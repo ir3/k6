@@ -1,0 +1,46 @@
+- content_for :title, "Editing user"
+%h1 ユーザメールアドレス編集
+.center-container
+=form_with model: @user, url: user_path, local: true do |f|
+  %table.center-table.radius-table
+    %thead.neutral
+      %tr
+        %th.bg-primary.text-primary-content id 
+        %td=@user.id
+      %tr
+        %th.bg-primary.text-primary-content{width:"120px"} メール
+        %td=@user.email_address
+        %td=f.email_field :email_address
+      %tr
+        %th.bg-primary.text-primary-content 姓
+        %td=@user.user_profile.lastname
+      %tr
+        %th.bg-primary.text-primary-content 名
+        %td=@user.user_profile.firstname
+      %tr
+        %th.bg-primary.text-primary-content 権限
+        %td=@user.user_profile.state
+      %tr
+        %th.bg-primary.text-primary-content 利用開始 
+        %td=@user.user_profile.sign_in_at.strftime("%Y/%m/%d %H:%M:%S")
+      %tr
+        %th.bg-primary.text-primary-content 利用終了
+        %td=@user.user_profile.sign_out_at.strftime("%Y/%m/%d %H:%M:%S")
+      %tr
+        %th.bg-primary.text-primary-content 登録日 
+        %td=@user.created_at.strftime("%Y/%m/%d %H:%M")
+      %tr
+        %th.bg-primary.text-primary-content 更新日
+        %td=@user.updated_at.strftime("%Y/%m/%d %H:%M")
+      %tr
+        .actions
+        %td
+        %td= link_to "ユーザ表示", @user
+        %td=f.submit "登録する", class: "btn btn-primary"
+%br
+%div
+  = link_to "ユーザprofile表示", user_profiles_path
+  |
+  = link_to "profile一覧", user_profiles_path
+  |
+  = link_to "パスワード編集", passwords_path

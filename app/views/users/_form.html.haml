@@ -1,0 +1,15 @@
+= form_with(model: user) do |form|
+  - if user.errors.any?
+    %div{style: "color: red"}
+      %h2= "#{pluralize(user.errors.count, "error")} prohibited this user from being saved:"
+
+      %ul
+        - user.errors.each do |error|
+          %li= error.full_message
+  .field
+    = form.label :email
+    = user.email_address
+    = form.email_field :email
+
+  %div
+    = form.submit

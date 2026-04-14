@@ -1,0 +1,52 @@
+- content_for :title, "Editing user_profile"
+%h1  ユーザprofile編集
+.center-container
+=form_with model: @user_profile, url: user_profile_path(@user_profile), local: true do |f|
+  %table.center-table.radius-table
+    %thead.neutral
+      %tr
+        %th.bg-primary.text-primary-content id
+        %td= @user.id
+      %tr
+        %th.bg-primary.text-primary-content{width:"180px"} メール
+        %td= @user.email_address
+      %tr
+        %th.bg-primary.text-primary-content 姓
+        %td= @user.user_profile.lastname
+        %td= f.text_field :lastname
+      %tr
+        %th.bg-primary.text-primary-content 名
+        %td= @user.user_profile.firstname
+        %td= f.text_field :firstname
+      %tr
+        %th.bg-primary.text-primary-content 権限
+        %td= @user.user_profile.state
+        - if Current.user.user_profile&.admin?
+          %td= f.text_field :state
+      %tr
+        %th.bg-primary.text-primary-content 利用開始
+        %td
+          - if @user.user_profile&.sign_in_at
+            = @user.user_profile.sign_in_at.strftime("%Y/%m/%d %H:%M:%S")
+      %tr
+        %th.bg-primary.text-primary-content 利用終了
+        %td
+          - if @user.user_profile&.sign_out_at
+            = @user.user_profile.sign_out_at.strftime("%Y/%m/%d %H:%M:%S")
+      %tr
+        %th.bg-primary.text-primary-content profile登録日
+        %td= @user.user_profile.created_at.strftime("%Y/%m/%d %H:%M")
+      %tr
+        %th.bg-primary.text-primary-content profile更新日
+        %td= @user.user_profile.updated_at.strftime("%Y/%m/%d %H:%M")
+      %tr
+        .actions
+        %td
+        %td= link_to "ユーザprofile", user_profile_path(@user_profile)
+        %td= f.submit "登録する", class: "btn btn-primary"
+%br
+%div
+  = link_to "ユーザ表示", user_profile_path(@user_profile)
+  - if Current.user.user_profile&.admin?
+    |
+    = link_to "ユーザprofiles一覧", user_profiles_path

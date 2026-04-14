@@ -1,0 +1,36 @@
+%tr{data: {controller: "row-link", 
+  row_link_url_value: user_path(user), 
+  action: "click->row-link#navigate"}, 
+  class: user.user_profile.role_color_class }
+  %td
+    = user.id
+  %td
+    = user.email_address
+  %td
+    -if user.user_profile
+      = user.user_profile.lastname
+  %td
+    -if user.user_profile
+      = user.user_profile.firstname
+  %td
+    -if user.user_profile
+      = user.user_profile.state
+  %td
+    -if user.user_profile
+      -if user.user_profile.sign_in_at.present?
+        = user.user_profile.sign_in_at.strftime("%Y/%m/%d %H:%M:%S")
+  %td
+    -if user.user_profile
+      -if user.user_profile.sign_out_at.present?
+        = user.user_profile.sign_out_at.strftime("%Y/%m/%d %H:%M:%S")
+  %td
+    -if user.user_profile
+      = user.user_profile.created_at.strftime("%Y/%m/%d %H:%M")
+  %td
+    -if user.user_profile
+      = user.user_profile.updated_at.strftime("%Y/%m/%d %H:%M")
+  %td
+    = user.created_at.strftime("%Y/%m/%d %H:%M")
+  %td
+    = user.updated_at.strftime("%Y/%m/%d %H:%M")
+

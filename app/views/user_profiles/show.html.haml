@@ -1,0 +1,25 @@
+- content_for :title, "show user_profile"
+%h1  ユーザprofile表示
+.center-container
+  %table.center-table.radius-table
+    %thead.neutral
+      %tr.bg-primary.text-primary-content
+        %th{width:"20px"} id
+        %th{width:"320px"} メール
+        %th 姓
+        %th 名
+        %th{width:"60px"} 権限
+        %th{width:"160px"} 利用開始
+        %th{width:"160px"} 利用終了
+        %th{width:"160px"} profile登録日
+        %th{width:"160px"} profile更新日
+        %th{width:"160px"} ユーザ登録日
+        %th{width:"160px"} ユーザ更新日
+    %tbody{style: "cursor: pointer"}
+    = render @user_profile
+%div
+  - if Current.user.user_profile&.admin?
+    = link_to "ユーザprofiles一覧", user_profiles_path
+    |
+  - if Current.user.user_profile&.admin? || @user_profile.user_id == Current.user.id
+    = link_to "ユーザprofile編集", edit_user_profile_path(@user_profile)

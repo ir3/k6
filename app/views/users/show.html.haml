@@ -1,0 +1,57 @@
+- content_for :title, "show user"
+%h1  ユーザ表示
+.center-container
+  %table.center-table.radius-table
+    %thead.neutral
+      %tr
+        %th.bg-primary.text-primary-content id 
+        %td=@user.id
+      %tr
+        %th.bg-primary.text-primary-content{width:"180px"} メール
+        %td=@user.email_address
+      %tr
+        %th.bg-primary.text-primary-content 姓 名
+        %td=@user.user_profile.fullname
+      %tr
+        %th.bg-primary.text-primary-content 権限
+        %td= @user.user_profile.state
+      %tr
+        %th.bg-primary.text-primary-content 利用開始 
+        %td=@user.user_profile.sign_in_at.strftime("%Y/%m/%d %H:%M:%S")
+      %tr
+        %th.bg-primary.text-primary-content 利用終了
+        %td
+          -if @user.user_profile
+            -if @user.user_profile.sign_out_at
+              =@user.user_profile.sign_out_at.strftime("%Y/%m/%d %H:%M:%S")
+      %tr
+        %th.bg-primary.text-primary-content profile登録日 
+        %td=@user.user_profile.created_at.strftime("%Y/%m/%d %H:%M")
+      %tr
+        %th.bg-primary.text-primary-content profile更新日
+        %td=@user.user_profile.updated_at.strftime("%Y/%m/%d %H:%M")
+      %tr
+        %th.bg-primary.text-primary-content ユーザ登録日 
+        %td=@user.created_at.strftime("%Y/%m/%d %H:%M")
+      %tr
+        %th.bg-primary.text-primary-content ユーザ更新日
+        %td=@user.updated_at.strftime("%Y/%m/%d %H:%M")
+%div
+  -user = User.find(Current.user.id)
+  = link_to "ユーザprofile編集", edit_user_profile_path(@user.user_profile)
+  -if user.user_profile.read_attribute_before_type_cast(:state) > 1
+    |
+    = link_to "ユーザprofiles", user_profiles_path
+    |
+    = link_to "ユーザ追加", sign_up_path
+    |
+    = link_to "ユーザ編集", edit_user_path(@user)
+    |
+    = link_to "ユーザ一覧", users_path
+    |
+    = button_to "登録抹消",
+      user_path(@user),
+      method: :delete,
+      class: "bg-primary btn btn-danger",
+      form_class: "d-inline",
+      form: { data: { turbo_confirm: "よろしいですか？" } }

@@ -1,0 +1,6 @@
+%h1 パスワードをお忘れですか？
+= tag.div(flash[:alert], style: "color:red") if flash[:alert]
+= form_with url: passwords_path do |form|
+  = form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "メールアドレスを入力", value: params[:email_address]
+  %br/
+  = form.submit "リセットURLを発行"

@@ -1,0 +1,23 @@
+- content_for :title, "ユーザ一覧"
+%h1 ユーザ一覧
+%p{style: "color: green"}= notice
+.center-container
+  %table.center-table.radius-table
+    %thead.neutral.text-neutral-content.bg-primary.text-primary-content
+      %tr
+        %th{width:"20px"} id 
+        %th{width:"320px"} メール
+        %th 姓
+        %th 名
+        %th{width:"60px"} 権限
+        %th{width:"160px"} 利用開始 
+        %th{width:"160px"} 利用終了
+        %th{width:"160px"} profile登録日 
+        %th{width:"160px"} profile更新日
+        %th{width:"160px"} ユーザ登録日 
+        %th{width:"160px"} ユーザ更新日
+    %tbody{style: "cursor: pointer"}
+      - @users.each do |user|
+        = render user
+= link_to "[ユーザ追加]", sign_up_path
+= link_to "[ユーザprofile]", user_profiles_path

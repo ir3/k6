@@ -1,0 +1,21 @@
+- content_for :title, "user profile登録"
+
+%h1 user profile追加
+
+= render "form", user_profile: @user_profile
+
+%br
+.container
+  = form_with model: @user_profile, url: new_user_profile_path do |form|
+    - if form.object.errors.any?
+      %div
+      Error: #{form.object.errors.full_messages.first}
+    %div
+      = form.label "姓"
+      = form.text_field :lastname, required: true, autofocus: true, autocomplete: "family-name"
+    %div
+      = form.label "名"
+      = form.text_field :firstname, required: true, autocomplete: "given-name"
+
+%div
+  = link_to "Back to user profiles", user_profiles_path

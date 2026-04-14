@@ -1,0 +1,20 @@
+[Unit]
+Description=K5 Rails Puma Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/k5
+Environment=RAILS_ENV=production
+Environment=SOLID_QUEUE_IN_PUMA=true
+EnvironmentFile=/var/www/k5/.env
+ExecStart=/bin/bash -lc 'bundle exec puma -C config/puma.rb'
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/www/k5/log/puma.stdout.log
+StandardError=append:/var/www/k5/log/puma.stderr.log
+
+[Install]
+WantedBy=multi-user.target

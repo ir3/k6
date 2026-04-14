@@ -1,0 +1,16 @@
+= form_with url: session_path do |f|
+  %table.center-table.radius-table
+    %tr
+      %th= f.label :name, "メールアドレス"
+      %td= f.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], size: 32, maxlength: 30
+    %tr
+      %th= f.label :name,"パスワード"
+      %td= f.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", size: 32, maxlength: 30
+    %tr
+      %td
+        %button.btn.btn-secondry
+          = link_to "Forgot password?", new_password_path
+      %td
+        = f.submit "利用開始",class: "btn btn-primary"
+        = link_to "アカウントをお持ちでない方は登録", root_path, class: "link link-primary text-sm"
+

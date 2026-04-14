@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  firstname: Admin
+  lastname: User
+  state: 9
+  sign_in_at: 2026-01-08 11:38:34
+  sign_out_at: 2026-01-08 11:38:34
+  created_at: 2026-01-08 11:38:34
+  updated_at: 2026-01-08 11:38:34
+
+two:
+  user: two
+  firstname: Normal
+  lastname: User
+  state: 1
+  sign_in_at: 2026-01-08 11:38:34
+  sign_out_at: 2026-01-08 11:38:34
+  created_at: 2026-01-08 11:38:34
+  updated_at: 2026-01-08 11:38:34
