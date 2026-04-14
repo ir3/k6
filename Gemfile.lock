@@ -101,9 +101,6 @@ GEM
     crass (1.0.6)
     cssbundling-rails (1.4.3)
       railties (>= 6.0.0)
-    dartsass-rails (0.5.1)
-      railties (>= 6.0.0)
-      sass-embedded (~> 1.63)
     date (3.5.1)
     debug (1.11.1)
       irb (~> 1.10)
@@ -122,24 +119,6 @@ GEM
       raabro (~> 1.4)
     globalid (1.3.0)
       activesupport (>= 6.1)
-    google-protobuf (4.34.1)
-      bigdecimal
-      rake (~> 13.3)
-    google-protobuf (4.34.1-aarch64-linux-gnu)
-      bigdecimal
-      rake (~> 13.3)
-    google-protobuf (4.34.1-aarch64-linux-musl)
-      bigdecimal
-      rake (~> 13.3)
-    google-protobuf (4.34.1-arm64-darwin)
-      bigdecimal
-      rake (~> 13.3)
-    google-protobuf (4.34.1-x86_64-linux-gnu)
-      bigdecimal
-      rake (~> 13.3)
-    google-protobuf (4.34.1-x86_64-linux-musl)
-      bigdecimal
-      rake (~> 13.3)
     haml (7.2.0)
       temple (>= 0.8.2)
       thor
@@ -227,7 +206,7 @@ GEM
       date
       stringio
     public_suffix (7.0.5)
-    puma (7.2.0)
+    puma (8.0.0)
       nio4r (~> 2.0)
     raabro (1.4.0)
     racc (1.8.1)
@@ -313,20 +292,6 @@ GEM
       racc (~> 1.5)
       sexp_processor (~> 4.16)
     rubyzip (3.2.2)
-    sass-embedded (1.99.0-aarch64-linux-gnu)
-      google-protobuf (~> 4.31)
-    sass-embedded (1.99.0-aarch64-linux-musl)
-      google-protobuf (~> 4.31)
-    sass-embedded (1.99.0-arm-linux-gnueabihf)
-      google-protobuf (~> 4.31)
-    sass-embedded (1.99.0-arm-linux-musleabihf)
-      google-protobuf (~> 4.31)
-    sass-embedded (1.99.0-arm64-darwin)
-      google-protobuf (~> 4.31)
-    sass-embedded (1.99.0-x86_64-linux-gnu)
-      google-protobuf (~> 4.31)
-    sass-embedded (1.99.0-x86_64-linux-musl)
-      google-protobuf (~> 4.31)
     securerandom (0.4.1)
     selenium-webdriver (4.41.0)
       base64 (~> 0.2)
@@ -414,7 +379,6 @@ DEPENDENCIES
   brakeman
   capybara
   cssbundling-rails
-  dartsass-rails
   debug
   dry-initializer (~> 3.2)
   erb2haml
