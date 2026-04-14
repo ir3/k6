@@ -9,3 +9,6 @@ application.register("hello", HelloController)
 
 import RowLinkController from "./row_link_controller"
 application.register("row-link", RowLinkController)
+
+import RubyWasmController from "./ruby_wasm_controller"
+application.register("ruby-wasm", RubyWasmController)

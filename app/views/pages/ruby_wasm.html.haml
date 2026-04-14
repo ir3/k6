@@ -1,0 +1,37 @@
+- content_for :title, "Ruby Playground"
+- content_for :head do
+  %script{src: "https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"}
+
+.p-6.max-w-4xl.mx-auto
+  %h1.text-2xl.font-bold.mb-4 Ruby 4.0 Playground (WebAssembly + p5.js)
+
+  %div{"data-controller" => "ruby-wasm"}
+    .mb-3
+      %span.badge.badge-neutral{"data-ruby-wasm-target" => "status"} 初期化中...
+
+    .mb-3{"data-ruby-wasm-target" => "canvas", style: "display:none"}
+
+    .mb-3
+      %textarea.textarea.textarea-bordered.w-full.font-mono.text-sm{"data-ruby-wasm-target" => "code", rows: "16"}
+        class MySketch
+          def setup
+            createCanvas(400, 300)
+            background(30)
+          end
+
+          def draw
+            fill(rand(255), rand(255), rand(255), 80)
+            noStroke
+            circle(mouseX, mouseY, 40)
+          end
+        end
+
+        P5.init(MySketch.new)
+
+    .flex.gap-2.mb-4
+      %button.btn.btn-primary{"data-ruby-wasm-target" => "runBtn", "data-action" => "click->ruby-wasm#run", disabled: true} 実行
+      %button.btn.btn-ghost{"data-action" => "click->ruby-wasm#clear"} クリア
+
+    .label
+      %span.label-text 出力
+    %pre.bg-base-200.rounded-box.p-4.min-h-16.text-sm.font-mono.whitespace-pre-wrap{"data-ruby-wasm-target" => "output"}

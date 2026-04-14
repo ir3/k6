@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   get "welcom/index"
+  get "ruby_wasm", to: "pages#ruby_wasm"
   resource :pages
   resources :passwords, param: :token
   resource :session

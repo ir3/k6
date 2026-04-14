@@ -12,6 +12,7 @@
   "dependencies": {
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^8.0.20",
+    "@ruby/wasm-wasi": "^2.9.3-2.9.4",
     "@tailwindcss/cli": "^4.1.18",
     "daisyui": "^5.5.19",
     "sass": "^1.97.2",
