@@ -46,3 +46,18 @@
 .radius-table{
     border-radius: 4px;
 }
+.alert {
+  overflow: hidden;
+  transition:
+    opacity 300ms ease,
+    max-height 400ms ease,
+    padding-top 300ms ease,
+    padding-bottom 300ms ease;
+  max-height: 120px;
+}
+.alert--dismissing {
+  opacity: 0;
+  max-height: 0 !important;
+  padding-top: 0;
+  padding-bottom: 0;
+}

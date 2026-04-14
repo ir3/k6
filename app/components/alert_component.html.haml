@@ -1,0 +1,8 @@
+.alert{ class: css, role: "alert", data: { controller: "alert", alert_auto_dismiss_value: @auto_dismiss, alert_delay_value: @delay } }
+  %span.material-symbols-outlined.text-lg= icon
+  .flex-1
+    - if @title
+      %p.font-medium.text-sm= @title
+    %p.text-sm= @message
+  - if @dismissible
+    %button.btn.btn-ghost.btn-xs{ type: "button", data: { action: "click->alert#dismiss" }, aria: { label: "閉じる" } } ✕

@@ -2,7 +2,7 @@
 %html{"data-theme" => "mytheme"}
   %head
     %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
-    %title= content_for(:title) || "K2"
+    %title= content_for(:title) || "K6"
     %meta{:content => "width=device-width,initial-scale=1", :name => "viewport"}/
     %meta{:content => "yes", :name => "apple-mobile-web-app-capable"}/
     %meta{:content => "yes", :name => "mobile-web-app-capable"}/
@@ -38,6 +38,6 @@
           %a About
         %li
           %a Contact
-  = tag.div(flash[:alert], style: "color:red") if flash[:alert]
-  = tag.div(flash[:notice], style: "color:green") if flash[:notice]
+  - flash.each do |type, message|
+    = render AlertComponent.new(message: message, variant: type.to_sym, auto_dismiss: true)
   = yield

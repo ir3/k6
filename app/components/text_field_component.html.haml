@@ -1,0 +1,10 @@
+.form-control.mb-4
+  %label.label
+    %span.label-text.font-medium= @label
+    - if @required
+      %span.text-error.ml-1 *
+  = @form.send(:text_field, @field, type: @type, class: input_classes, placeholder: @placeholder, required: @required, autocomplete: @autocomplete)
+  - if error?
+    = render(FormErrorComponent.new(errors: errors))
+  - elsif @hint
+    %p.text-xs.text-base-content\/60.mt-1= @hint

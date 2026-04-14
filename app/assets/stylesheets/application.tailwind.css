@@ -1,3 +1,5 @@
+@source "../../../app/components/**/*.{rb,haml}";
+@source "../../../app/views/**/*.haml";
 @import "tailwindcss";
 @plugin "daisyui";
 @plugin "daisyui/theme" {
