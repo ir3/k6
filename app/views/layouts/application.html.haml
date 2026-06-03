@@ -40,4 +40,7 @@
           %a Contact
   - flash.each do |type, message|
     = render AlertComponent.new(message: message, variant: type.to_sym, auto_dismiss: true)
+  - if flash[:reset_url]
+    = tag.div(style: "color:green") do
+      = link_to "▶ パスワードリセットはこちら", flash[:reset_url]
   = yield

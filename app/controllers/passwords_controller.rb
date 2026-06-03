@@ -9,7 +9,8 @@ class PasswordsController < ApplicationController
     if user = User.find_by(email_address: params[:email_address])
       token = user.generate_token_for(:password_reset)
       reset_url = edit_password_url(token)
-      redirect_to new_session_path, notice: "パスワードリセットURL: #{reset_url}"
+      flash[:reset_url] = reset_url
+      redirect_to new_session_path, notice: "パスワードリセットURLを発行しました。下のリンクをクリックしてください。"
     else
       redirect_to new_password_path, alert: "そのメールアドレスのユーザが見つかりません。"
     end
