@@ -1,0 +1,67 @@
+= form_for @orderpart do |f|
+  - if @orderpart.errors.any?
+    #error_explanation
+      %h2= "#{pluralize(@orderpart.errors.count, "error")} prohibited this orderpart from being saved:"
+      %ul
+        - @orderpart.errors.full_messages.each do |msg|
+          %li= msg
+
+  .field
+    = f.label :id
+    = f.number_field :id
+  .field
+    = f.label :mno
+    = f.number_field :mno
+  .field
+    = f.label :sno
+    = f.number_field :sno
+  .field
+    = f.label :itemno
+    = f.text_field :itemno
+  .field
+    = f.label :kzaiko
+    = f.text_field :kzaiko
+  .field
+    = f.label :partno
+    = f.text_field :partno
+  .field
+    = f.label :info
+    = f.text_field :info
+  .field
+    = f.label :qty
+    = f.number_field :qty
+  .field
+    = f.label :bqty
+    = f.number_field :bqty
+  .field
+    = f.label :unit
+    = f.text_field :unit
+  .field
+    = f.label :unitpd
+    = f.number_field :unitpd
+  .field
+    = f.label :unitpi
+    = f.number_field :unitpi
+  .field
+    = f.label :unitpi2
+    = f.number_field :unitpi2
+  .field
+    = f.label :irate
+    = f.text_field :irate
+  .field
+    = f.label :totala
+    = f.number_field :totala
+  .field
+    = f.label :total2
+    = f.number_field :total2
+  .field
+    = f.label :unitweight
+    = f.text_field :unitweight
+  .field
+    = f.label :updated_at
+    = f.datetime_select :updated_at
+  .field
+    = f.label :deleted_at
+    = f.datetime_select :deleted_at
+  .actions
+    = f.submit 'Save'

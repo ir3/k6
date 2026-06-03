@@ -9,6 +9,33 @@ Rails.application.routes.draw do
   resources :user_profiles
   #root to: 'welcom#index'
 
+  # kobeengine
+  resources :adlists
+  get  'search'           => 'adlists#search',   as: 'search'
+  post 'adlists/out/'     => 'adlists#out'
+  post 'adlists/select/'  => 'adlists#select'
+
+  resources :keparts
+  post 'keparts/search/'  => 'keparts#search'
+
+  resources :orders
+  post 'orders/search/'   => 'orders#search'
+  post 'orders/copy/'     => 'orders#copy'
+  post 'orders/ocopy/'    => 'orders#ocopy'
+  post 'orders/keycopy/'  => 'orders#keycopy'
+
+  resources :orderparts
+  post 'orderparts/search/'  => 'orderparts#search'
+  post 'orderparts/select/'  => 'orderparts#select'
+
+  resources :parts
+  post 'parts/search/'    => 'parts#search'
+  post 'parts/select/'    => 'parts#select'
+
+  resources :registries
+  resources :stocks
+  resources :stockbs
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

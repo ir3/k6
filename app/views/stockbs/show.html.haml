@@ -1,0 +1,81 @@
+%p#notice= notice
+
+%p
+  %b Id:
+  = @stockb.id
+%p
+  %b Partno:
+  = @stockb.partno
+%p
+  %b Kind:
+  = @stockb.kind
+%p
+  %b Indate:
+  = @stockb.indate
+%p
+  %b Num:
+  = @stockb.num
+%p
+  %b Inprice:
+  = @stockb.inprice
+%p
+  %b Irprice:
+  = @stockb.irprice
+%p
+  %b Invalue:
+  = @stockb.invalue
+%p
+  %b Irvalue:
+  = @stockb.irvalue
+%p
+  %b Outdate:
+  = @stockb.outdate
+%p
+  %b Onum:
+  = @stockb.onum
+%p
+  %b Mno:
+  = @stockb.mno
+%p
+  %b Orprice:
+  = @stockb.orprice
+%p
+  %b Orvalue:
+  = @stockb.orvalue
+%p
+  %b Itemno:
+  = @stockb.itemno
+%p
+  %b Cordno:
+  = @stockb.cordno
+%p
+  %b Updated at:
+  = @stockb.updated_at
+%p
+  %b Memo:
+  = @stockb.memo
+%p
+  %b Cname:
+  = @stockb.cname
+%p
+  %b Sname:
+  = @stockb.sname
+%p
+  %b Novalid:
+  = @stockb.novalid
+%p
+  %b Ikubun:
+  = @stockb.ikubun
+%p
+  %b Okubun:
+  = @stockb.okubun
+%p
+  %b Created at:
+  = @stockb.created_at
+%p
+  %b Deleted at:
+  = @stockb.deleted_at
+
+= link_to 'Edit', edit_stockb_path(@stockb)
+\|
+= link_to 'Back', stockbs_path

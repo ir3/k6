@@ -1,0 +1,148 @@
+%table
+  %tr
+    %td{style:'text-align:center; font-size:xx-large'}
+      注文部品詳細
+    %td{style:"padding: 5px 5px 5px 30px;"}
+      %form{method:"post", action: "#{orders_keycopy_path}", name: "order_key_copy"}
+        = hidden_field_tag('authenticity_token', form_authenticity_token)
+        %input{type: "submit", value: "取引先、船名、機番を複製し新規取引登録", class: "btn wtext btn-info"}
+    %td{style:"padding: 5px 5px 5px 30px;"}
+      %form{method:"post", action: "#{orders_copy_path}", name: "order_copy"}
+        = hidden_field_tag('authenticity_token', form_authenticity_token)
+        %input{type: "submit", value: "部品詳細も複製し新規取引登録",  class: "btn wtext btn-info"}
+    %td{style:"padding: 5px 5px 5px 30px;"}
+      = link_to "台帳を修正", edit_order_path,  class: "btn wtext btn-info"
+    %td{style:"padding: 5px 5px 5px 30px;"}
+      = link_to "台帳から削除", order_path, method: :delete, data: {confirm: "本当に削除しますか？"}, class: "btn wtext btn-info"
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %tr{bgcolor: "#e3e3e3"}
+    %th.title{width:"40px"} Id
+    %td{width:"70px"}= @order.id
+    %th.title{width:"80px"} 取引管理No.
+    %td{width:"120px",style:'text-align:center; font-size:xx-large'}= @order.mno
+    %th.title{width:"45px"} 会社名
+    %td{style:'text-align:center; font-size:x-large'}
+      - dp = ''
+      - if Adlist.find_by(id: @order.adlist_id)
+        - adlist = Adlist.find(@order.adlist_id)
+        - dp << adlist.company
+        - dp << ' '+adlist.section if adlist.section
+        = link_to dp, adlist
+    %th.title{width:"45px"} 船名
+    %td{style:'text-align:center; font-size:xx-large'}
+      = @order.shipname
+    %th.title{width:"45px"} 船籍
+    %td{style:'text-align:center; font-size:xx-large'}
+      = @order.country
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %tr{bgcolor: "#e3e3e3"}
+    %th.title{width:"45px"} 件名
+    %td= @order.orderitem
+    %th.title{width:"45px"} 内容
+    %td= @order.memo
+    %th.title{width:"45px"} 機番
+    %td{width:"160px",style:'text-align:center; font-size:xx-large'}
+      = @order.engno
+    %th.title{width:"90px"} 型式(機種)
+    %td{width:"120px",style:'text-align:center; font-size:x-large'}
+      = @order.etype
+    %th.title{width:"80px"} 客先註番
+    %td= @order.ono
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %tr{bgcolor: "#e3e3e3"}
+    %th.title{width:"40px"} TC
+    %td= @order.tc
+    %th.title{width:"55px"} TCNo.
+    %td= @order.tcno
+    %th.title{width:"40px"} ZP
+    %td= @order.zp
+    %th.title{width:"55px"} ZPNo.
+    %td= @order.zpno
+    %th.title{width:"40px"} GLC
+    %td= @order.glc
+    %th.title{width:"55px"} GLNo.
+    %td= @order.glcno
+    %th.title{width:"40px"} MG
+    %td= @order.mg
+    %th.title{width:"55px"} MGNo.
+    %td= @order.mgno
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %tr{bgcolor: "#e3e3e3"}
+    %th.title{width:"45px"} 納入期日
+    %td{width:"100px"}= @order.rdate
+    %th.title{width:"55px"} 納入コメント
+    %td= @order.ncomment
+    %th.title{width:"40px"} 点数
+    %td= @order.pnum
+    %th.title{width:"55px"} A部品掛け率
+    %td{width:"80px"}= @order.irate
+    %th.title{width:"55px"}  以外掛け率
+    %td{width:"80px"}= @order.irate2
+    %th.title{width:"55px"} 値引き
+    %td= @order.nebiki
+    %th.title{width:"45px"} 更新日時
+    %td.datej= @order.updated_at.strftime("%Y/%m/%d %H:%M")
+%table
+  %tr
+    %td
+      見積依頼出力日
+    %td
+      = @order.ndate
+      %br
+        初回見積出力日
+      %br= @order.mitday
+    %td
+      最新見積出力日
+      %br= @order.ldate
+    %td
+      受注or受注メモ出力日
+      %br= @order.tcondition
+    %td
+      納品or納品書(請求要となった)日
+      %br= @order.pnum
+    %td
+      出荷案内出力(請求要となった)日
+      %br= @order.syuday
+    %td
+      請求or請求書出力日
+      %br= @order.seiday
+    %td
+      入金(確認)日
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %thead
+    %tr.headline{bgcolor: "#d4d8f1"}
+      %th{width:"25px"} id
+      %th{width:"25px"} 順
+      %th{width:"150px"} 部品コード
+      %th{width:"120px"} ItemNo
+      %th{width:""} 名称
+      %th{width:""} 備考
+      %th{width:"50px"} 数量
+      %th{width:"100px"} 販売単価(円)
+      %th{width:"90px"} 単位重量kg
+      %th{width:"90px"} 総重量kg
+      %th{width:"60px"} (掛率)
+      %th.datej 更新日時
+  - @orderparts.each do |orderpart|
+    %tr
+      %td= orderpart.id
+      %td{style:'text-align:right'}= orderpart.sno
+      - if Part.find_by(pcode: orderpart.partno)
+        - part_id = Part.find_by(pcode: orderpart.partno).id
+        %td= (link_to orderpart.partno, parts_path+"/#{part_id}")+ orderpart.kzaiko
+      - elsif Kepart.find_by(pcode: orderpart.partno)
+        - part_id = Kepart.find_by(pcode: orderpart.partno).id
+        %td= (link_to orderpart.partno, keparts_path+"/#{part_id}")+ orderpart.kzaiko
+      - else
+        %td= ''
+      %td= orderpart.itemno
+      - #part = Part.find_by_sql("SELECT jname FROM parts WHERE pcode = '#{orderpart.partno}'")
+      - part = Part.find_by(pcode: orderpart.partno)
+      %td= part.jname if part
+      %td= orderpart.info
+      %td{style:'text-align:right'}= orderpart.qty
+      %td{style:'text-align:right'}= orderpart.unitpd.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+      %td{style:'text-align:right'}= orderpart.unitweight
+      %td{style:'text-align:right'}= orderpart.totalweight
+      %td{style:'text-align:right'}= orderpart.irate
+      %td= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')

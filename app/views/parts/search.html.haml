@@ -1,0 +1,25 @@
+- model_class = Part
+%h1=t '.title', default: model_class.model_name.human
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %thead
+    %tr.headline
+      %th= model_class.human_attribute_name(:id)
+      %th= model_class.human_attribute_name(:pcode)
+      %th= model_class.human_attribute_name(:form)
+      %th= model_class.human_attribute_name(:jname)
+      %th= model_class.human_attribute_name(:ename)
+      %th= model_class.human_attribute_name(:stock)
+      %th= model_class.human_attribute_name(:sel_unit)
+      %th= model_class.human_attribute_name(:price)
+      %th= model_class.human_attribute_name(:newprice)+'(円)'
+      %th= model_class.human_attribute_name(:weightkg)
+      %th= model_class.human_attribute_name(:munit)
+      %th= model_class.human_attribute_name(:itemno)
+      %th= model_class.human_attribute_name(:cordno)
+      %th= model_class.human_attribute_name(:comment)
+      %th{width:"160px"}= model_class.human_attribute_name(:updated_at)
+      %tbody
+        %form{method:"post", action:"#{parts_select_path}"}
+          = render @parts
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+          %input{name: "submit", type: "submit", value: "選択"}/

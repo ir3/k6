@@ -1,0 +1,19 @@
+- stripes = [ 'ALICEBLUE', '#d3d9bf' ]
+%tr{BGCOLOR:"#{stripes.push(stripes[0]).shift}"}
+%td= check_box 'selids', adlist.id, {}, true, false
+%td= link_to adlist.id, orders_path + "?keyword=#{adlist.id}&keykind=companyid"
+%td
+  = adlist.ruby
+  %br/
+  = adlist.company || adlist.name
+%td= (adlist.name ? adlist.name : ' ')
+%td= (adlist.section ? adlist.section : ' ') << (adlist.section2 ? adlist.section2 : ' ')
+%td
+  = adlist.cozip7
+  = (adlist.coad1 ? adlist.coad1 : ' ') << (adlist.coad2 ? adlist.coad2 : ' ') << (adlist.coad3 ? adlist.coad3 : ' ')
+%td
+  = (adlist.cotel ? adlist.cotel : ' ')
+  = (adlist.cofax ? ' '+adlist.cofax : ' ')
+%td= adlist.memo
+%td= adlist.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+%td= link_to 'Show', adlist

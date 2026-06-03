@@ -1,0 +1,30 @@
+- if @adlists
+  %table
+    %tr
+      %td
+        %h1 検索結果
+      %td
+        %form{method:"post", action:"#{adlists_out_path}"}
+          %input{name: "submit", type: "submit", value: "Excel出力"}/
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+  %table.table-bordered.table-condensed.table-striped{width:"99%", align:"center"}
+    %thead
+      %th 選
+      %th 客No.
+      %th{width: "200px"} よみ/ 名前
+      %th 名前
+      %th{width: "100px"} 部署
+      %th{width: "300px"} 郵便番号 住所
+      %th{width: "130px"} TEL/ FAX
+      %th メモ
+      %th{width: "150px"} 更新日
+      %th 詳細
+      %tbody#posts
+        %form{method:"post", action:"#{adlists_select_path}"}
+          = render @adlists
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+          %input{name: "submit", type: "submit", value: "選択"}/
+  %br/
+  = link_to '新規追加', new_adlist_path
+- else
+  検索結果はみつかりません

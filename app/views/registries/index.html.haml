@@ -1,0 +1,23 @@
+%h1{align:"center"} 船籍一覧
+
+%table.table-bordered.table-condensed.table-striped{width: "40%", align:"center"}
+  %tr
+    %th ＃
+    %th 国籍
+    %th Rate
+    %th
+    %th
+    %th
+
+  - @registries.each do |registry|
+    %tr
+      %td= registry.countryid
+      %td= registry.country
+      %td= registry.rate
+      %td= link_to 'Show', registry
+      %td= link_to 'Edit', edit_registry_path(registry)
+      %td= link_to 'Destroy', registry, :method => :delete, :data => { :confirm => 'Are you sure?' }
+
+%br
+
+= link_to '船籍追加', new_registry_path

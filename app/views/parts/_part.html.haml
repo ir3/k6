@@ -1,0 +1,17 @@
+%tr
+%td{style: 'text-align:center'}= link_to part.id, part_path(part)
+%td= part.pcode
+%td= part.form
+%td= part.jname
+%td= part.ename
+%td= part.stock
+%td{style: 'text-align:right'}= part.sel_unit
+%td{style: 'text-align:right'}= part.price
+%td{style: 'text-align:right'}= part.newprice.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
+%td{style: 'text-align:right'}= part.weightkg
+%td= part.munit
+%td= part.itemno
+%td= part.cordno
+%td= part.comment
+%td= part.updated_at.strftime('%Y/%m/%d %H:%M')
+

@@ -1,0 +1,56 @@
+= form_for @part, html: { class: 'form-horizontal' } do |f|
+  .control-group
+    = f.label :pcode, class: 'control-label'
+    .controls
+      = f.text_field :pcode, class: 'text_field'
+  .control-group
+    = f.label :form, class: 'control-label'
+    .controls
+      = f.text_field :form, class: 'text_field'
+  .control-group
+    = f.label :jname, class: 'control-label'
+    .controls
+      = f.text_field :jname, class: 'text_field'
+  .control-group
+    = f.label :ename, class: 'control-label'
+    .controls
+      = f.text_field :ename, class: 'text_field'
+  .control-group
+    = f.label :stock, class: 'control-label'
+    .controls
+      = f.text_field :stock, class: 'text_field'
+  .control-group
+    = f.label :sel_unit, class: 'control-label'
+    .controls
+      = f.text_field :sel_unit, class: 'text_field'
+  .control-group
+    = f.label :price, class: 'control-label'
+    .controls
+      = f.number_field :price, class: 'number_field'
+  .control-group
+    = f.label :newprice, class: 'control-label'
+    .controls
+      = f.number_field :newprice, class: 'number_field'
+  .control-group
+    = f.label :weightkg, class: 'control-label'
+    .controls
+      = f.text_field :weightkg, class: 'text_field'
+  .control-group
+    = f.label :munit, class: 'control-label'
+    .controls
+      = f.number_field :munit, class: 'number_field'
+  .control-group
+    = f.label :itemno, class: 'control-label'
+    .controls
+      = f.text_field :itemno, class: 'text_field'
+  .control-group
+    = f.label :cordno, class: 'control-label'
+    .controls
+      = f.text_field :cordno, class: 'text_field'
+  .control-group
+    = f.label :comment, class: 'control-label'
+    .controls
+      = f.text_field :comment, class: 'text_field'
+  .form-actions
+    = f.submit nil, class: 'btn btn-primary'
+    = link_to t('.cancel', default: t("helpers.links.cancel")), parts_path, class: 'btn'

@@ -1,0 +1,71 @@
+- model_class = Stock
+%table
+  %tr
+    %td
+      %h1=t '.title', default: model_class.model_name.human
+    %td
+      = paginate @stocks, window: 4, outer_window: 5, left: 1, right: 3
+
+%table.table-bordered.table-condensed.table-striped{width: "100%"}
+  %thead
+    %tr
+      %th Id
+      %th Partno
+      %th Kind
+      %th Indate
+      %th Num
+      %th Inprice
+      %th Irprice
+      %th Invalue
+      %th Irvalue
+      %th Outdate
+      %th Onum
+      %th Mno
+      %th Orprice
+      %th Orvalue
+      %th Itemno
+      %th Cordno
+      %th Memo
+      %th Cname
+      %th Sname
+      %th Invalid
+      %th Ikubun
+      %th Okubun
+      %th Updated at
+      %th
+      %th
+      %th
+
+  %tbody
+    - @stocks.each do |stock|
+      %tr
+        %td= stock.id
+        %td= stock.partno
+        %td= stock.kind
+        %td= stock.indate
+        %td= stock.num
+        %td= stock.inprice
+        %td= stock.irprice
+        %td= stock.invalue
+        %td= stock.irvalue
+        %td= stock.outdate
+        %td= stock.onum
+        %td= stock.mno
+        %td= stock.orprice
+        %td= stock.orvalue
+        %td= stock.itemno
+        %td= stock.cordno
+        %td= stock.memo
+        %td= stock.cname
+        %td= stock.sname
+        %td= stock.novalid
+        %td= stock.ikubun
+        %td= stock.okubun
+        %td= stock.updated_at.strftime('%Y/%m/%d %H:%M')
+        %td= link_to 'Show', stock
+        %td= link_to 'Edit', edit_stock_path(stock)
+        %td= link_to 'Destroy', stock, :method => :delete, :data => { :confirm => 'Are you sure?' }
+
+%br
+
+= link_to 'New Stock', new_stock_path

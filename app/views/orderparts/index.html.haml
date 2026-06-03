@@ -1,0 +1,53 @@
+- model_class = Orderpart
+%table
+  %tr
+    %td
+      %h1 部品明細
+    %td
+      = paginate @orderparts, window: 4, outer_window: 5, left: 1, right: 3
+
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %tr{bgcolor: "#e3e3e3"}
+    %th ＃
+    %th Mno
+    %th Sno
+    %th ItemNo
+    %th 在庫
+    %th 部品番号
+    %th 説明
+    %th 数量
+    %th バラ売
+    %th 単位
+    %th 国内単価
+    %th 海外掛率
+    %th 合計金額
+    %th 海外切上
+    %th 単位重量kg
+    %th 合計重量kg
+    %th 更新日時
+
+  - @orderparts.each do |orderpart|
+    %tr
+      %td= link_to orderpart.id, orderpart
+      - order = Order.where(mno: orderpart.mno)
+      %td= link_to orderpart.mno, order_path(order)
+      - #%td= orderpart.mno
+      %td{style:'text-align:right'}= orderpart.sno
+      %td= orderpart.itemno
+      %td= orderpart.kzaiko
+      %td= orderpart.partno
+      %td= orderpart.info
+      %td{style:'text-align:right'}= orderpart.qty
+      %td{style:'text-align:right'}= orderpart.bqty
+      %td= orderpart.unit
+      %td{style:'text-align:right'}= orderpart.unitpd.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+      %td{style:'text-align:right'}= orderpart.irate
+      %td{style:'text-align:right'}= orderpart.totala.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+      %td{style:'text-align:right'}= orderpart.total2
+      %td{style:'text-align:right'}= orderpart.unitweight
+      %td{style:'text-align:right'}= orderpart.totalweight
+      %td= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')
+
+%br
+
+= link_to 'New Orderpart', new_orderpart_path

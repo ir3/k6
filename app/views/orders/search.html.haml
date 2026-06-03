@@ -1,0 +1,19 @@
+- model_class = Order
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %thead
+    %tr.headline
+      %th 取引管理No.
+      %th 客No.
+      %th 客先
+      %th 型式
+      %th 機番
+      %th{width:"100px"} 船名
+      %th{width:"45px"} 船籍
+      %th{width:"45px"} 点数
+      %th 件名
+      %th 客先注文番号
+      %th Memo
+      %th Tc Tcno Zp Zpno Glc Glcno Mg Mgno
+      %tbody
+        = render @orders
+        = hidden_field_tag('authenticity_token', form_authenticity_token)

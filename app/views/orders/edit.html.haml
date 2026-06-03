@@ -1,0 +1,92 @@
+- if notice
+  %p#notice= notice
+- else
+%table
+  %tr
+    %td{style:'text-align:center; font-size:xx-large'}
+      %i.fa.fa-home{style:"color:white;font-size:100%;vertical-align: middle"}
+      取引台帳修正
+  - if @order.errors.any?
+    #error_explanation
+      %h2= "#{pluralize(@order.errors.count, "error")} prohibited this order from being saved:"
+      %ul
+        - @order.errors.full_messages.each do |msg|
+          %li= msg
+= form_for @order do |f|
+  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+    %tr{bgcolor: "#e3e3e3"}
+      %th.title{width:"40px"} Id
+      %td{width:"70px"}= @order.id
+      %th.title{width:"80px"} 取引管理No.
+      %td{width:"120px",style:'text-align:center; font-size:xx-large'}= @order.mno
+      %th.title{width:"45px"} 会社名
+      %td{width: "400px",style:'font-size:x-large'}
+        - dp = ''
+        - dp << Adlist.find(@order.adlist_id).company
+        - dp << ' '+Adlist.find(@order.adlist_id).section if Adlist.find(@order.adlist_id).section
+        = dp
+      %th.title{width:"45px"} 船名
+      %td{style:'font-size:xx-large'}
+        = f.text_field :shipname, size:"30"
+      %th.title{width:"45px"} 機番
+      %td{style:'font-size:xx-large'}
+        = f.text_field :engno, size:"10"
+  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+    %tr{bgcolor: "#e3e3e3"}
+      %th.title{width:"45px"} 件名
+      %td= f.text_field :orderitem
+      %th.title{width:"45px"} 内容
+      %td{style:'font-size:x-large'}
+        = f.text_field :memo, size:"40"
+      %th.title{width:"45px"} 客先註番
+      %td= f.text_field :ono
+      %th.title{width:"90px"} 型式(機種)
+      %td{style:'font-size:x-large'}
+        = f.text_field :etype, size:"10"
+      %th.title{width:"45px"} 船籍
+      %td{style:'font-size:xx-large'}
+        = f.text_field :country, size:"8"
+  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+    %tr{bgcolor: "#e3e3e3"}
+      %th.title{width:"40px"} TC
+      %td= f.text_field :tc, size:"12"
+      %th.title{width:"55px"} TCNo.
+      %td= f.text_field :tcno, size:"12"
+      %th.title{width:"40px"} ZP
+      %td= f.text_field :zp, size:"12"
+      %th.title{width:"55px"} ZPNo.
+      %td= f.text_field :zpno, size:"12"
+      %th.title{width:"40px"} GLC
+      %td= f.text_field :glc, size:"12"
+      %th.title{width:"55px"} GLNo.
+      %td= f.text_field :glcno, size:"12"
+      %th.title{width:"40px"} MG
+      %td= f.text_field :mg, size:"12"
+      %th.title{width:"55px"} MGNo.
+      %td= f.text_field :mgno, size:"12"
+  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+    %tr{bgcolor: "#e3e3e3"}
+      %th.title{width:"45px"} 納入期日
+      %td{width:"100px"}
+        = f.date_select :rdate
+      %th.title{width:"60px"} 納入コメント
+      %td{style:'font-size:x-large'}
+        = f.text_field :ncomment, size:"40"
+      %th.title{width:"55px"} A部品掛け率
+      %td{style:'font-size:xx-large'}
+        = f.text_field :irate, size:"2"
+      %th.title{width:"55px"}  以外掛け率
+      %td{style:'font-size:xx-large'}
+        = f.text_field :irate2, size:"2"
+      %th.title{width:"45px"} 値引き
+      %td{style:'font-size:xx-large'}
+        = f.number_field :nebiki, size:"7",min: 0, max: 9999999
+      %th.title{width:"45px"} 更新日時
+      %td{width:"150px"}= @order.updated_at.strftime("%Y/%m/%d %H:%M")
+
+  .actions
+    = f.submit '修正実行'
+
+= link_to '注文詳細(削除もここから)', @order
+\|
+= link_to '一覧へ', orders_path

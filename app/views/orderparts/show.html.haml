@@ -1,0 +1,63 @@
+%p#notice= notice
+
+%p
+  %b id:
+  = @orderpart.id
+%p
+  %b Mno:
+  = @orderpart.mno
+%p
+  %b Sno:
+  = @orderpart.sno
+%p
+  %b Itemno:
+  = @orderpart.itemno
+%p
+  %b Kzaiko:
+  = @orderpart.kzaiko
+%p
+  %b Partno:
+  = @orderpart.partno
+%p
+  %b Info:
+  = @orderpart.info
+%p
+  %b Qty:
+  = @orderpart.qty
+%p
+  %b Bqty:
+  = @orderpart.bqty
+%p
+  %b Unit:
+  = @orderpart.unit
+%p
+  %b Unitpd:
+  = @orderpart.unitpd
+%p
+  %b Unitpi:
+  = @orderpart.unitpi
+%p
+  %b Unitpi2:
+  = @orderpart.unitpi2
+%p
+  %b Irate:
+  = @orderpart.irate
+%p
+  %b Totala:
+  = @orderpart.totala
+%p
+  %b Total2:
+  = @orderpart.total2
+%p
+  %b Unitweight:
+  = @orderpart.unitweight
+%p
+  %b Updated at:
+  = @orderpart.updated_at
+%p
+  %b Deleted at:
+  = @orderpart.deleted_at
+
+= link_to 'Edit', edit_orderpart_path(@orderpart)
+\|
+= link_to 'Back', orderparts_path

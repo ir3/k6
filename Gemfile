@@ -72,3 +72,6 @@ group :test do
 end
 
 gem "dry-initializer", "~> 3.2"
+
+gem "kaminari"
+gem "caxlsx_rails"

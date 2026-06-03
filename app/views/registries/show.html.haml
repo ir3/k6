@@ -1,0 +1,18 @@
+%p#notice= notice
+
+%p
+  %b Countryid:
+  = @registry.countryid
+%p
+  %b Country:
+  = @registry.country
+%p
+  %b Rate:
+  = @registry.rate
+%p
+  %b Deleted at:
+  = @registry.deleted_at
+
+= link_to 'Edit', edit_registry_path(@registry)
+\|
+= link_to 'Back', registries_path

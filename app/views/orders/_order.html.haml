@@ -1,0 +1,33 @@
+%tr
+  %td
+    = link_to order.mno, order_path(id: order.id)
+  %td{style:'text-align:right'}
+    = link_to order.adlist_id.to_s, "/orders?keykind=companyid&keyword=#{order.adlist_id}"
+  %td
+    - dp = ''
+    - if Adlist.find_by(id: order.adlist_id)
+      - adlist = Adlist.find(order.adlist_id)
+      - dp << adlist.company if adlist
+      - dp << ' '+adlist.section if adlist.section
+      = link_to dp, adlist
+  %td= order.etype
+  %td
+    = link_to(order.engno, "/orders?engno=#{order.engno}") if order.engno
+  %td
+    = link_to(order.shipname, "/orders?shipname=#{order.shipname}") if order.shipname
+  %td= order.country
+  %td{style:'text-align:right'}= order.pnum
+  %td= order.orderitem
+  %td= order.ono
+  %td= order.memo
+  %td
+    - disp = ' '
+    - disp << order.tc if order.tc
+    - disp << ' '+order.tcno if order.tcno
+    - disp << ' '+order.zp if order.zp
+    - disp << ' '+order.zpno if order.zpno
+    - disp << ' '+order.glc if order.glc
+    - disp << ' '+order.glcno if order.glcno
+    - disp << ' '+order.mg if order.mg
+    - disp << ' '+order.mgno if order.mgno
+    = disp

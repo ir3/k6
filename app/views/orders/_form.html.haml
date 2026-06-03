@@ -1,0 +1,127 @@
+= form_for @order do |f|
+  - if @order.errors.any?
+    #error_explanation
+      %h2= "#{pluralize(@order.errors.count, "error")} prohibited this order from being saved:"
+      %ul
+        - @order.errors.full_messages.each do |msg|
+          %li= msg
+
+  .field
+    = f.label :id
+    = f.number_field :id
+  .field
+    = f.label :mno
+    = f.number_field :mno
+  .field
+    = f.label :st
+    = f.text_field :st
+  .field
+    = f.label :rdate
+    = f.date_select :rdate
+  .field
+    = f.label :ncomment
+    = f.text_field :ncomment
+  .field
+    = f.label :ndate
+    = f.text_field :ndate
+  .field
+    = f.label :nplase
+    = f.text_field :nplase
+  .field
+    = f.label :ldate
+    = f.text_field :ldate
+  .field
+    = f.label :tcondition
+    = f.text_field :tcondition
+  .field
+    = f.label :etype
+    = f.text_field :etype
+  .field
+    = f.label :engno
+    = f.text_field :engno
+  .field
+    = f.label :shipname
+    = f.text_field :shipname
+  .field
+    = f.label :country
+    = f.text_field :country
+  .field
+    = f.label :pnum
+    = f.number_field :pnum
+  .field
+    = f.label :inspection
+    = f.text_field :inspection
+  .field
+    = f.label :hno
+    = f.text_field :hno
+  .field
+    = f.label :orderitem
+    = f.text_field :orderitem
+  .field
+    = f.label :memo
+    = f.text_field :memo
+  .field
+    = f.label :tname
+    = f.text_field :tname
+  .field
+    = f.label :idate
+    = f.text_field :idate
+  .field
+    = f.label :odate
+    = f.text_field :odate
+  .field
+    = f.label :mdate
+    = f.text_field :mdate
+  .field
+    = f.label :irate
+    = f.text_field :irate
+  .field
+    = f.label :nebiki
+    = f.number_field :nebiki
+  .field
+    = f.label :irate2
+    = f.text_field :irate2
+  .field
+    = f.label :tc
+    = f.text_field :tc
+  .field
+    = f.label :tcno
+    = f.text_field :tcno
+  .field
+    = f.label :zp
+    = f.text_field :zp
+  .field
+    = f.label :zpno
+    = f.text_field :zpno
+  .field
+    = f.label :glc
+    = f.text_field :glc
+  .field
+    = f.label :glcno
+    = f.text_field :glcno
+  .field
+    = f.label :mg
+    = f.text_field :mg
+  .field
+    = f.label :mgno
+    = f.text_field :mgno
+  .field
+    = f.label :ono
+    = f.text_field :ono
+  .field
+    = f.label :mitday
+    = f.date_select :mitday
+  .field
+    = f.label :syuday
+    = f.date_select :syuday
+  .field
+    = f.label :seiday
+    = f.date_select :seiday
+  .field
+    = f.label :updated_at
+    = f.datetime_select :updated_at
+  .field
+    = f.label :created_at
+    = f.datetime_select :created_at
+  .actions
+    = f.submit 'Save'

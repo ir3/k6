@@ -1,0 +1,8 @@
+%h1 取引先(関係先)編集
+= render 'form'
+%table{align:"left",style:'margin-left:40px'}
+  %tr
+    %td{width:"270px"}
+      = link_to '詳細表示', @adlist
+    %td{width:"270px"}
+      = link_to '取引先一覧', adlists_path

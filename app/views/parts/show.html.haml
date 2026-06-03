@@ -1,0 +1,179 @@
+- model_class = Part
+%table{width:"37%", align:"center"}
+  %tbody
+    %tr
+      %td{width:"19%", style:'text-align:left'}
+        %h2=t '.title', default: model_class.model_name.human.titleize + ' 在庫'
+      %td{width:"10%", style: 'text-align:left;font-size:200%'}
+        = link_to "入庫", "JavaScript:disp('disp7');",  class:"btn wtext btn-info"
+      %td{width:"10%", style: 'text-align:left'}
+        = link_to "出庫", "JavaScript:disp('disp8');",  class:"btn wtext btn-info"
+
+#disp7{style: 'display:none'}
+  = form_for(@stock, url: stocks_path) do |f|
+    %table.table-condensed{align:"center"}
+      %tr
+        %td
+          入庫数:
+        %td
+          = f.number_field "num", in:1...100
+        %td
+          入庫区分:
+        %td
+          = f.radio_button "ikubun", 1, {checked: true}
+          買取品
+          = f.radio_button "ikubun", 2
+          返品(貸出分)
+          = f.radio_button "ikubun", 3
+          返品(キャンセル)
+          = f.radio_button "ikubun", 4
+          返品(誤送)
+        %td
+          備考:
+        %td
+          = f.text_field "memo", {size: 40}
+        %td
+          - now = Time.now
+          - today = now.strftime('%Y/%m/%d')
+          = f.hidden_field(:cordno, value:'')
+          = f.hidden_field(:kind, value:'0')
+          = f.hidden_field(:indate, value:today)
+          = f.hidden_field(:irprice, value:@part.newprice)
+          = f.hidden_field(:invalue, value:0)
+          = f.hidden_field(:inprice, value:0)
+          = f.hidden_field(:irvalue, value:0)
+          = f.hidden_field(:itemno, value:@part.itemno)
+          = f.hidden_field(:onum, value:0)
+          = f.hidden_field(:orprice, value:0)
+          = f.hidden_field(:orvalue, value:0)
+          = f.hidden_field(:partno, value:@part.pcode)
+          = f.hidden_field(:sname, value:'')
+          = f.submit "入庫登録"
+        %td
+          = link_to '閉じる', "JavaScript:nondisp('disp7');"
+#disp8{style: 'display:none'}
+  = form_for(@stock, url: stocks_path) do |f|
+    %table.table-condensed{align:"center"}
+      %tr
+        %td
+          出庫数:
+          = f.number_field "num", in:1...100
+        %td
+          出庫区分:
+          = f.radio_button "okubun", 0
+          貸出分
+          = f.radio_button "okubun", 2, {checked: true}
+          売掛分
+        %td
+          取引管理No.:
+          = f.text_field "mno", {size:12, value:session[:mno]}
+        %td
+          備考:
+          = f.text_field "memo", {size:40}
+        %td
+          - now = Time.now
+          - today = now.strftime('%Y/%m/%d')
+          = f.hidden_field(:cordno, value:'')
+          = f.hidden_field(:kind, value:'0')
+          = f.hidden_field(:inprice, value:0)
+          = f.hidden_field(:invalue, value:0)
+          = f.hidden_field(:irprice, value:@part.newprice)
+          = f.hidden_field(:irvalue, value:0)
+          = f.hidden_field(:itemno, value:@part.itemno)
+          = f.hidden_field(:indate, value:today)
+          = f.hidden_field(:outdate, value:today)
+          = f.hidden_field(:onum, value:0)
+          = f.hidden_field(:orprice, value:0)
+          = f.hidden_field(:orvalue, value:0)
+          = f.hidden_field(:partno, value:@part.pcode)
+          = f.hidden_field(:sname, value:'')
+          = f.submit "出庫登録"
+        %td
+          = link_to '閉じる', "JavaScript:nondisp('disp8');"
+%table.table-bordered.table-condensed.table-striped{width:"99%", align:"center"}
+  %thead
+    %tr.headline
+      %th{width:"20px"}= model_class.human_attribute_name(:id)
+      %th{width:"200px"}= model_class.human_attribute_name(:pcode)
+      %th= model_class.human_attribute_name(:stock)
+      %th= model_class.human_attribute_name(:form)
+      %th= model_class.human_attribute_name(:jname)
+      %th= model_class.human_attribute_name(:ename)
+      %th= model_class.human_attribute_name(:sel_unit)
+      %th= model_class.human_attribute_name(:price)
+      %th= model_class.human_attribute_name(:newprice)
+  %tbody
+    %tr
+      %td{style:'text-align:center'}= @part.id
+      %td{style:'text-align:center; font-size:xx-large'}= @part.pcode
+      %td{style:'text-align:center; font-size:xx-large'}= @num
+      %td{style:'text-align:center; font-size:xx-large'}= @part.form
+      %td{style:'text-align:center; font-size:xx-large'}= @part.jname
+      %td{style:'text-align:center'}= @part.ename
+      %td{style:'text-align:center'}= @part.sel_unit
+      %td{style:'text-align:center'}= @part.price.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
+      %td{style:'text-align:center; font-size: xx-large'}= @part.newprice.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %thead
+    %tr.headline
+      %th{width:"90px"}= model_class.human_attribute_name(:weightkg)
+      %th{width:"90px"}= model_class.human_attribute_name(:munit)
+      %th{width:"100px"}= model_class.human_attribute_name(:itemno)
+      %th{width:"90px"}= model_class.human_attribute_name(:cordno)
+      %th= model_class.human_attribute_name(:comment)
+      %th{width:"150px"}= model_class.human_attribute_name(:updated_at)
+      %th{width:"150px"}= model_class.human_attribute_name(:created_at)
+  %tbody
+    %tr
+      %td{style:'text-align:center'}= @part.weightkg
+      %td{style:'text-align:center'}= @part.munit
+      %td{style:'text-align:center'}= @part.itemno
+      %td{style:'text-align:center'}= @part.cordno
+      %td{style:'text-align:center'}= @part.comment
+      %td{style:'text-align:center'}= @part.updated_at.strftime('%Y/%m/%d %H:%M')
+      %td{style:'text-align:center'}= @part.created_at.strftime('%Y/%m/%d %H:%M')
+この部品の入出荷状況
+%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
+  %thead
+    %tr.headline
+      %th{width:"10px"}= '＃'
+      %th{width:"100px"}= '日付'
+      %th= '出荷先'
+      %th= '船名'
+      %th= '販売単価'
+      %th= '発注数'
+      %th= '入庫数'
+      %th= '入庫区分'
+      %th= '入荷額'
+      %th= '出庫数'
+      %th= '出庫区分'
+      %th= '出荷額'
+      %th= '備考'
+      %th= '取引管理No.'
+      %th{width:"160px"}= '更新日'
+  %tbody
+    - @stocks.reverse.each do |stock|
+      %tr
+        %td{style:'text-align:center'}= stock.id
+        %td{style:'text-align:center'}= stock.indate.strftime('%Y/%m/%d') if stock.indate
+        - if stock.cname && stock.cname != '0'
+          - cname = stock.cname
+        - elsif stock.mno && stock.mno > 0
+          - cname = mno2name(stock.mno)
+        - else
+          - cname = ''
+        %td{style:'text-align:center'}= cname
+        - shipname = stock.sname if stock.sname
+        - shipname = mno2shipname(stock.mno) if stock.mno && stock.mno > 0
+        %td{style:'text-align:center'}= shipname
+        %td{style:'text-align:center'}= stock.irprice.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
+        %td{style:'text-align:center'}= stock.onum > 0 ? stock.onum : '' if stock.onum
+        %td{style:'text-align:center'}= stock.num > 0 ? stock.num : '' if stock.num
+        %td{style:'text-align:center'}= inputkubun(stock.ikubun) if stock.num > 0
+        %td{style:'text-align:center'}= (stock.irprice * stock.num).to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,') if stock.num >  0
+        %td{style:'text-align:center'}= stock.num < 0 ? -stock.num : ''
+        %td{style:'text-align:center'}= outputkubun(stock.okubun) if stock.num < 0
+        %td{style:'text-align:center'}= (stock.irprice * -stock.num).to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,') if stock.num <  0
+        %td{style:'text-align:center'}= stock.memo
+        %td{style:'text-align:center'}= stock.mno ? (link_to stock.mno, order_path(id: mno2id(stock.mno)) if stock.mno > 0) : ' '
+        %td{style:'text-align:center'}= stock.created_at.strftime('%Y/%m/%d %H:%M')
