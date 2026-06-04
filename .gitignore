@@ -40,3 +40,10 @@
 
 # macOS
 .DS_Store
+
+# Access DB files (sensitive data)
+/db/access/
+
+# データインポート用ファイル
+db/*.tab
+db/*.txt

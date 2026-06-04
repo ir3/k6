@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-K2 is a Rails 8 user management and authentication starter built with Hotwire (Turbo + Stimulus), Tailwind CSS + DaisyUI, HAML templates, and SQLite (via Solid Cache/Queue/Cable). Authentication is custom (Rails 8 generator, not Devise). UI is Japanese-localized.
+K6 is a Rails 8 application combining user management/authentication with business functions ported from kobeengine (a legacy Rails app). Built with Hotwire (Turbo + Stimulus), Tailwind CSS + DaisyUI, HAML templates, and SQLite (via Solid Cache/Queue/Cable). Authentication is custom (Rails 8 generator, not Devise). UI is Japanese-localized.
+
+### kobeengine 統合済みテーブル
+
+adlists（顧客住所録）, keparts（KE部品）, orderparts（注文明細）, orders（注文台帳）, parts（部品台帳）, registries（国別為替）, stocks（在庫台帳）, stockbs（在庫台帳B）, tasks
 
 ## Commands
 
@@ -72,11 +76,21 @@ Role-based via `UserProfile#state` enum: `offline(0)`, `online(1)`, `manager(2)`
 
 ### Models
 
-Three tables:
+認証系テーブル（k6 固有）:
 
 - **User** — `email_address` (normalized to lowercase/stripped), `password_digest` (`has_secure_password`), has_many :sessions, has_one :user_profile.
 - **UserProfile** — `firstname`, `lastname` (max 20 chars), `state` (enum), `sign_in_at`, `sign_out_at`. 1:1 with User.
 - **Session** — Tracks browser sessions. Belongs to User.
+
+業務テーブル（kobeengine より移植）:
+
+- **Adlist** — 顧客住所録。`deleted_at` で論理削除。
+- **Order** — 注文台帳。`belongs_to :adlists`。
+- **Orderpart** — 注文明細。
+- **Part** — 部品台帳（20,000件超）。
+- **Kepart** — KE部品台帳。
+- **Stock / Stockb** — 在庫台帳 / 在庫台帳B。
+- **Registry** — 国別為替レート。
 
 ### Controllers
 
@@ -102,8 +116,46 @@ Solid Queue, Solid Cache, and Solid Cable all run on SQLite (separate DB files i
 
 Three jobs on push/PR to main: **Scan Ruby** (Brakeman), **Lint** (RuboCop), **Test** (full suite with Chrome for system tests, screenshots uploaded on failure).
 
+## Data Import
+
+### Access DB → SQLite3
+
+Windows の Access DB（.mdb）から業務データをインポートする仕組みが `db/import/` にある。
+
+```bash
+# ツール
+brew install mdbtools
+
+# テーブル一覧確認
+mdb-tables db/access/ファイル名.mdb
+
+# インポート実行
+bin/rails runner db/import/import_adlists.rb
+```
+
+- `db/access/` は `.gitignore` 対象（機密データ）
+- CP932 特殊文字（㈱, 﨑 など）の文字化けは `MOJIBAKE_MAP` で gsub 置換
+- 詳細は `~/ob/Claude/access_to_sqlite3.md` 参照
+
+### .tab ファイルからのインポート（旧来方式）
+
+`db/seeds/` に各テーブル用スクリプトあり。`bin/rails runner db/seeds/xxx.rb` で実行。
+
+## Gems（主要追加分）
+
+| Gem | 用途 |
+|-----|------|
+| `kaminari` | ページネーション |
+| `caxlsx_rails` | Excel（.xlsx）出力（adlists） |
+| `csv` | Ruby 4.0 で標準から外れたため明示追加 |
+| `haml-rails` | HAML テンプレート |
+| `view_component` | ViewComponent |
+| `dry-initializer` | ViewComponent のコンストラクタ |
+
 ## Conventions
 
 - Japanese locale (`config.time_zone = "Tokyo"`, `config.i18n.default_locale = :ja`). Locale files: `config/locales/ja.yml`, `config/locales/en.yml`.
 - Use `Dry::Initializer` in ViewComponents instead of manual `initialize`.
 - RuboCop config: `rubocop-rails-omakase` (`.rubocop.yml`).
+- 業務テーブルは `ActiveRecord::Base` を直接継承（kobeengine 由来）。
+- テーブルのスタイルは `center-table radius-table` クラス（`k.css` で定義、枠線 1px）。
