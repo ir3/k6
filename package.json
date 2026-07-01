@@ -12,9 +12,9 @@
   "dependencies": {
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^8.0.20",
-    "@tailwindcss/cli": "^4.3.1",
-    "daisyui": "^5.5.23",
+    "@tailwindcss/cli": "^4.3.2",
+    "daisyui": "^5.6.6",
     "sass": "^1.97.2",
-    "tailwindcss": "^4.3.1"
+    "tailwindcss": "^4.3.2"
   }
 }

@@ -93,23 +93,23 @@
   resolved "https://registry.npmjs.org/@rails/actioncable/-/actioncable-8.0.300.tgz"
   integrity sha512-X+jxLnyYciTciEeM9crFFsR6DCodCsnoQIzv4hEST6Lx1rEBEjNQbBopnyDT4gr7lBeHJNfb6fEcvZuWFxUSQg==
 
-"@tailwindcss/cli@^4.3.1":
-  version "4.3.1"
-  resolved "https://registry.npmjs.org/@tailwindcss/cli/-/cli-4.3.1.tgz"
-  integrity sha512-ZWPy20rF+TBfTImxDMG3Wr75Y3RpaPlo9lc+oJbInlMyjT+XPkTVKVIL5RZ7JirXuIahcfHoLNFRmDorKi+JQQ==
+"@tailwindcss/cli@^4.3.2":
+  version "4.3.2"
+  resolved "https://registry.npmjs.org/@tailwindcss/cli/-/cli-4.3.2.tgz"
+  integrity sha512-Fzt+HrIZHDlkRYKdLMBeufaroaPvwCBG70sMLdmurdeadNMO/LxbmT8Sbb+P83ep0iAlAImettb7Y+rO+37rXw==
   dependencies:
     "@parcel/watcher" "2.5.1"
-    "@tailwindcss/node" "4.3.1"
-    "@tailwindcss/oxide" "4.3.1"
+    "@tailwindcss/node" "4.3.2"
+    "@tailwindcss/oxide" "4.3.2"
     enhanced-resolve "5.21.6"
     mri "^1.2.0"
     picocolors "^1.1.1"
-    tailwindcss "4.3.1"
+    tailwindcss "4.3.2"
 
-"@tailwindcss/node@4.3.1":
-  version "4.3.1"
-  resolved "https://registry.npmjs.org/@tailwindcss/node/-/node-4.3.1.tgz"
-  integrity sha512-6NDaqRoAMSXD1mr/RXu0HBvNE9a2n5tHPsxu9XHLws8o4Twes5rBM2205SUUiJ9goAtadrN6xTGX0UDEwp/N4A==
+"@tailwindcss/node@4.3.2":
+  version "4.3.2"
+  resolved "https://registry.npmjs.org/@tailwindcss/node/-/node-4.3.2.tgz"
+  integrity sha512-yWP/sqEcBLaD8JuA6zNwxoYKr75qxTioYwlRwekj5Jr/I5GXnoJfjetH/psLUIv74cYTH2lBUEzBkinthoYcBg==
   dependencies:
     "@jridgewell/remapping" "^2.3.5"
     enhanced-resolve "5.21.6"
@@ -117,30 +117,30 @@
     lightningcss "1.32.0"
     magic-string "^0.30.21"
     source-map-js "^1.2.1"
-    tailwindcss "4.3.1"
+    tailwindcss "4.3.2"
 
-"@tailwindcss/oxide-darwin-arm64@4.3.1":
-  version "4.3.1"
-  resolved "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.3.1.tgz"
-  integrity sha512-hVnWLwv+e/l7c4WKyVtHVrIPvYdqWHjRB3MDIqARynzFtnQg85kmQEFCbV9Ja0VVx4xXTIiDWY60Y7iz/iNoDA==
+"@tailwindcss/oxide-darwin-arm64@4.3.2":
+  version "4.3.2"
+  resolved "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.3.2.tgz"
+  integrity sha512-GZypeUY/IDJW3877KeM+O67vbXr3MBnbtEL4aYhNErv/JWZhye2vGSWWG9tB6iiqR2MqRNkY8IOUy4NdSZV26w==
 
-"@tailwindcss/oxide@4.3.1":
-  version "4.3.1"
-  resolved "https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.3.1.tgz"
-  integrity sha512-yVPyo8RNkabVr3O2EhHEE0Rewu7YKzc1DhIqfL46LKveFrmu9XbDazNOJY7/GRuvw1h6u3utWnR29H/p5JPlgA==
+"@tailwindcss/oxide@4.3.2":
+  version "4.3.2"
+  resolved "https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.3.2.tgz"
+  integrity sha512-z8ZgnzX8gdNoWLBLqBPoh/sjnxkwvf9ZuWjnO0l0yIzbLa5/9S+eC5QxGZKRobVHIC3/1BoMWjHblqWjcgFgag==
   optionalDependencies:
-    "@tailwindcss/oxide-android-arm64" "4.3.1"
-    "@tailwindcss/oxide-darwin-arm64" "4.3.1"
-    "@tailwindcss/oxide-darwin-x64" "4.3.1"
-    "@tailwindcss/oxide-freebsd-x64" "4.3.1"
-    "@tailwindcss/oxide-linux-arm-gnueabihf" "4.3.1"
-    "@tailwindcss/oxide-linux-arm64-gnu" "4.3.1"
-    "@tailwindcss/oxide-linux-arm64-musl" "4.3.1"
-    "@tailwindcss/oxide-linux-x64-gnu" "4.3.1"
-    "@tailwindcss/oxide-linux-x64-musl" "4.3.1"
-    "@tailwindcss/oxide-wasm32-wasi" "4.3.1"
-    "@tailwindcss/oxide-win32-arm64-msvc" "4.3.1"
-    "@tailwindcss/oxide-win32-x64-msvc" "4.3.1"
+    "@tailwindcss/oxide-android-arm64" "4.3.2"
+    "@tailwindcss/oxide-darwin-arm64" "4.3.2"
+    "@tailwindcss/oxide-darwin-x64" "4.3.2"
+    "@tailwindcss/oxide-freebsd-x64" "4.3.2"
+    "@tailwindcss/oxide-linux-arm-gnueabihf" "4.3.2"
+    "@tailwindcss/oxide-linux-arm64-gnu" "4.3.2"
+    "@tailwindcss/oxide-linux-arm64-musl" "4.3.2"
+    "@tailwindcss/oxide-linux-x64-gnu" "4.3.2"
+    "@tailwindcss/oxide-linux-x64-musl" "4.3.2"
+    "@tailwindcss/oxide-wasm32-wasi" "4.3.2"
+    "@tailwindcss/oxide-win32-arm64-msvc" "4.3.2"
+    "@tailwindcss/oxide-win32-x64-msvc" "4.3.2"
 
 braces@^3.0.3:
   version "3.0.3"
@@ -156,10 +156,10 @@ chokidar@^4.0.0:
   dependencies:
     readdirp "^4.0.1"
 
-daisyui@^5.5.23:
-  version "5.5.23"
-  resolved "https://registry.npmjs.org/daisyui/-/daisyui-5.5.23.tgz"
-  integrity sha512-xuheNUSL4T6ZVtWXoioqcNkjoyGX85QTDz4HTw2aBPfqk4fuMjax5HDo8qCmpV6M1YN8bGvfx5BpYCoDeRlt+A==
+daisyui@^5.6.6:
+  version "5.6.6"
+  resolved "https://registry.npmjs.org/daisyui/-/daisyui-5.6.6.tgz"
+  integrity sha512-UFiuIZYucF7ylrnY3PT1SqwaEbVB10mqTZRyeRchZk0bud+HihYLLhXdxGDVmR/ftrM9G9YVr9FFPRVVIZJ5hA==
 
 detect-libc@^1.0.3:
   version "1.0.3"
@@ -330,10 +330,10 @@ source-map-js@^1.2.1, "source-map-js@>=0.6.2 <2.0.0":
   resolved "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz"
   integrity sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==
 
-tailwindcss@^4.3.1, tailwindcss@4.3.1:
-  version "4.3.1"
-  resolved "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.3.1.tgz"
-  integrity sha512-hk+TB1m+K8CYNrP6rjQaq/Y+4Zylwpa87mLYBKCunwnnQ9p+fHb7kmSfGqyEJoxF/O6CDyABWVFEafNSYKll+Q==
+tailwindcss@^4.3.2, tailwindcss@4.3.2:
+  version "4.3.2"
+  resolved "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.3.2.tgz"
+  integrity sha512-WtctNNSH8A9jlMIqxzuYumOHU5uGZyRv0Q5svQl+oEPy5w84YpBxdb7MdqyiSPQge5jTJ6zFQLq0PFygdccSBA==
 
 tapable@^2.3.3:
   version "2.3.3"
