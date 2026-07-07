@@ -13,9 +13,9 @@
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^8.0.20",
     "@ruby/wasm-wasi": "^2.9.3-2.9.4",
-    "@tailwindcss/cli": "^4.3.0",
-    "daisyui": "^5.5.20",
+    "@tailwindcss/cli": "^4.3.2",
+    "daisyui": "^5.6.14",
     "sass": "^1.97.2",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.2"
   }
 }
