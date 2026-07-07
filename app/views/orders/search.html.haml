@@ -1,7 +1,7 @@
 - model_class = Order
-%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead
-    %tr.headline
+%table.center-table.radius-table{width: "99%", align:"center"}
+  %thead.bg-primary.text-primary-content
+    %tr
       %th 取引管理No.
       %th 客No.
       %th 客先
@@ -14,6 +14,6 @@
       %th 客先注文番号
       %th Memo
       %th Tc Tcno Zp Zpno Glc Glcno Mg Mgno
-      %tbody
-        = render @orders
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
+  %tbody
+    = render @orders
+    = hidden_field_tag('authenticity_token', form_authenticity_token)

@@ -65,8 +65,15 @@ class OrdersController < ApplicationController
     end
   end
 
-  # POST /orders/search
+  # GET/POST /orders/search
   def search
+    # TurboはPOSTフォームの応答にリダイレクトを要求するため、
+    # POST時はGETへリダイレクトしてから描画する(Post/Redirect/Getパターン)。
+    if request.post?
+      redirect_to orders_search_path(keyword: params[:keyword], keykind: params[:keykind])
+      return
+    end
+
     keyword = params[:keyword]
     keykind = params[:keykind]
     logger.debug  keyword
@@ -79,6 +86,7 @@ class OrdersController < ApplicationController
         @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%'")
       end
     elsif
+      session[:yearmonth] = keyword
       @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like '#{keyword}%'")
     end
 

@@ -9,6 +9,8 @@ Rails.application.routes.draw do
   resources :user_profiles
   #root to: 'welcom#index'
 
+  get "menu" => "menus#index", as: "menu"
+
   # kobeengine
   resources :adlists
   get  'search'           => 'adlists#search',   as: 'search'
@@ -18,8 +20,8 @@ Rails.application.routes.draw do
   resources :keparts
   post 'keparts/search/'  => 'keparts#search'
 
+  match 'orders/search' => 'orders#search', via: %i[get post], as: 'orders_search'
   resources :orders
-  post 'orders/search/'   => 'orders#search'
   post 'orders/copy/'     => 'orders#copy'
   post 'orders/ocopy/'    => 'orders#ocopy'
   post 'orders/keycopy/'  => 'orders#keycopy'
