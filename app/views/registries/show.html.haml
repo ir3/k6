@@ -25,7 +25,12 @@
 %div{style: "text-align:center"}
   = link_to '編集', edit_registry_path(@registry)
   &nbsp;|&nbsp;
-  = form_tag soft_delete_registry_path(@registry), method: :patch, style: "display:inline", data: { turbo: false } do
-    = submit_tag '削除', onclick: "return confirm('削除しますか？')"
+  - if @registry.deleted_at
+    = form_tag registry_path(@registry), method: :patch, style: "display:inline", data: { turbo: false } do
+      = hidden_field_tag "registry[clear_deleted]", "1"
+      = submit_tag '削除取り消し', onclick: "return confirm('削除を取り消しますか？')"
+  - else
+    = form_tag soft_delete_registry_path(@registry), method: :patch, style: "display:inline", data: { turbo: false } do
+      = submit_tag '削除', onclick: "return confirm('削除しますか？')"
   &nbsp;|&nbsp;
   = link_to '一覧へ', registries_path

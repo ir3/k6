@@ -5,9 +5,9 @@
     = link_to order.adlist_id.to_s, "/orders?keykind=companyid&keyword=#{order.adlist_id}"
   %td
     - dp = ''
-    - if Adlist.find_by(id: order.adlist_id)
-      - adlist = Adlist.find(order.adlist_id)
-      - dp << adlist.company if adlist
+    - adlist = Adlist.find_by(no: order.adlist_id.to_s)
+    - if adlist
+      - dp << adlist.company if adlist.company
       - dp << ' '+adlist.section if adlist.section
       = link_to dp, adlist
   %td= order.etype
