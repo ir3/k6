@@ -7,24 +7,25 @@
       = paginate @orderparts, window: 4, outer_window: 5, left: 1, right: 3
 
 %table.center-table.radius-table{width: "99%", align:"center"}
-  %tr{bgcolor: "#e3e3e3"}
-    %th ＃
-    %th Mno
-    %th Sno
-    %th ItemNo
-    %th 在庫
-    %th 部品番号
-    %th 説明
-    %th 数量
-    %th バラ売
-    %th 単位
-    %th 国内単価
-    %th 海外掛率
-    %th 合計金額
-    %th 海外切上
-    %th 単位重量kg
-    %th 合計重量kg
-    %th 更新日時
+  %thead.bg-primary.text-primary-content
+    %tr
+      %th ＃
+      %th Mno
+      %th Sno
+      %th ItemNo
+      %th 在庫
+      %th 部品番号
+      %th 説明
+      %th 数量
+      %th バラ売
+      %th 単位
+      %th 国内単価
+      %th 海外掛率
+      %th 合計金額
+      %th 海外切上
+      %th 単位重量kg
+      %th 合計重量kg
+      %th 更新日時
 
   - @orderparts.each do |orderpart|
     %tr

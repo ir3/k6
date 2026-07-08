@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rails",
+      "runtimeExecutable": "/opt/anyenv/envs/rbenv/versions/4.0.5/bin/ruby",
+      "runtimeArgs": ["bin/rails", "server"],
+      "port": 3000
+    }
+  ]
+}

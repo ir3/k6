@@ -34,7 +34,11 @@ Rails.application.routes.draw do
   post 'parts/search/'    => 'parts#search'
   post 'parts/select/'    => 'parts#select'
 
-  resources :registries
+  resources :registries do
+    member do
+      patch :soft_delete
+    end
+  end
   resources :stocks
   resources :stockbs
 

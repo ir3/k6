@@ -61,9 +61,11 @@ class RegistriesController < ApplicationController
   def update
     @registry = Registry.find(params[:id])
 
+    attrs = registry_params
+    attrs[:deleted_at] = nil if attrs.delete(:clear_deleted) == "1"
+
     respond_to do |format|
-      #      if @registry.update_attributes(params[:registry])
-      if @registry.update(registry_params)
+      if @registry.update(attrs)
         format.html { redirect_to @registry, notice: 'Registry was successfully updated.' }
         format.json { head :no_content }
       else
@@ -73,11 +75,24 @@ class RegistriesController < ApplicationController
     end
   end
 
+  # PATCH /registries/1/soft_delete
+  def soft_delete
+    @registry = Registry.find(params[:id])
+    @registry.update(deleted_at: Time.current)
+    redirect_to registries_url
+  end
+
+  private
+
+  def registry_params
+    params.require(:registry).permit(:country, :countryid, :rate, :deleted_at, :clear_deleted)
+  end
+
   # DELETE /registries/1
   # DELETE /registries/1.json
   def destroy
     @registry = Registry.find(params[:id])
-    @registry.destroy
+    @registry.update(deleted_at: Time.current)
 
     respond_to do |format|
       format.html { redirect_to registries_url }

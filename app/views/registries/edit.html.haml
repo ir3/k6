@@ -1,7 +1,11 @@
-%h1 Editing registry
+%h1{style: "text-align:center"} 船籍編集
 
 = render 'form'
 
-= link_to 'Show', @registry
-\|
-= link_to 'Back', registries_path
+%div{style: "text-align:center"}
+  = link_to '詳細', @registry
+  &nbsp;|&nbsp;
+  = form_tag soft_delete_registry_path(@registry), method: :patch, style: "display:inline", data: { turbo: false } do
+    = submit_tag '削除', onclick: "return confirm('削除しますか？')"
+  &nbsp;|&nbsp;
+  = link_to '一覧へ', registries_path

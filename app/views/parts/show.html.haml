@@ -91,7 +91,7 @@
         %td
           = link_to '閉じる', "JavaScript:nondisp('disp8');"
 %table.table-bordered.table-condensed.table-striped{width:"99%", align:"center"}
-  %thead
+  %thead.bg-primary.text-primary-content
     %tr.headline
       %th{width:"20px"}= model_class.human_attribute_name(:id)
       %th{width:"200px"}= model_class.human_attribute_name(:pcode)
@@ -114,7 +114,7 @@
       %td{style:'text-align:center'}= @part.price.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
       %td{style:'text-align:center; font-size: xx-large'}= @part.newprice.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead
+  %thead.bg-primary.text-primary-content
     %tr.headline
       %th{width:"90px"}= model_class.human_attribute_name(:weightkg)
       %th{width:"90px"}= model_class.human_attribute_name(:munit)
@@ -134,7 +134,7 @@
       %td{style:'text-align:center'}= @part.created_at.strftime('%Y/%m/%d %H:%M')
 この部品の入出荷状況
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead
+  %thead.bg-primary.text-primary-content
     %tr.headline
       %th{width:"10px"}= '＃'
       %th{width:"100px"}= '日付'

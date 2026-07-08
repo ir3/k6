@@ -6,81 +6,81 @@
 %hr{width: "100%"}
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr{bgcolor: "#e3e3e3"}
-    %th.title{width:"90px"}  取引先No.
+    %th.title.bg-primary.text-primary-content{width:"90px"}  取引先No.
     %td{width:"170px"}= link_to @adlist.no, orders_path + "?keyword=#{@adlist.no}&keykind=companyid"
-    %th.title{width:"80px"}  よみがな
+    %th.title.bg-primary.text-primary-content{width:"80px"}  よみがな
     %td{width:"190px"}= @adlist.ruby
-    %th.title{width:"90px"}  メモ
+    %th.title.bg-primary.text-primary-content{width:"90px"}  メモ
     %td{width:"190px"}= simple_format(@adlist.memo)
-    %th.title{width:"170px"}  あいうえお順キー
+    %th.title.bg-primary.text-primary-content{width:"170px"}  あいうえお順キー
     %td{width:"90px"}= @adlist.kbn
 %hr{width:"0%"}
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr
-    %th.title{width:"90px"}  会社名
+    %th.title.bg-primary.text-primary-content{width:"90px"}  会社名
     %td{width:"170px"}= @adlist.company
-    %th.title{width:"80px"}  部署
+    %th.title.bg-primary.text-primary-content{width:"80px"}  部署
     %td{width:"190px"}= @adlist.section
-    %th.title{width:"90px"}  部署２
+    %th.title.bg-primary.text-primary-content{width:"90px"}  部署２
     %td{width:"190px"}= @adlist.section2
-    %th.title{width:"90px"} 新潟送り状コード
+    %th.title.bg-primary.text-primary-content{width:"90px"} 新潟送り状コード
     %td{width:"170px"}= @adlist.copok
 %hr{width: "100%"}
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr
-    %th.title{width:"90px"}  会社郵便番号
+    %th.title.bg-primary.text-primary-content{width:"90px"}  会社郵便番号
     %td{width:"80px"}= @adlist.cozip7
-    %th.title{width:"90px"}  会社住所
+    %th.title.bg-primary.text-primary-content{width:"90px"}  会社住所
     - coad = @adlist.coad1 + @adlist.coad2 + ' ' + @adlist.coad3
     %td{width:"810px"}= coad
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr
-    %th.title{width:"90px"}  会社メール
+    %th.title.bg-primary.text-primary-content{width:"90px"}  会社メール
     %td{width:"170px"}= @adlist.comail
-    %th.title{width:"80px"}  会社電話
+    %th.title.bg-primary.text-primary-content{width:"80px"}  会社電話
     %td{width:"110px"}= @adlist.cotel
-    %th.title{width:"70px"}  会社fax
+    %th.title.bg-primary.text-primary-content{width:"70px"}  会社fax
     %td{width:"110px"}= @adlist.cofax
-    %th.title{width:"80px"}  会社携帯
+    %th.title.bg-primary.text-primary-content{width:"80px"}  会社携帯
     %td{width:"110px"}= @adlist.comobile
-    %th.title{width:"80px"} 会社url
+    %th.title.bg-primary.text-primary-content{width:"80px"} 会社url
     %td{width:"170px"}= @adlist.courl
 %hr{width: "100%"}
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr
-    %th.title{width:"90px"}  個人名
+    %th.title.bg-primary.text-primary-content{width:"90px"}  個人名
     %td{width:"170px"}= @adlist.name
-    %th.title{width:"80px"}  役職
+    %th.title.bg-primary.text-primary-content{width:"80px"}  役職
     %td{width:"190px"}= @adlist.position
 %hr{width: "100%"}
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr
-    %th.title{width:"90px"}  郵便番号
+    %th.title.bg-primary.text-primary-content{width:"90px"}  郵便番号
     %td{width:"80px"}= @adlist.zip7
-    %th.title{width:"90px"}  住所１
+    %th.title.bg-primary.text-primary-content{width:"90px"}  住所１
     %td{width:"270px"}= @adlist.address1
-    %th.title{width:"90px"}  住所２
+    %th.title.bg-primary.text-primary-content{width:"90px"}  住所２
     %td{width:"190px"}= @adlist.address2
-    %th.title{width:"90px"}  住所３
+    %th.title.bg-primary.text-primary-content{width:"90px"}  住所３
     %td{width:"170px"}= @adlist.address3
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr
-    %th.title{width:"90px"}  メール
+    %th.title.bg-primary.text-primary-content{width:"90px"}  メール
     %td{width:"170px"}= @adlist.email
-    %th.title{width:"80px"}  Tel
+    %th.title.bg-primary.text-primary-content{width:"80px"}  Tel
     %td{width:"110px"}= @adlist.tel
-    %th.title{width:"70px"}  Fax
+    %th.title.bg-primary.text-primary-content{width:"70px"}  Fax
     %td{width:"110px"}= @adlist.fax
-    %th.title{width:"80px"}  携帯
+    %th.title.bg-primary.text-primary-content{width:"80px"}  携帯
     %td{width:"110px"}= @adlist.mtel
-    %th.title{width:"80px"}  Url
+    %th.title.bg-primary.text-primary-content{width:"80px"}  Url
     %td{width:"170px"}= @adlist.url
 %hr{width: "100%"}
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr
-    %th.title{width:"90px"}  作成日時
+    %th.title.bg-primary.text-primary-content{width:"90px"}  作成日時
     %td{width:"170px"}= @adlist.created_at.strftime("%Y/%m/%d %H:%M")
-    %th.title{width:"90px"}  更新日時
+    %th.title.bg-primary.text-primary-content{width:"90px"}  更新日時
     %td{width:"170px"}= @adlist.updated_at.strftime("%Y/%m/%d %H:%M")
 %hr{width: "100%"}
 %table{align:"left",style:'margin-left:40px'}

@@ -1,18 +1,31 @@
 %p#notice= notice
 
-%p
-  %b Countryid:
-  = @registry.countryid
-%p
-  %b Country:
-  = @registry.country
-%p
-  %b Rate:
-  = @registry.rate
-%p
-  %b Deleted at:
-  = @registry.deleted_at
+%table.center-table.radius-table{align: "center"}
+  %tr
+    %th.bg-primary.text-primary-content ＃
+    %td= @registry.countryid
+  %tr
+    %th.bg-primary.text-primary-content 国籍
+    %td= @registry.country
+  %tr
+    %th.bg-primary.text-primary-content Rate
+    %td= @registry.rate
+  %tr
+    %th.bg-primary.text-primary-content 削除日時
+    %td= @registry.deleted_at&.strftime("%Y-%m-%d %H:%M")
+  %tr
+    %th.bg-primary.text-primary-content 登録日時
+    %td= @registry.created_at.strftime("%Y-%m-%d %H:%M")
+  %tr
+    %th.bg-primary.text-primary-content 更新日時
+    %td= @registry.updated_at.strftime("%Y-%m-%d %H:%M")
 
-= link_to 'Edit', edit_registry_path(@registry)
-\|
-= link_to 'Back', registries_path
+%br
+
+%div{style: "text-align:center"}
+  = link_to '編集', edit_registry_path(@registry)
+  &nbsp;|&nbsp;
+  = form_tag soft_delete_registry_path(@registry), method: :patch, style: "display:inline", data: { turbo: false } do
+    = submit_tag '削除', onclick: "return confirm('削除しますか？')"
+  &nbsp;|&nbsp;
+  = link_to '一覧へ', registries_path

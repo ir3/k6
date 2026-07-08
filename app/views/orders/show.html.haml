@@ -15,7 +15,7 @@
     %td{style:"padding: 5px 5px 5px 30px;"}
       = link_to "台帳から削除", order_path, method: :delete, data: {confirm: "本当に削除しますか？"}, class: "btn wtext btn-info"
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %tr{bgcolor: "#e3e3e3"}
+  %tr.bg-primary.text-primary-content
     %th.title{width:"40px"} Id
     %td{width:"70px"}= @order.id
     %th.title{width:"80px"} 取引管理No.
@@ -35,7 +35,7 @@
     %td{style:'text-align:center; font-size:xx-large'}
       = @order.country
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %tr{bgcolor: "#e3e3e3"}
+  %tr.bg-primary.text-primary-content
     %th.title{width:"45px"} 件名
     %td= @order.orderitem
     %th.title{width:"45px"} 内容
@@ -49,7 +49,7 @@
     %th.title{width:"80px"} 客先註番
     %td= @order.ono
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %tr{bgcolor: "#e3e3e3"}
+  %tr.bg-primary.text-primary-content
     %th.title{width:"40px"} TC
     %td= @order.tc
     %th.title{width:"55px"} TCNo.
@@ -67,7 +67,7 @@
     %th.title{width:"55px"} MGNo.
     %td= @order.mgno
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %tr{bgcolor: "#e3e3e3"}
+  %tr.bg-primary.text-primary-content
     %th.title{width:"45px"} 納入期日
     %td{width:"100px"}= @order.rdate
     %th.title{width:"55px"} 納入コメント

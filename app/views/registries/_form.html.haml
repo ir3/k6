@@ -6,17 +6,26 @@
         - @registry.errors.full_messages.each do |msg|
           %li= msg
 
-  .field
-    = f.label :countryid
-    = f.text_field :countryid
-  .field
-    = f.label :country
-    = f.text_field :country
-  .field
-    = f.label :rate
-    = f.text_field :rate
-  .field
-    = f.label :deleted_at
-    = f.datetime_select :deleted_at
-  .actions
-    = f.submit 'Save'
+  %table.center-table.radius-table{align: "center"}
+    %tr
+      %th.bg-primary.text-primary-content ＃
+      %td= @registry.countryid
+    %tr
+      %th.bg-primary.text-primary-content 国籍
+      %td= f.text_field :country, class: "input input-bordered"
+    %tr
+      %th.bg-primary.text-primary-content Rate
+      %td= f.text_field :rate, class: "input input-bordered"
+    %tr
+      %th.bg-primary.text-primary-content 削除日時
+      %td
+        - if @registry.deleted_at
+          = @registry.deleted_at.strftime("%Y-%m-%d %H:%M")
+          &nbsp;
+          = f.check_box :clear_deleted, {}, "1", "0"
+          削除を取り消す
+        - else
+          （未削除）
+
+  %p{style: "text-align:center"}
+    = f.submit '保存'

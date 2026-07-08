@@ -91,7 +91,7 @@
         %td
           = link_to '閉じる', "JavaScript:nondisp('disp10');"
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead
+  %thead.bg-primary.text-primary-content
     %tr.headline
       %th= model_class.human_attribute_name(:id)
       %th= model_class.human_attribute_name(:pcode)
@@ -116,7 +116,7 @@
       %td{style: 'text-align:center'}= @kepart.price.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
       %td{style: 'text-align:center; font-size: xx-large'}= @kepart.newprice.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead
+  %thead.bg-primary.text-primary-content
     %tr.headline
       %th{width:"90px"}= model_class.human_attribute_name(:weightkg)
       %th{width:"90px"}= model_class.human_attribute_name(:munit)
@@ -137,7 +137,7 @@
 
 この部品の入出荷状況
 %table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead
+  %thead.bg-primary.text-primary-content
     %tr.headline
       %th{width:"10px"}= '＃'
       %th{width:"100px"}= '日付'

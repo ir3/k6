@@ -1,22 +1,24 @@
 %h1{align:"center"} 船籍一覧
 
-%table.center-table.radius-table{width: "40%", align:"center"}
-  %tr
-    %th ＃
-    %th 国籍
-    %th Rate
-    %th
-    %th
-    %th
+%table.center-table.radius-table{align:"center"}
+  %thead.bg-primary.text-primary-content
+    %tr
+      %th ＃
+      %th 国籍
+      %th Rate
+      %th 削除日時
+      %th 登録日時
+      %th 更新日時
 
   - @registries.each do |registry|
-    %tr
+    - row_style = registry.deleted_at ? "cursor:pointer; background-color:#ffe4e4;" : "cursor:pointer;"
+    %tr{data: { controller: "row-link", action: "click->row-link#visit", "row-link-url-value": registry_path(registry) }, style: row_style}
       %td= registry.countryid
       %td= registry.country
       %td= registry.rate
-      %td= link_to 'Show', registry
-      %td= link_to 'Edit', edit_registry_path(registry)
-      %td= link_to 'Destroy', registry, :method => :delete, :data => { :confirm => 'Are you sure?' }
+      %td= registry.deleted_at&.strftime("%Y-%m-%d %H:%M")
+      %td= registry.created_at.strftime("%Y-%m-%d %H:%M")
+      %td= registry.updated_at.strftime("%Y-%m-%d %H:%M")
 
 %br
 
