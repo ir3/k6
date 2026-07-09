@@ -80,27 +80,26 @@
     P5::init(App.new)
     </script>
 
-#p5-canvas{style: "display:flex; justify-content:center;"}
 %div{style: "display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 4rem)"}
-  .container{style: "margin: 25px auto"}
-    = form_with model: @user, url: sign_up_path do |form|
-      - if form.object.errors.any?
-        %div
-        Error: #{form.object.errors.full_messages.first}
-      %table.center-table.radius-table
-        %tr
-          %th.bg-primary.text-primary-content= form.label :email_address
-          %td.text-primary-content{width:"380px"}= form.email_field :email_address, required: true, autocomplete: "email", autofocus: true
-        %tr
-          %th.bg-primary.text-primary-content= form.label :password
-          %td= form.password_field :password, required: true, autocomplete: "new-password"
-        %tr
-          %th.bg-primary.text-primary-content= form.label :password_confirmation
-          %td= form.password_field :password_confirmation, required: true, autocomplete: "new-password"
+  #p5-canvas{style: "display:flex; justify-content:center;"}
+  = form_with model: @user, url: sign_up_path do |form|
+    - if form.object.errors.any?
+      %div
+      Error: #{form.object.errors.full_messages.first}
+    %table.center-table.radius-table
+      %tr
+        %th.bg-primary.text-primary-content= form.label :email_address
+        %td.text-primary-content{width:"380px"}= form.email_field :email_address, required: true, autocomplete: "email", autofocus: true
+      %tr
+        %th.bg-primary.text-primary-content= form.label :password
+        %td= form.password_field :password, required: true, autocomplete: "new-password"
+      %tr
+        %th.bg-primary.text-primary-content= form.label :password_confirmation
+        %td= form.password_field :password_confirmation, required: true, autocomplete: "new-password"
+      %tr
+        %td
+        %td= form.submit "登録", class: "btn btn-primary"
+      - unless authenticated?
         %tr
           %td
-          %td= form.submit "登録", class: "btn btn-primary"
-        - unless authenticated?
-          %tr
-            %td
-            %td= link_to "すでにアカウントをお持ちの方は利用開始", new_session_path, class: "link link-primary text-sm"
+          %td= link_to "すでにアカウントをお持ちの方は利用開始", new_session_path, class: "link link-primary text-sm"
