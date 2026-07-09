@@ -1,8 +1,12 @@
-%h1 パスワードを変更する
-= tag.div(flash[:alert], style: "color:red") if flash[:alert]
+- content_for :page_title, "パスワードを変更する"
 = form_with url: password_path(params[:token]), method: :put do |form|
-  = form.password_field :password, required: true, autocomplete: "new-password", placeholder: "新しいパスワード", maxlength: 72
-  %br/
-  = form.password_field :password_confirmation, required: true, autocomplete: "new-password", placeholder: "新しいパスワード（確認）", maxlength: 72
-  %br/
-  = form.submit "変更を保存"
+  %table.center-table.radius-table
+    %tr
+      %th.bg-primary.text-primary-content= form.label :password, "新しいパスワード"
+      %td= form.password_field :password, required: true, autocomplete: "new-password", placeholder: "新しいパスワード", maxlength: 72
+    %tr
+      %th.bg-primary.text-primary-content= form.label :password_confirmation, "新しいパスワード（確認）"
+      %td= form.password_field :password_confirmation, required: true, autocomplete: "new-password", placeholder: "新しいパスワード（確認）", maxlength: 72
+    %tr
+      %td
+      %td= form.submit "変更を保存", class: "btn btn-primary"
