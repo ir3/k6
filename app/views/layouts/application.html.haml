@@ -16,31 +16,37 @@
     = stylesheet_link_tag "k", "data-turbo-track": "reload"
     = javascript_include_tag "application", "data-turbo-track": "reload", type: "module"
   %body
-  .navbar.bg-accent
-    %a.btn.btn-ghost.normal-case.text-xl ようこそ
-    -if authenticated? 
-      -user = User.find(Current.user.id)
-      =link_to "#{Current.user.email_address}さん", user_path(user)
-      -if user.user_profile
-        -if user.user_profile.read_attribute_before_type_cast(:state) > 1
-          .bg-secondary 管理者 
-          = link_to "[ユーザ一覧]", users_path
-      .bg-primary
-        = button_to "利用終了", session_path, method: :delete
-    -else
-      %a.btn.btn-ghost.normal-case.text-xl
-      = link_to "Sign Up", new_user_path 
-    .flex-none
-      %ul.menu.menu-horizontal.px-4
-        %li
-          = link_to "Menu", menu_path
-        %li
-          %a About
-        %li
-          %a Contact
-  - flash.each do |type, message|
-    = render AlertComponent.new(message: message, variant: type.to_sym, auto_dismiss: true)
-  - if flash[:reset_url]
-    = tag.div(style: "color:green") do
-      = link_to "▶ パスワードリセットはこちら", flash[:reset_url]
-  = yield
+    .navbar.bg-blue-900.text-white{style: "min-height: calc(4rem - 4px); padding-top: 0; padding-bottom: 0;"}
+      %a.btn.btn-ghost.normal-case.text-xl.text-white ようこそ
+      - if content_for?(:page_title)
+        %span.text-white.text-lg.ml-2= yield(:page_title)
+      -if authenticated?
+        -user = User.find(Current.user.id)
+        =link_to "#{Current.user.email_address}さん", user_path(user), class: "ml-8"
+        -if user.user_profile
+          -if user.user_profile.read_attribute_before_type_cast(:state) > 1
+            .dropdown
+              %label.btn.btn-sm.btn-secondary{tabindex: "0"} 管理者 ▾
+              %ul.dropdown-content.menu.bg-base-100.rounded-box.z-10.w-40.p-2.shadow.text-black{tabindex: "0"}
+                %li= link_to "ユーザ一覧", users_path
+                %li= link_to "ユーザprofile一覧", user_profiles_path
+        = button_to "利用終了", session_path, method: :delete, class: "btn btn-error btn-sm text-white"
+      -else
+        %a.btn.btn-ghost.normal-case.text-xl
+        = link_to "利用開始", sign_up_path
+      .flex-none
+        %ul.menu.menu-horizontal.px-4
+          %li
+            = link_to "Home", welcom_index_path
+          %li
+            = link_to "Menu", menu_path
+          %li
+            %a About
+          %li
+            %a Contact
+    - flash.each do |type, message|
+      = render AlertComponent.new(message: message, variant: type.to_sym, auto_dismiss: true)
+    - if flash[:reset_url]
+      = tag.div(style: "color:green") do
+        = link_to "▶ パスワードリセットはこちら", flash[:reset_url]
+    = yield

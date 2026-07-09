@@ -61,6 +61,13 @@
   z-index: 10;
 }
 
+.center-table th,
+.center-table thead th {
+  background-color: #c8dce8 !important;
+  color: #777 !important;
+  font-weight: normal !important;
+}
+
 .center-table caption {
   caption-side: top;
   font-size: 1.5em;

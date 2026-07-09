@@ -3,7 +3,6 @@ class SignUpsController < ApplicationController
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to sign_up_path, alert: "Try again later." }
 
   def show
-    redirect_to users_path and return if authenticated?
     @user = User.new
   end
 
@@ -11,7 +10,7 @@ class SignUpsController < ApplicationController
     @user = User.new(sign_up_params)
     if @user.save
       start_new_session_for(@user)
-      redirect_to controller: :users, action: :index
+      redirect_to welcom_index_path
     else
       render :show, status: :unprocessable_entity
     end

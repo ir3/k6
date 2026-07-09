@@ -1,5 +1,5 @@
 - content_for :title, "Editing user_profile"
-%h1  ユーザprofile編集
+- content_for :page_title, "ユーザprofile編集"
 .center-container
 =form_with model: @user_profile, url: user_profile_path(@user_profile), local: true do |f|
   %table.center-table.radius-table
@@ -45,7 +45,7 @@
         %td= link_to "ユーザprofile", user_profile_path(@user_profile)
         %td= f.submit "登録する", class: "btn btn-primary"
 %br
-%div
+%div.text-center
   = link_to "ユーザ表示", user_profile_path(@user_profile)
   - if Current.user.user_profile&.admin?
     |
