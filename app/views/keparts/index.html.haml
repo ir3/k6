@@ -1,11 +1,9 @@
 - model_class = Kepart
+- content_for :page_title, "Ｂ部品台帳表示"
 %table
   %tr
     %td
-      %h1 B部品一覧
-    %td
-      - unless @keyword
-        = paginate @keparts, window: 4, outer_window: 5, left: 1, right: 3
+      = paginate @keparts, window: 4, outer_window: 5, left: 1, right: 3
 
 %table.center-table.radius-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content

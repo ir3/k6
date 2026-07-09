@@ -6,6 +6,12 @@
       "runtimeExecutable": "/opt/anyenv/envs/rbenv/versions/4.0.5/bin/ruby",
       "runtimeArgs": ["bin/rails", "server"],
       "port": 3000
+    },
+    {
+      "name": "rails-preview",
+      "runtimeExecutable": "/opt/anyenv/envs/rbenv/versions/4.0.5/bin/ruby",
+      "runtimeArgs": ["bin/rails", "server", "-p", "3001", "--pid", "tmp/pids/server_preview.pid"],
+      "port": 3001
     }
   ]
 }

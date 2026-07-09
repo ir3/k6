@@ -20,7 +20,8 @@ Rails.application.routes.draw do
   resources :keparts
   post 'keparts/search/'  => 'keparts#search'
 
-  match 'orders/search' => 'orders#search', via: %i[get post], as: 'orders_search'
+  match 'orders/search'  => 'orders#search',  via: %i[get post], as: 'orders_search'
+  match 'orders/alllist' => 'orders#alllist', via: %i[get post], as: 'orders_alllist'
   resources :orders
   post 'orders/copy/'     => 'orders#copy'
   post 'orders/ocopy/'    => 'orders#ocopy'

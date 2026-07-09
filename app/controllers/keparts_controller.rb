@@ -7,19 +7,18 @@ class KepartsController < ApplicationController
   # GET /keparts.json
   def index
     @keyword = params[:keyword]
-    if @keyword && !@keyword.empty?
-      @keparts = Kepart.find_by_sql("SELECT * FROM keparts WHERE pcode like '#{@keyword}%' ORDER BY id")
-    else
-      @keparts = Kepart.page params[:page]
-    end
+    @keparts = if @keyword && !@keyword.empty?
+                 Kepart.where("pcode LIKE ?", "%#{Kepart.sanitize_sql_like(@keyword)}%").order(:id).page params[:page]
+               else
+                 Kepart.page params[:page]
+               end
   end
 
   # POST /keparts/search
   def search
-    keyword = params[:keyword]
     @keyword = params[:keyword]
-    logger.debug keyword
-    @keparts = Kepart.find_by_sql("SELECT * FROM keparts WHERE pcode like '%#{keyword}%'")
+    logger.debug @keyword
+    @keparts = Kepart.where("pcode LIKE ?", "%#{Kepart.sanitize_sql_like(@keyword)}%").page params[:page]
 
     render :index
   end

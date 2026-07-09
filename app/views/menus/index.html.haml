@@ -1,5 +1,6 @@
-- ym  = session[:yearmonth]
-- ymd = session[:ymd]
+- ym   = session[:yearmonth]
+- ymd  = session[:ymd]
+- smno = session[:smno] || ym
 %table.tb{border: "0", cellpadding: "0", cellspacing: "0"}
   %tr
     %td
@@ -99,17 +100,19 @@
         %input.btn.wtext.btn-info{name: "submit", type: "submit", value: "取引番号"}/
         = hidden_field_tag('authenticity_token', form_authenticity_token)
     %td
-      %form{action: "alllist.asp"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "SMNo", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{ym}"}/
-      %br/
-      %input{name: "fixed", size: "16", type: "hidden", value: "0"}/
-      %input.btn.wtext.btn-info{name: "submit", type: "submit", value: "未受決分"}/
+      %form{method: "post", action: "#{orders_alllist_path}"}
+        = hidden_field_tag('authenticity_token', form_authenticity_token)
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "SMNo", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{smno}"}/
+        %br/
+        %input{name: "fixed", type: "hidden", value: "0"}/
+        %input.btn.wtext.btn-info{type: "submit", value: "未受決分"}/
     %td
-      %form{action: "alllist.asp"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "SMNo", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{ym}"}/
-      %br/
-      %input{name: "fixed", size: "16", type: "hidden", value: "1"}/
-      %input.btn.wtext.btn-info{type: "submit", value: "受注決定分"}/
+      %form{method: "post", action: "#{orders_alllist_path}"}
+        = hidden_field_tag('authenticity_token', form_authenticity_token)
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "SMNo", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{smno}"}/
+        %br/
+        %input{name: "fixed", type: "hidden", value: "1"}/
+        %input.btn.wtext.btn-info{type: "submit", value: "受注決定分"}/
     %td
       %form{method:"post", action: "#{orders_search_path}"}
         %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", style: "ime-mode:disabled;", type: "text", value: ""}/
@@ -155,37 +158,39 @@
           部品番号を指定します。Ａ部品表に無い部品の在庫登録もそこから行います。
     %tr
     %td
-      %form{action: "zaikolist.asp"}
-      %span.TB12
-        部品コード
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "pcode", size: "16", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %br/
-      %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品全在庫"}/
+      %form{action: stocks_path}
+        %span.TB12
+          部品コード
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+        %br/
+        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品全在庫"}/
     %td
       %form{action: "zaikonlist.asp"}
       %input.btn.wtext.btn-info{type: "submit", value: "Ａ在庫非表示リスト"}/
     %td
-      %form{action: "zaikolist2.asp", method: "post"}
-      %span.TB12 部品コード
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "pcode", size: "16", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %br/
-      %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品在庫有り"}/
+      %form{action: stocks_path}
+        %span.TB12 部品コード
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+        %input{name: "in_stock", type: "hidden", value: "1"}/
+        %br/
+        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品在庫有り"}/
     %td
       %form{action: "norder.asp", method: "post"}
       %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品注文"}/
     %td
-      %form{action: "hzaikolist.asp?zero=0", method: "post"}
-      %span.TB12 部品コード
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "pcode", size: "16", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ｂ部品全在庫"}/
+      %form{action: stockbs_path}
+        %span.TB12 部品コード
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ｂ部品全在庫"}/
     %td
       %input.btn.wtext.btn-info{type: "submit", value: "Ｂ在庫非表示リスト"}/
       %form{action: "hzaikonlist.asp"}
     %td
-      %form{action: "hzaikolist.asp", method: "post"}
-      %span.TB12 部品コード
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "pcode", size: "16", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ｂ部品在庫有り"}/
+      %form{action: stockbs_path}
+        %span.TB12 部品コード
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+        %input{name: "in_stock", type: "hidden", value: "1"}/
+        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ｂ部品在庫有り"}/
   %hr/
   %table
     %tr
@@ -201,11 +206,11 @@
           部品詳細を出力しその画面から実施します
     %tr
     %td
-      %form{action: "partslist.asp", method: "post"}
-      %span.TB12 部品コード
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "pcode", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %br/
-      %input.tb1.btn.wtext.btn-info{title: "１．新潟標準部品 NDPからの Excel価格表データに存在する分", type: "submit", value: "Ａ部品"}/
+      %form{action: parts_path}
+        %span.TB12 部品コード
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+        %br/
+        %input.tb1.btn.wtext.btn-info{title: "１．新潟標準部品 NDPからの Excel価格表データに存在する分", type: "submit", value: "Ａ部品"}/
     %td
       %form{action: "partslist.asp", method: "post"}
       %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sNAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
@@ -222,11 +227,11 @@
       %br/
       %input.btn.wtext.btn-info{type: "submit", value: "英文検索"}/
     %td
-      %form{action: "hiteijolist.asp"}
-      %span.TB12 部品コード
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "pcode", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %br/
-      %input.tb1.btn.wtext.btn-info{title: "１．新潟標準部品  （NDPからの Excel価格表データに存在する）の変化分（最近 増えている）\r\n２．新潟非標準部品（非定常品 注文にて調達。Excelにはないが新潟部品）\r\n３．一般標準部品  （新潟純正ではないが、新潟部品番号にて関連して取り扱い）\r\n４．他社部品      （ヤンマー部品など）\r\n   ", type: "submit", value: "Ｂ部品"}/
+      %form{action: keparts_path}
+        %span.TB12 部品コード
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+        %br/
+        %input.tb1.btn.wtext.btn-info{title: "１．新潟標準部品  （NDPからの Excel価格表データに存在する）の変化分（最近 増えている）\r\n２．新潟非標準部品（非定常品 注文にて調達。Excelにはないが新潟部品）\r\n３．一般標準部品  （新潟純正ではないが、新潟部品番号にて関連して取り扱い）\r\n４．他社部品      （ヤンマー部品など）\r\n   ", type: "submit", value: "Ｂ部品"}/
     %td
       %form{action: "hiteijolist.asp", method: "post"}
       %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sNAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/

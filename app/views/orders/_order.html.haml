@@ -1,26 +1,28 @@
-%tr
-  %td
+- row_bg = order.orderitem.to_s.include?('（受注）') ? '#e0f4ff' : '#f0f0f0'
+- td_style = "background-color: #{row_bg};"
+%tr{style: "background-color: #{row_bg};"}
+  %td{style: td_style}
     = link_to order.mno, order_path(id: order.id)
-  %td{style:'text-align:right'}
+  %td{style: "#{td_style}text-align:right"}
     = link_to order.adlist_id.to_s, "/orders?keykind=companyid&keyword=#{order.adlist_id}"
-  %td
+  %td{style: td_style}
     - dp = ''
     - adlist = Adlist.find_by(no: order.adlist_id.to_s)
     - if adlist
       - dp << adlist.company if adlist.company
       - dp << ' '+adlist.section if adlist.section
       = link_to dp, adlist
-  %td= order.etype
-  %td
+  %td{style: td_style}= order.etype
+  %td{style: td_style}
     = link_to(order.engno, "/orders?engno=#{order.engno}") if order.engno
-  %td
+  %td{style: td_style}
     = link_to(order.shipname, "/orders?shipname=#{order.shipname}") if order.shipname
-  %td= order.country
-  %td{style:'text-align:right'}= order.pnum
-  %td= order.orderitem
-  %td= order.ono
-  %td= order.memo
-  %td
+  %td{style: td_style}= order.country
+  %td{style: "#{td_style}text-align:right"}= order.pnum
+  %td{style: td_style}= order.orderitem
+  %td{style: td_style}= order.ono
+  %td{style: td_style}= order.memo
+  %td{style: td_style}
     - disp = ' '
     - disp << order.tc if order.tc
     - disp << ' '+order.tcno if order.tcno

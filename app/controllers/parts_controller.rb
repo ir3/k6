@@ -7,11 +7,11 @@ class PartsController < ApplicationController
   # GET /parts.json
   def index
     @keyword = params[:keyword]
-    if @keyword && !@keyword.empty?
-      @parts = Part.find_by_sql("SELECT * FROM parts WHERE pcode like '#{@keyword}%' ORDER BY id")
-    else
-      @parts = Part.order('id').page params[:page]
-    end
+    @parts = if @keyword && !@keyword.empty?
+               Part.where("pcode LIKE ?", "%#{Part.sanitize_sql_like(@keyword)}%").order(:id).page params[:page]
+             else
+               Part.order('id').page params[:page]
+             end
 
     respond_to do |format|
       format.html # index.html.erb

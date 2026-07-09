@@ -6,7 +6,14 @@ class StockbsController < ApplicationController
   # GET /stockbs
   # GET /stockbs.json
   def index
-    @stockbs = Stockb.page params[:page]
+    @partno = params[:partno]
+    @in_stock = params[:in_stock].present?
+
+    scope = Stockb.all
+    scope = scope.where("partno LIKE ?", "%#{Stockb.sanitize_sql_like(@partno)}%") if @partno.present?
+    scope = scope.where("num > 0") if @in_stock
+
+    @stockbs = scope.page params[:page]
   end
 
   # GET /stockbs/1

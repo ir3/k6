@@ -1,0 +1,22 @@
+%h2{style: "text-align:center"}= @title
+
+%table.center-table.radius-table{width: "99%", align:"center"}
+  %thead.bg-primary.text-primary-content
+    %tr
+      %th 取引管理No.
+      %th 客No.
+      %th 客先
+      %th 型式
+      %th 機番
+      %th{width:"100px"} 船名
+      %th{width:"45px"} 船籍
+      %th{width:"45px"} 点数
+      %th 件名
+      %th 客先注文番号
+      %th Memo
+      %th Tc Tcno Zp Zpno Glc Glcno Mg Mgno
+  %tbody
+    = render @orders
+
+%p{style: "text-align:center"}
+  = link_to 'Menuへ', menu_path

@@ -65,6 +65,32 @@ class OrdersController < ApplicationController
     end
   end
 
+  # GET/POST /orders/alllist
+  def alllist
+    if request.post?
+      redirect_to orders_alllist_path(smno: params[:SMNo], fixed: params[:fixed])
+      return
+    end
+
+    smno  = params[:smno].to_s
+    smno  = session[:smno].to_s if smno.empty?
+    session[:smno] = smno unless smno.empty?
+
+    fixed = params[:fixed].to_i
+    label = fixed == 1 ? "受注決定分" : "未受決分"
+
+    base = Order.where("deleted_at IS NULL")
+                .where("CAST(mno AS TEXT) LIKE ?", "#{smno}%")
+                .order(:mno)
+
+    @orders = if fixed == 1
+      base.where("orderitem LIKE ?", "%（受注）%")
+    else
+      base.where("orderitem NOT LIKE ? OR orderitem IS NULL", "%（受注）%")
+    end
+    @title = "#{smno} #{label}"
+  end
+
   # GET/POST /orders/search
   def search
     # TurboはPOSTフォームの応答にリダイレクトを要求するため、
@@ -232,7 +258,7 @@ class OrdersController < ApplicationController
     session[:order_id] = @order.id
     session[:mno] = @order.mno
     # @orderparts = Orderpart.find_by_sql("SELECT * FROM orderparts WHERE (deleted_at IS NULL) AND mno=#{@order.mno}")
-    @orderparts = Orderpart.where(mno: @order.mno)
+    @orderparts = Orderpart.where(mno: @order.mno).order(:sno)
 
     respond_to do |format|
       format.html # show.html.erb
@@ -254,7 +280,7 @@ class OrdersController < ApplicationController
   # GET /orders/1/edit
   def edit
     @order = Order.find(params[:id])
-    @orderparts = Orderpart.where(mno: @order.mno)
+    @orderparts = Orderpart.where(mno: @order.mno).order(:sno)
   end
 
   # POST /orders

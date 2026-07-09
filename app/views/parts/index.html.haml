@@ -1,11 +1,9 @@
 - model_class = Part
+- content_for :page_title, "Ａ部品台帳表示"
 %table
   %tr
     %td
-      %h1=t '.title', default: model_class.model_name.human
-    %td
-      - unless @keyword
-        = paginate @parts, window: 4, outer_window: 5, left: 1, right: 3
+      = paginate @parts, window: 4, outer_window: 5, left: 1, right: 3
 %table.center-table.radius-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr.headline
@@ -48,5 +46,4 @@
         %td= part.created_at.strftime('%Y/%m/%d %H:%M')
 
 = link_to '新規作成', new_part_path, class: 'btn btn-primary'
-- unless @keyword
-  = paginate @parts, window: 4, outer_window: 5, left: 1, right: 3
+= paginate @parts, window: 4, outer_window: 5, left: 1, right: 3
