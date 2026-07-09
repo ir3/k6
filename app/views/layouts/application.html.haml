@@ -17,7 +17,12 @@
     = javascript_include_tag "application", "data-turbo-track": "reload", type: "module"
   %body
     .navbar.bg-blue-900.text-white{style: "min-height: calc(4rem - 4px); padding-top: 0; padding-bottom: 0;"}
-      %a.btn.btn-ghost.normal-case.text-xl.text-white ようこそ
+      - if controller_name == "menus"
+        %a.btn.btn-ghost.normal-case.text-xl{style: "color: #fde047; font-size: 0.85rem;"} 神戸エンジンサービス
+      - else
+        %a.btn.btn-ghost.normal-case.text-xl.text-white ようこそ
+      - if controller_name == "menus"
+        %span.text-white.ml-2 業務システム
       - if content_for?(:page_title)
         %span.text-white.text-lg.ml-2= yield(:page_title)
       -if authenticated?
