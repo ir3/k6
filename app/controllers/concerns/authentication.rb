@@ -66,6 +66,9 @@ module Authentication
       user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip).tap do |session|
         Current.session = session
         cookies.signed.permanent[:session_id] = { value: session.id, httponly: true, same_site: :lax }
+        # ログアウトしても消さない「このブラウザは利用したことがある」痕跡。
+        # rootアクセス時にsign_upではなくログイン画面へ誘導するために使う。
+        cookies.permanent[:known_user] = { value: "1", httponly: true, same_site: :lax }
       end
       begin
        Current.user.user_profile.sign_in_at = Time.current

@@ -3,6 +3,8 @@ class SignUpsController < ApplicationController
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to sign_up_path, alert: "Try again later." }
 
   def show
+    redirect_to new_session_path and return if !authenticated? && cookies[:known_user].present?
+
     @user = User.new
   end
 

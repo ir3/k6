@@ -9,12 +9,8 @@
       %td= f.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", size: 32, maxlength: 30
     %tr
       %td
+        %button.btn.btn-secondary
+          = link_to "パスワードをお忘れですか？", new_password_path
       %td
         = f.submit "利用開始", class: "btn btn-primary"
-    %tr
-      %td
-        %button.btn.btn-secondary
-          = link_to "Forgot password?", new_password_path
-      %td
-        = link_to "アカウントをお持ちでない方は登録", root_path, class: "link link-primary text-sm"
 
