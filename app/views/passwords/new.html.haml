@@ -1,6 +1,9 @@
-%h1 パスワードをお忘れですか？
-= tag.div(flash[:alert], style: "color:red") if flash[:alert]
+- content_for :page_title, "パスワードをお忘れですか？"
 = form_with url: passwords_path do |form|
-  = form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "メールアドレスを入力", value: params[:email_address]
-  %br/
-  = form.submit "リセットURLを発行"
+  %table.center-table.radius-table
+    %tr
+      %th.bg-primary.text-primary-content= form.label :email_address, "メールアドレス"
+      %td= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "メールアドレスを入力", value: params[:email_address]
+    %tr
+      %td
+      %td= form.submit "リセットURLを発行", class: "btn btn-primary"

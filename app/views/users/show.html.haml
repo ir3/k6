@@ -1,5 +1,5 @@
 - content_for :title, "show user"
-%h1  ユーザ表示
+- content_for :page_title, "ユーザ表示"
 .center-container
   %table.center-table.radius-table
     %thead.neutral
@@ -36,7 +36,7 @@
       %tr
         %th.bg-primary.text-primary-content ユーザ更新日
         %td=@user.updated_at.strftime("%Y/%m/%d %H:%M")
-%div
+%div.text-center
   -user = User.find(Current.user.id)
   = link_to "ユーザprofile編集", edit_user_profile_path(@user.user_profile)
   -if user.user_profile.read_attribute_before_type_cast(:state) > 1
