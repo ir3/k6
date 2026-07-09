@@ -21,10 +21,10 @@ for kv in $(sudo systemctl show k6 --property=Environment | sed 's/^Environment=
 # node/yarnをPATHに通す（systemdのPATHには含まれていないため）
 export PATH="/opt/anyenv/envs/nodenv/shims:/opt/anyenv/envs/nodenv/bin:$PATH"
 
-# アセットビルド
+# アセットビルド + フィンガープリント生成（cssやjsを変更した場合は必須）
 yarn install
-yarn build
-yarn build:css
+cp app/assets/stylesheets/k.css app/assets/builds/k.css
+RAILS_ENV=production bin/rails assets:precompile
 
 # マイグレーションがあれば
 bin/rails db:migrate
@@ -34,10 +34,9 @@ sudo systemctl restart k6
 ```
 
 - `yarn install` … package.json の依存関係をインストール（package.json 変更時のみ必要、毎回実行しても無害）
-- `yarn build` … esbuild で JS をバンドル（`app/assets/builds/` へ出力）
-- `yarn build:css` … Tailwind で CSS をビルド（同じく `app/assets/builds/` へ出力）
+- `bin/rails assets:precompile` … 内部で `yarn build`（esbuild）・`yarn build:css`（Tailwind）を実行した後、**ダイジェスト（フィンガープリント）付きファイル名を生成して `public/assets` に配置する**（Propshaft本体の仕事）
 
-`bin/rails assets:precompile` はこの2つ（`yarn build`/`yarn build:css`）を自動で呼ぶだけの糖衣構文。ただし `environment` タスクに依存しており `secret_key_base` の解決が必要になるため、上記のように直接 `yarn build`/`yarn build:css` を叩いた方が本番のRails起動が絡まずシンプル。
+**`yarn build && yarn build:css` だけでは不十分。** nginx の設定（[config/nginx/k6.conf](config/nginx/k6.conf)）は `/assets/` 配下をPumaを経由せず直接静的ファイルとして配信するため、Railsのビューヘルパーが参照するダイジェスト付きファイル名と実ファイルが一致している必要がある。`assets:precompile` を省略すると、古いダイジェストファイル・古いmanifestが残ったままになり、**コードは更新されても画面は旧レイアウトのまま**になる（2026-07-08に実際発生）。
 
 `sudo systemctl restart k6` は毎回必須（本番は `config.cache_classes = true` でコード変更を自動リロードしないため、`git pull` だけでは反映されない）。
 
