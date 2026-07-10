@@ -21,7 +21,7 @@ Rails.application.config.to_prepare do
       return if email.end_with?("@#{allowed_domain}")
 
       @user = User.new(sign_up_params)
-      @user.errors.add(:email_address, "は@#{allowed_domain}のアドレスのみ登録できます")
+      @user.errors.add(:email_address, "は許可されたアドレスのみ登録できます")
       render :show, status: :unprocessable_entity
     end
   end
