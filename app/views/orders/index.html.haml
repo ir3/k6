@@ -1,3 +1,4 @@
+= paginate @orders, window: 4, outer_window: 5, left: 1, right: 3
 %table.center-table.radius-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr.headline
@@ -30,3 +31,4 @@
       %th Tc Tcno Zp Zpno Glc Glcno Mg Mgno
   %tbody
     = render @orders
+= paginate @orders, window: 4, outer_window: 5, left: 1, right: 3

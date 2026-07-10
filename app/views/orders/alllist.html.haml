@@ -1,5 +1,6 @@
 %h2{style: "text-align:center"}= @title
 
+= paginate @orders, window: 4, outer_window: 5, left: 1, right: 3
 %table.center-table.radius-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr
@@ -17,6 +18,7 @@
       %th Tc Tcno Zp Zpno Glc Glcno Mg Mgno
   %tbody
     = render @orders
+= paginate @orders, window: 4, outer_window: 5, left: 1, right: 3
 
 %p{style: "text-align:center"}
   = link_to 'Menuへ', menu_path

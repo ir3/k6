@@ -23,6 +23,10 @@
         %a.btn.btn-ghost.normal-case.text-xl.text-white ようこそ
       - if controller_name == "menus"
         %span.text-white.ml-2 業務システム
+      - if controller_name == "orders"
+        %span.text-white.ml-2 取引台帳
+        - if @search_condition
+          %span.text-white.text-xs.ml-2.opacity-80= @search_condition
       - if content_for?(:page_title)
         %span.text-white.text-lg.ml-2= yield(:page_title)
       -if authenticated?

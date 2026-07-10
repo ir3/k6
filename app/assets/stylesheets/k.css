@@ -76,6 +76,13 @@
 .radius-table{
     border-radius: 4px;
 }
+.menu-table {
+  border-collapse: collapse;
+}
+.menu-table td,
+.menu-table th {
+  border: 1px solid #e0e0e0;
+}
 .alert {
   overflow: hidden;
   transition:

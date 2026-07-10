@@ -41,23 +41,30 @@ class OrdersController < ApplicationController
           ym = date.last_month.strftime('%Y%m')
         end
         @orders = Order.joins(:adlists).find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like '#{ym}%' ORDER BY id #{mno_order}")
+        @search_condition = "対象年月: #{ym}"
       elsif @keykind == 'companyid'
         session[:keykind] = @keykind.to_s
         @orders = Order.where('adlist_id = ?', @keyword).order("id #{mno_order}")
+        @search_condition = "取引先ID: #{@keyword}"
       else
         @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like'%#{@keyword}%' ORDER BY id #{mno_order}")
+        @search_condition = "取引番号: #{@keyword}"
       end
     elsif @shipname && !@shipname.empty?
       session[:shipname] = @shipname.to_s
       @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND shipname like'#{@shipname}%' ORDER BY id #{mno_order}")
+      @search_condition = "船名: #{@shipname}"
     elsif @engno && !@engno.empty?
       session[:engno] = @engno.to_s
       @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND engno like'#{@engno}%' ORDER BY id #{mno_order}")
+      @search_condition = "機番: #{@engno}"
     else
       ym = session[:yearmonth] if session[:yearmonth]
       @orders = Order.joins(:adlists).find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like '#{ym}%' ORDER BY id #{mno_order}")
+      @search_condition = "対象年月: #{ym}"
     end
     session[:yearmonth] = ym
+    @orders = paginate_orders(@orders)
 
     respond_to do |format|
       format.html # index.html.erb
@@ -88,7 +95,9 @@ class OrdersController < ApplicationController
     else
       base.where("orderitem NOT LIKE ? OR orderitem IS NULL", "%（受注）%")
     end
+    @orders = paginate_orders(@orders)
     @title = "#{smno} #{label}"
+    @search_condition = @title
   end
 
   # GET/POST /orders/search
@@ -104,6 +113,7 @@ class OrdersController < ApplicationController
     keykind = params[:keykind]
     logger.debug  keyword
     logger.debug  keykind
+    keykind_labels = { "etype" => "形式検索", "engno" => "機番検索", "shipname" => "船名検索", "company" => "会社名検索", "memo" => "メモ検索" }
     if keykind && !keykind.empty?
       if keykind == 'company'
         adlist_id = Adlist.find_by_sql("SELECT * FROM adlists WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%'").first
@@ -111,10 +121,13 @@ class OrdersController < ApplicationController
       else
         @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%'")
       end
+      @search_condition = "#{keykind_labels[keykind] || keykind}: #{keyword}"
     elsif
       session[:yearmonth] = keyword
       @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like '#{keyword}%'")
+      @search_condition = "取引番号: #{keyword}"
     end
+    @orders = paginate_orders(@orders)
 
     respond_to do |format|
       format.html # index.html.erb
@@ -332,6 +345,15 @@ class OrdersController < ApplicationController
   end
 
   private
+
+  # find_by_sql の結果（配列）と ActiveRecord::Relation のどちらでもページネーションできるようにする
+  def paginate_orders(orders)
+    if orders.is_a?(ActiveRecord::Relation)
+      orders.page(params[:page])
+    else
+      Kaminari.paginate_array(orders).page(params[:page])
+    end
+  end
 
   # 新規に取引管理No.作成
   def newmno
