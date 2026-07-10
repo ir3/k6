@@ -27,7 +27,7 @@ cp app/assets/stylesheets/k.css app/assets/builds/k.css
 RAILS_ENV=production bin/rails assets:precompile
 
 # マイグレーションがあれば
-bin/rails db:migrate
+RAILS_ENV=production bin/rails db:migrate
 
 # Pumaへ反映
 sudo systemctl restart k6
@@ -39,6 +39,23 @@ sudo systemctl restart k6
 **`yarn build && yarn build:css` だけでは不十分。** nginx の設定（[config/nginx/k6.conf](config/nginx/k6.conf)）は `/assets/` 配下をPumaを経由せず直接静的ファイルとして配信するため、Railsのビューヘルパーが参照するダイジェスト付きファイル名と実ファイルが一致している必要がある。`assets:precompile` を省略すると、古いダイジェストファイル・古いmanifestが残ったままになり、**コードは更新されても画面は旧レイアウトのまま**になる（2026-07-08に実際発生）。
 
 `sudo systemctl restart k6` は毎回必須（本番は `config.cache_classes = true` でコード変更を自動リロードしないため、`git pull` だけでは反映されない）。
+
+## 手動で `bin/rails` コマンドを叩くときの注意（RAILS_ENV）
+
+サーバー上で `bin/rails` を単発で叩く（`assets:clobber`・`runner`・`console`など）ときは、**必ず `RAILS_ENV=production` を明示的に付ける**こと。
+
+```bash
+# NG: development環境として起動しようとして落ちる
+bin/rails assets:clobber
+# => Bundler::GemRequireError: ... cannot load such file -- debug/prelude
+
+# OK
+RAILS_ENV=production bin/rails assets:clobber
+```
+
+`RAILS_ENV` を指定しないと Rails はデフォルトの `development` として起動しようとする。`Gemfile` の `debug` gem は `group :development, :test` に入っており（[Gemfile](Gemfile)）、本番の `bundle install` ではこのグループを除外してインストールしているため、`development` として起動しようとした瞬間に `debug/prelude` が読み込めずに `Bundler::GemRequireError` で落ちる（2026-07-10に実際発生）。
+
+「通常のデプロイ手順」内の `for kv in $(sudo systemctl show k6 --property=Environment ...)` を先にそのシェルで実行していれば `RAILS_ENV=production` も含めて読み込まれるはずだが、**新しくSSHし直した直後など、そのステップを飛ばしたシェルでは効いていない**。事故を避けるため、単発でRailsコマンドを叩くときは `for kv in ...` を実行済みかどうかによらず、常に `RAILS_ENV=production` を明示するのが安全。
 
 ## secret_key_base について
 
