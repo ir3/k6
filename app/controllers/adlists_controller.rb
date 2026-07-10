@@ -8,8 +8,11 @@ class AdlistsController < ApplicationController
   # GET /adlists.json
   def index
     @keyword = params[:keyword]
+    @gyo = params[:gyo]
     @new_order = params[:new_order]
-    if @keyword && !@keyword.empty?
+    if @gyo.present?
+      @adlists = Adlist.where('ruby LIKE ? OR ruby LIKE ?', "#{@gyo}%", "#{hiragana_to_katakana(@gyo)}%").order(:id)
+    elsif @keyword && !@keyword.empty?
       @adlists = Adlist.find_by_sql("SELECT * FROM adlists WHERE ruby like '#{@keyword}%' ORDER BY id")
     else
       @adlists = Adlist.order('id').page params[:page]
@@ -244,6 +247,11 @@ class AdlistsController < ApplicationController
   end
 
   private
+
+  # ひらがなをカタカナに変換する（ひらがなとカタカナのコードポイントは 0x60 差分で対応）
+  def hiragana_to_katakana(str)
+    str.each_char.map { |c| c.ord.between?(0x3041, 0x3096) ? [ c.ord + 0x60 ].pack("U") : c }.join
+  end
 
   # Never trust parameters from the scary internet, only allow the white list through.
   def adlist_params

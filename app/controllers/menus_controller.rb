@@ -4,6 +4,7 @@ class MenusController < ApplicationController
   allow_unauthenticated_access only: :index
 
   def index
+    session[:visited_menu] = true
     unless session[:ymd]
       ymd = Time.now.strftime('%Y/%m/%d')
       session[:ymd] = ymd

@@ -17,7 +17,7 @@
     = javascript_include_tag "application", "data-turbo-track": "reload", type: "module"
   %body
     .navbar.bg-blue-900.text-white{style: "min-height: calc(4rem - 4px); padding-top: 0; padding-bottom: 0;"}
-      - if controller_name == "menus"
+      - if session[:visited_menu]
         %a.btn.btn-ghost.normal-case.text-xl{style: "color: #fde047; font-size: 0.85rem;"} 神戸エンジンサービス
       - else
         %a.btn.btn-ghost.normal-case.text-xl.text-white ようこそ

@@ -1,5 +1,12 @@
-関係先一覧
-- unless @keyword
+- content_for :page_title, "取引先一覧"
+.flex.gap-2.my-2
+  - MenusHelper::GYO_LIST.each do |label, kanas|
+    .dropdown
+      %label.btn.btn-sm.btn-secondary{tabindex: "0"}= "#{label} ▾"
+      %ul.dropdown-content.menu.bg-base-100.rounded-box.z-20.w-20.p-2.shadow.text-black{tabindex: "0"}
+        - kanas.each do |kana|
+          %li= link_to kana, adlists_path(gyo: kana)
+- unless @keyword || @gyo
   = paginate @adlists, window: 4, outer_window: 5, left: 1, right: 3
 %table.center-table.radius-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
@@ -48,5 +55,5 @@
         %td= adlist.updated_at.strftime("%Y/%m/%d %H:%M")
   %br/
 = link_to '新規作成', new_adlist_path, class: 'btn btn-primary'
-- unless @keyword
+- unless @keyword || @gyo
   = paginate @adlists, window: 4, outer_window: 5, left: 1, right: 3

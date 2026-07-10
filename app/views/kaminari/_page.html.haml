@@ -1,0 +1,4 @@
+- if page.current?
+  %button.join-item.btn.btn-sm.btn-active{type: "button", disabled: true}= page
+- else
+  = link_to page, url, remote: remote, rel: page.rel, class: "join-item btn btn-sm"

@@ -1,285 +1,272 @@
 - ym   = session[:yearmonth]
 - ymd  = session[:ymd]
 - smno = session[:smno] || ym
-%table.tb{border: "0", cellpadding: "0", cellspacing: "0"}
-  %tr
-    %td
-      %form{action: "tradesel.asp"}
-      %input.btn.wtext.btn-info{type: "submit", value: "取引条件一覧"}/
-    %td
-      %span.TB12
-        %a{href: "https://niigata-power.com/", target: "_blank"} 新潟原動機
-        %a{href: "https://csnet.niigata-power.com/csnet/toppage.htm", target: "_blank"} 部品営業gr
-    %td
-      .bottons
-        %form.tbw90{action: "https://csnet.niigata-power.com/csnet/ssnetasp/logincheck.asp", method: "post", name: "login", target: "_blank"}
-          %input{name: "uid", type: "hidden", value: "2768400"}/
-          %input{name: "passwd", type: "hidden", value: "ndpsss20"}/
-          %input.btn.wtext.btn-info{type: "submit", value: "NDPNET"}/
-    %td
-      %select.tbw90{onchange: "go_order(this)"}
-        %option{value: "#"} 直注文
-        %option{value: "99974"} 岡田
-        %option{value: "99972"} 松本
-    %td
-      %form{action: "chgpass.asp", method: "post", name: "login"}
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{maxlength: "10", name: "pass", size: "10", style: "ime-mode:disabled;", type: "text", value: "ndpsss20"}/
-        %br/
-        %input.btn.wtext.btn-info{type: "submit", value: "Pass変更"}/
-    %td
-      = link_to "船籍一覧", registries_path,  class: "btn wtext btn-info"
-%hr/
-.hoge
-  %table
+.pl-6
+  %table.tb{border: "0", cellpadding: "0", cellspacing: "0"}
     %tr
-    %td
-      %form{method:"post", action: "#{orders_search_path}"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sDay", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{ymd}",id: "datepicker"}/
-      %br/
-      %input.btn.wtext.btn-info{onclick: "wrtCalendarLay(document.date_form.sDay,event)", type: "button", value: "範囲開始日"}/
-    %td
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "eDay", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{ymd}",id: "datepicker"}/
-      %br/
-      %input.btn.wtext.btn-info{onclick: "wrtCalendarLay(document.date_form.eDay,event)", type: "button", value: "範囲終了日"}/
-    %td
-      %select#ksel{name: "sime"}
-        %option{value: "#"} ●締日選択
-        %option{value: "末"} 月末
-        %option{value: "２５日"} ２５日
-        %option{value: "２０日"} ２０日
-        %option{value: "都度"} 都度
-        %option{value: "他"} その他
-    %td{width: "235px"}
-      %span.TB12
-        受注済（受注メモ出力済）かつ納品未（納品書、
-        出荷案内書未出力）
-      %br/
-      %input{checked: "", name: "seltype", type: "radio", value: "3"}/
-      納品未一覧
-    %td{width: "235px"}
-      %span.TB12
-        該当締日で受注済かつ納品済（納品書、
-        出荷案内書出力済）
-      %br/
-      %input{name: "seltype", type: "radio", value: "4"}/
-      請求書発行必要一覧
-    %td{width: "220px"}
-      %span.TB12
-        受注済（受注メモ出力済）かつ請求書出力済
-      %br/
-      %input{name: "seltype", type: "radio", value: "5"}/
-      請求済一覧
-    %td{width: "110px"}
-      %span.TB12
-        入金済
-      %br/
-      %input{name: "seltype", type: "radio", value: "6"}/
-      入金済一覧
+      %td
+        = link_to "取引先一覧", adlists_path, class: "btn wtext btn-info"
+      - MenusHelper::GYO_LIST.each do |label, kanas|
+        %td
+          .dropdown
+            %label.btn.btn-sm.btn-secondary{tabindex: "0"}= "#{label} ▾"
+            %ul.dropdown-content.menu.bg-base-100.rounded-box.z-20.w-20.p-2.shadow.text-black{tabindex: "0"}
+              - kanas.each do |kana|
+                %li= link_to kana, adlists_path(gyo: kana)
+      %td
+        = link_to "船籍一覧", registries_path,  class: "btn wtext btn-info"
+  %hr/
+  .hoge
     %table
       %tr
-        %td
-          %span.TB12
-            船名 絞り込み
-          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sNAME", size: "16", type: "text", value: ""}/
+      %td
+        %form{method:"post", action: "#{orders_search_path}"}
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sDay", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{ymd}",id: "datepicker"}/
+        %br/
+        %input.btn.wtext.btn-info{onclick: "wrtCalendarLay(document.date_form.sDay,event)", type: "button", value: "範囲開始日"}/
+      %td
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "eDay", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{ymd}",id: "datepicker"}/
+        %br/
+        %input.btn.wtext.btn-info{onclick: "wrtCalendarLay(document.date_form.eDay,event)", type: "button", value: "範囲終了日"}/
+      %td
+        %select#ksel{name: "sime"}
+          %option{value: "#"} ●締日選択
+          %option{value: "末"} 月末
+          %option{value: "２５日"} ２５日
+          %option{value: "２０日"} ２０日
+          %option{value: "都度"} 都度
+          %option{value: "他"} その他
+      %td{width: "235px"}
+        %span.TB12
+          受注済（受注メモ出力済）かつ納品未（納品書、
+          出荷案内書未出力）
+        %br/
+        %input{checked: "", name: "seltype", type: "radio", value: "3"}/
+        納品未一覧
+      %td{width: "235px"}
+        %span.TB12
+          該当締日で受注済かつ納品済（納品書、
+          出荷案内書出力済）
+        %br/
+        %input{name: "seltype", type: "radio", value: "4"}/
+        請求書発行必要一覧
+      %td{width: "220px"}
+        %span.TB12
+          受注済（受注メモ出力済）かつ請求書出力済
+        %br/
+        %input{name: "seltype", type: "radio", value: "5"}/
+        請求済一覧
+      %td{width: "110px"}
+        %span.TB12
+          入金済
+        %br/
+        %input{name: "seltype", type: "radio", value: "6"}/
+        入金済一覧
+      %table
+        %tr
+          %td
+            %span.TB12
+              船名 絞り込み
+            %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sNAME", size: "16", type: "text", value: ""}/
+            %br/
+          %td
+            %span.TB12
+              会社名 絞り込み
+            %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "company", size: "16", type: "text", value: ""}/
+            %br/
+          %td{colspan: "2"}
+            %input.st1.btn.wtext.btn-info{type: "submit", value: "上記条件検索"}/
+      %input{name: "fixed", type: "hidden", value: "1"}/
+    %hr/
+    %table
+      %tr
+      %td
+        %form{method:"post", action: "#{orders_search_path}"}
+          %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{maxlength: "9", name: "keyword", size: "9", type: "text", style: "ime-mode:disabled;", value: "#{ym}"}/
           %br/
-        %td
-          %span.TB12
-            会社名 絞り込み
-          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "company", size: "16", type: "text", value: ""}/
+          %input.btn.wtext.btn-info{name: "submit", type: "submit", value: "取引番号"}/
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+      %td
+        %form{method: "post", action: "#{orders_alllist_path}"}
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "SMNo", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{smno}"}/
           %br/
-        %td{colspan: "2"}
-          %input.st1.btn.wtext.btn-info{type: "submit", value: "上記条件検索"}/
-    %input{name: "fixed", type: "hidden", value: "1"}/
-  %hr/
-  %table
-    %tr
-    %td
-      %form{method:"post", action: "#{orders_search_path}"}
-        %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{maxlength: "9", name: "keyword", size: "9", type: "text", style: "ime-mode:disabled;", value: "#{ym}"}/
-        %br/
-        %input.btn.wtext.btn-info{name: "submit", type: "submit", value: "取引番号"}/
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-    %td
-      %form{method: "post", action: "#{orders_alllist_path}"}
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "SMNo", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{smno}"}/
-        %br/
-        %input{name: "fixed", type: "hidden", value: "0"}/
-        %input.btn.wtext.btn-info{type: "submit", value: "未受決分"}/
-    %td
-      %form{method: "post", action: "#{orders_alllist_path}"}
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "SMNo", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{smno}"}/
-        %br/
-        %input{name: "fixed", type: "hidden", value: "1"}/
-        %input.btn.wtext.btn-info{type: "submit", value: "受注決定分"}/
-    %td
-      %form{method:"post", action: "#{orders_search_path}"}
-        %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", style: "ime-mode:disabled;", type: "text", value: ""}/
-        %input{name: "keykind", type: "hidden", value: "etype"}/
+          %input{name: "fixed", type: "hidden", value: "0"}/
+          %input.btn.wtext.btn-info{type: "submit", value: "未受決分"}/
+      %td
+        %form{method: "post", action: "#{orders_alllist_path}"}
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "SMNo", size: "10", style: "ime-mode:disabled;", type: "text", value: "#{smno}"}/
+          %br/
+          %input{name: "fixed", type: "hidden", value: "1"}/
+          %input.btn.wtext.btn-info{type: "submit", value: "受注決定分"}/
+      %td
+        %form{method:"post", action: "#{orders_search_path}"}
+          %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", style: "ime-mode:disabled;", type: "text", value: ""}/
+          %input{name: "keykind", type: "hidden", value: "etype"}/
+          %br/
+          %input.btn.wtext.btn-info{type: "submit", value: "形式検索"}/
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+      %td
+        %form{method:"post", action: "#{orders_search_path}"}
+          %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", style: "ime-mode:disabled;", type: "text", value: ""}/
+          %input{name: "keykind", type: "hidden", value: "engno"}/
+          %br/
+          %input.btn.wtext.btn-info{type: "submit", value: "機番検索"}/
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+      %td
+        %form{method:"post", action: "#{orders_search_path}"}
+          %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", type: "text", value: ""}/
+          %input{name: "keykind", type: "hidden", value: "shipname"}/
+          %br/
+          %input.btn.wtext.btn-info{type: "submit", value: "船名検索"}/
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+      %td
+        %form{method:"post", action: "#{orders_search_path}"}
+          %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", type: "text", value: ""}/
+          %input{name: "keykind", type: "hidden", value: "company"}/
+          %br/
+          %input.btn.wtext.btn-info{type: "submit", value: "会社名検索"}/
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+      %td
+        %form{method:"post", action: "#{orders_search_path}"}
+          %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "30",maxlength: "30", type: "text", value: ""}/
+          %input{name: "keykind", type: "hidden", value: "memo"}/
+          %br/
+          %input.btn.wtext.btn-info{type: "submit", value: "メモ検索"}/
+          = hidden_field_tag('authenticity_token', form_authenticity_token)
+    %hr{size: "3"}/
+    %table
+      %tr
+        %td{colspan: "5"}
+          在庫管理
+          %span.TB12
+            入庫の入力は、在庫の一覧から該当部品をクリックするか、新規在庫の場合「入庫入力」から
+            部品番号を指定します。Ａ部品表に無い部品の在庫登録もそこから行います。
+      %tr
+      %td
+        %form{action: stocks_path}
+          %span.TB12
+            部品コード
+          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+          %br/
+          %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品全在庫"}/
+      %td
+        %form{action: "zaikonlist.asp"}
+        %input.btn.wtext.btn-info{type: "submit", value: "Ａ在庫非表示リスト"}/
+      %td
+        %form{action: stocks_path}
+          %span.TB12 部品コード
+          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+          %input{name: "in_stock", type: "hidden", value: "1"}/
+          %br/
+          %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品在庫有り"}/
+      %td
+        %form{action: "norder.asp", method: "post"}
+        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品注文"}/
+      %td
+        %form{action: stockbs_path}
+          %span.TB12 部品コード
+          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+          %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ｂ部品全在庫"}/
+      %td
+        %input.btn.wtext.btn-info{type: "submit", value: "Ｂ在庫非表示リスト"}/
+        %form{action: "hzaikonlist.asp"}
+      %td
+        %form{action: stockbs_path}
+          %span.TB12 部品コード
+          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+          %input{name: "in_stock", type: "hidden", value: "1"}/
+          %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ｂ部品在庫有り"}/
+    %hr/
+    %table
+      %tr
+        %td{colspan: "4"}
+          Ａ部品台帳
+          %span.TB12
+            Ａ部品台帳のメンテ（価格改定など）は、部品台帳を検索してからクリックし
+            部品詳細を出力しその画面から実施します
+        %td{colspan: "4"}
+          Ｂ部品台帳
+          %span.TB12
+            Ｂ部品台帳のメンテは、Ｂ部品一覧を検索してからクリックし
+            部品詳細を出力しその画面から実施します
+      %tr
+      %td
+        %form{action: parts_path}
+          %span.TB12 部品コード
+          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+          %br/
+          %input.tb1.btn.wtext.btn-info{title: "１．新潟標準部品 NDPからの Excel価格表データに存在する分", type: "submit", value: "Ａ部品"}/
+      %td
+        %form{action: "partslist.asp", method: "post"}
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sNAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
         %br/
         %input.btn.wtext.btn-info{type: "submit", value: "形式検索"}/
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-    %td
-      %form{method:"post", action: "#{orders_search_path}"}
-        %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", style: "ime-mode:disabled;", type: "text", value: ""}/
-        %input{name: "keykind", type: "hidden", value: "engno"}/
+      %td
+        %form{action: "partslist.asp", method: "post"}
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "JNAME", size: "12", type: "text", value: ""}/
         %br/
-        %input.btn.wtext.btn-info{type: "submit", value: "機番検索"}/
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-    %td
-      %form{method:"post", action: "#{orders_search_path}"}
-        %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", type: "text", value: ""}/
-        %input{name: "keykind", type: "hidden", value: "shipname"}/
+        %input.btn.wtext.btn-info{type: "submit", value: "和文検索"}/
+      %td
+        %form{action: "partslist.asp", method: "post"}
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "ENAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
         %br/
-        %input.btn.wtext.btn-info{type: "submit", value: "船名検索"}/
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-    %td
-      %form{method:"post", action: "#{orders_search_path}"}
-        %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "10", type: "text", value: ""}/
-        %input{name: "keykind", type: "hidden", value: "company"}/
+        %input.btn.wtext.btn-info{type: "submit", value: "英文検索"}/
+      %td
+        %form{action: keparts_path}
+          %span.TB12 部品コード
+          %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+          %br/
+          %input.tb1.btn.wtext.btn-info{title: "１．新潟標準部品  （NDPからの Excel価格表データに存在する）の変化分（最近 増えている）\r\n２．新潟非標準部品（非定常品 注文にて調達。Excelにはないが新潟部品）\r\n３．一般標準部品  （新潟純正ではないが、新潟部品番号にて関連して取り扱い）\r\n４．他社部品      （ヤンマー部品など）\r\n   ", type: "submit", value: "Ｂ部品"}/
+      %td
+        %form{action: "hiteijolist.asp", method: "post"}
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sNAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
         %br/
-        %input.btn.wtext.btn-info{type: "submit", value: "会社名検索"}/
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-    %td
-      %form{method:"post", action: "#{orders_search_path}"}
-        %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "30",maxlength: "30", type: "text", value: ""}/
-        %input{name: "keykind", type: "hidden", value: "memo"}/
+        %input.btn.wtext.btn-info{type: "submit", value: "形式検索"}/
+      %td
+        %form{action: "hiteijolist.asp", method: "post"}
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "JNAME", size: "12", type: "text", value: ""}/
         %br/
-        %input.btn.wtext.btn-info{type: "submit", value: "メモ検索"}/
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-  %hr{size: "3"}/
-  %table
-    %tr
-      %td{colspan: "5"}
-        在庫管理
-        %span.TB12
-          入庫の入力は、在庫の一覧から該当部品をクリックするか、新規在庫の場合「入庫入力」から
-          部品番号を指定します。Ａ部品表に無い部品の在庫登録もそこから行います。
-    %tr
-    %td
-      %form{action: stocks_path}
-        %span.TB12
-          部品コード
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
+        %input.btn.wtext.btn-info{type: "submit", value: "和文検索"}/
+      %td
+        %form{action: "hiteijolist.asp", method: "post"}
+        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "ENAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
         %br/
-        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品全在庫"}/
-    %td
-      %form{action: "zaikonlist.asp"}
-      %input.btn.wtext.btn-info{type: "submit", value: "Ａ在庫非表示リスト"}/
-    %td
-      %form{action: stocks_path}
-        %span.TB12 部品コード
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
-        %input{name: "in_stock", type: "hidden", value: "1"}/
-        %br/
-        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品在庫有り"}/
-    %td
-      %form{action: "norder.asp", method: "post"}
-      %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ａ部品注文"}/
-    %td
-      %form{action: stockbs_path}
-        %span.TB12 部品コード
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
-        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ｂ部品全在庫"}/
-    %td
-      %input.btn.wtext.btn-info{type: "submit", value: "Ｂ在庫非表示リスト"}/
-      %form{action: "hzaikonlist.asp"}
-    %td
-      %form{action: stockbs_path}
-        %span.TB12 部品コード
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "partno", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
-        %input{name: "in_stock", type: "hidden", value: "1"}/
-        %input.tb1.btn.wtext.btn-info{type: "submit", value: "Ｂ部品在庫有り"}/
-  %hr/
-  %table
-    %tr
-      %td{colspan: "4"}
-        Ａ部品台帳
-        %span.TB12
-          Ａ部品台帳のメンテ（価格改定など）は、部品台帳を検索してからクリックし
-          部品詳細を出力しその画面から実施します
-      %td{colspan: "4"}
-        Ｂ部品台帳
-        %span.TB12
-          Ｂ部品台帳のメンテは、Ｂ部品一覧を検索してからクリックし
-          部品詳細を出力しその画面から実施します
-    %tr
-    %td
-      %form{action: parts_path}
-        %span.TB12 部品コード
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
-        %br/
-        %input.tb1.btn.wtext.btn-info{title: "１．新潟標準部品 NDPからの Excel価格表データに存在する分", type: "submit", value: "Ａ部品"}/
-    %td
-      %form{action: "partslist.asp", method: "post"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sNAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %br/
-      %input.btn.wtext.btn-info{type: "submit", value: "形式検索"}/
-    %td
-      %form{action: "partslist.asp", method: "post"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "JNAME", size: "12", type: "text", value: ""}/
-      %br/
-      %input.btn.wtext.btn-info{type: "submit", value: "和文検索"}/
-    %td
-      %form{action: "partslist.asp", method: "post"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "ENAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %br/
-      %input.btn.wtext.btn-info{type: "submit", value: "英文検索"}/
-    %td
-      %form{action: keparts_path}
-        %span.TB12 部品コード
-        %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "keyword", size: "9", maxlength: "9", style: "ime-mode:disabled; width: 8rem;", type: "text", value: ""}/
-        %br/
-        %input.tb1.btn.wtext.btn-info{title: "１．新潟標準部品  （NDPからの Excel価格表データに存在する）の変化分（最近 増えている）\r\n２．新潟非標準部品（非定常品 注文にて調達。Excelにはないが新潟部品）\r\n３．一般標準部品  （新潟純正ではないが、新潟部品番号にて関連して取り扱い）\r\n４．他社部品      （ヤンマー部品など）\r\n   ", type: "submit", value: "Ｂ部品"}/
-    %td
-      %form{action: "hiteijolist.asp", method: "post"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "sNAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %br/
-      %input.btn.wtext.btn-info{type: "submit", value: "形式検索"}/
-    %td
-      %form{action: "hiteijolist.asp", method: "post"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "JNAME", size: "12", type: "text", value: ""}/
-      %br/
-      %input.btn.wtext.btn-info{type: "submit", value: "和文検索"}/
-    %td
-      %form{action: "hiteijolist.asp", method: "post"}
-      %input.input.input-bordered.border-2.border-neutral.bg-base-100{name: "ENAME", size: "12", style: "ime-mode:disabled;", type: "text", value: ""}/
-      %br/
-      %input.btn.wtext.btn-info{type: "submit", value: "英文検索"}/
-    %tr
-    %td
-      %form{action: "nplist.asp"}
-        %input.btn.wtext.btn-info{type: "submit", value: "Ａ部品Excel出力"}/
-  %hr{size: "3"}/
-  %a{href: "./docs/取り扱い部品.txt"} 取り扱い部品の分類
-  %a{href: "./docs/新潟部品発注.txt"} Ａ部品発注
-  %a{href: "./docs/神戸エンジンサービス 懸案事項一覧.txt"} 懸案事項一覧
-  %a{href: "./docs/メール移動.txt"} メール移動.txt
-  /
-    <a href="./docs/新ＤＢ移行.txt">新ＤＢ移行</a>
-    <table align="">
-    <tr>
-    <form ACTION="haisou.asp">
-    <td>書類
-    <input class="tb1" type="submit" value="書類拝送案内">
-    </td>
-    </form>
-    </tr>
-    </table>
-    <hr>
-  %table{align: ""}
-    %tr
-    %td
-      %form{action: "pmplist.asp"}
-      見積参考情報
-      %input.tb23.btn.wtext.btn-info{type: "submit", value: "部品見積出現状況（金額ランキング）"}/
-    %td
-      %form{action: "pmnlist.asp"}
-      %input.tb23.btn.wtext.btn-info{type: "submit", value: "部品見積出現状況（員数ランキング）"}/
-    %td
-      %form{action: "selmonth.asp", method: "post"}
-      %input.tb1.btn.wtext.btn-info{type: "submit", value: "月別入出庫"}/
+        %input.btn.wtext.btn-info{type: "submit", value: "英文検索"}/
+      %tr
+      %td
+        %form{action: "nplist.asp"}
+          %input.btn.wtext.btn-info{type: "submit", value: "Ａ部品Excel出力"}/
+    %hr{size: "3"}/
+    %a{href: "./docs/取り扱い部品.txt"} 取り扱い部品の分類
+    %a{href: "./docs/新潟部品発注.txt"} Ａ部品発注
+    %a{href: "./docs/神戸エンジンサービス 懸案事項一覧.txt"} 懸案事項一覧
+    %a{href: "./docs/メール移動.txt"} メール移動.txt
+    /
+      <a href="./docs/新ＤＢ移行.txt">新ＤＢ移行</a>
+      <table align="">
+      <tr>
+      <form ACTION="haisou.asp">
+      <td>書類
+      <input class="tb1" type="submit" value="書類拝送案内">
+      </td>
+      </form>
+      </tr>
+      </table>
+      <hr>
+    %table{align: ""}
+      %tr
+      %td
+        %form{action: "pmplist.asp"}
+        見積参考情報
+        %input.tb23.btn.wtext.btn-info{type: "submit", value: "部品見積出現状況（金額ランキング）"}/
+      %td
+        %form{action: "pmnlist.asp"}
+        %input.tb23.btn.wtext.btn-info{type: "submit", value: "部品見積出現状況（員数ランキング）"}/
+      %td
+        %form{action: "selmonth.asp", method: "post"}
+        %input.tb1.btn.wtext.btn-info{type: "submit", value: "月別入出庫"}/
 - content_for(:javascript) do
   :javascript
     $(function(){
@@ -288,4 +275,3 @@
         return false;
       });
     });
-
