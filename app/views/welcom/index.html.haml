@@ -6,6 +6,33 @@
   #p5-canvas{style: "display:flex; justify-content:center;"}
 
 :javascript
-  setTimeout(function() {
-    window.location.href = "#{menu_path}";
-  }, 10000);
+  (function() {
+    var redirected = false;
+    function goToMenu() {
+      if (redirected) return;
+      redirected = true;
+      window.location.href = "#{menu_path}";
+    }
+    function afterCanvasReady() {
+      setTimeout(goToMenu, 10000);
+    }
+
+    var container = document.getElementById("p5-canvas");
+    if (container && container.querySelector("canvas")) {
+      afterCanvasReady();
+    } else if (container) {
+      var observer = new MutationObserver(function() {
+        if (container.querySelector("canvas")) {
+          observer.disconnect();
+          afterCanvasReady();
+        }
+      });
+      observer.observe(container, { childList: true });
+    } else {
+      afterCanvasReady();
+    }
+
+    // p5/ruby-wasmの読み込みに失敗・時間がかかりすぎた場合の保険。
+    // ページ表示から20秒経ったら強制的に遷移する。
+    setTimeout(goToMenu, 20000);
+  })();
