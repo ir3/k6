@@ -380,7 +380,7 @@ GEM
     sqlite3 (2.9.5-arm64-darwin)
     sqlite3 (2.9.5-x86_64-linux-gnu)
     sqlite3 (2.9.5-x86_64-linux-musl)
-    sshkit (1.25.0)
+    sshkit (1.25.1)
       base64
       logger
       net-scp (>= 1.1.2)
@@ -472,4 +472,4 @@ DEPENDENCIES
   web-console
 
 BUNDLED WITH
-  4.0.12
+  4.0.17
