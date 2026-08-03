@@ -77,6 +77,10 @@
   font-weight: normal !important;
 }
 
+.title {
+  white-space: nowrap;
+}
+
 .center-table caption {
   caption-side: top;
   font-size: 1.5em;
