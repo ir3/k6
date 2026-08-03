@@ -271,7 +271,7 @@ class OrdersController < ApplicationController
     session[:order_id] = @order.id
     session[:mno] = @order.mno
     # @orderparts = Orderpart.find_by_sql("SELECT * FROM orderparts WHERE (deleted_at IS NULL) AND mno=#{@order.mno}")
-    @orderparts = Orderpart.where(mno: @order.mno).order(:sno)
+    @orderparts = Orderpart.where(mno: @order.mno).reorder(:sno)
 
     respond_to do |format|
       format.html # show.html.erb
@@ -293,7 +293,7 @@ class OrdersController < ApplicationController
   # GET /orders/1/edit
   def edit
     @order = Order.find(params[:id])
-    @orderparts = Orderpart.where(mno: @order.mno).order(:sno)
+    @orderparts = Orderpart.where(mno: @order.mno).reorder(:sno)
   end
 
   # POST /orders

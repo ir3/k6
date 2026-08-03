@@ -8,7 +8,7 @@
           %li= link_to kana, adlists_path(gyo: kana)
 - unless @keyword || @gyo
   = paginate @adlists, window: 4, outer_window: 5, left: 1, right: 3
-%table.center-table.radius-table{width: "99%", align:"center"}
+%table.center-table.radius-table.zebra-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr.headline
       %th.idw ＃
@@ -16,16 +16,16 @@
       - if @new_order == 'on'
         %th.title{width:"100px"}
           新規注文登録
-      %th
+      %th{width:"230px"}
         よみ　/　名前
       %th 部署
       %th 新潟7桁
       %th
         郵便番号　/　住所
-      %th{width:"200px"}
+      %th{style: "white-space: nowrap;"}
         TEL　/　FAX
-      %th.datej 作成日
-      %th.datej 更新日
+      %th.datej{width:"75px"} 作成日
+      %th.datej{width:"75px"} 更新日
   %tbody
     - @adlists.each_with_index do |adlist,i|
       %tr
@@ -38,7 +38,7 @@
               = hidden_field_tag('adlist_id', adlist.no)
               = hidden_field_tag('authenticity_token', form_authenticity_token)
         %td
-          = link_to adlist.ruby, adlist
+          = link_to adlist.ruby, adlist, class: "text-sm text-gray-400"
           %br/
           - cname = adlist.company || adlist.name
           = link_to cname, adlist
@@ -48,8 +48,9 @@
         %td
           = adlist.cozip7
           = (adlist.coad1 ? adlist.coad1 : ' ') << (adlist.coad2 ? adlist.coad2 : ' ') << (adlist.coad3 ? adlist.coad3 : ' ')
-        %td
+        %td{style: "white-space: nowrap;"}
           = adlist.cotel
+          %br/
           = h adlist.cofax
         %td= adlist.created_at.strftime("%Y/%m/%d %H:%M")
         %td= adlist.updated_at.strftime("%Y/%m/%d %H:%M")

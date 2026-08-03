@@ -1,7 +1,5 @@
 %table
   %tr
-    %td{style:'text-align:center; font-size:xx-large'}
-      注文部品詳細
     %td{style:"padding: 5px 5px 5px 30px;"}
       %form{method:"post", action: "#{orders_keycopy_path}", name: "order_key_copy"}
         = hidden_field_tag('authenticity_token', form_authenticity_token)
@@ -108,25 +106,25 @@
       %br= @order.seiday
     %td
       入金(確認)日
-%table.center-table.radius-table{width: "99%", align:"center"}
+%table.center-table.radius-table.zebra-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr
-      %th{width:"100px"} id
       %th{width:"25px"} 順
       %th{width:"140px"} 部品コード
       %th{width:"100px"} ItemNo
       %th{width:""} 名称
       %th{width:""} 備考
+      %th{width:"80px"} (掛率)
       %th{width:"60px"} 数量
       %th{width:"120px"} 販売単価(円)
-      %th{width:"110px"} 単位重量kg
+      %th{width:"110px"} 金額
+      %th{width:"90px"} 販売単位
+      %th{width:"60px"} バラ
       %th{width:"90px"} 総重量kg
-      %th{width:"80px"} (掛率)
-      %th{width:"180px"} 更新日時
+      %th{width:"75px"} 更新日時
   %tbody
   - @orderparts.each do |orderpart|
     %tr
-      %td= orderpart.id
       %td{style:'text-align:right'}= orderpart.sno
       - if Part.find_by(pcode: orderpart.partno)
         - part_id = Part.find_by(pcode: orderpart.partno).id
@@ -141,9 +139,11 @@
       - part = Part.find_by(pcode: orderpart.partno)
       %td= part.jname if part
       %td= orderpart.info
+      %td{style:'text-align:right'}= orderpart.irate
       %td{style:'text-align:right'}= orderpart.qty
       %td{style:'text-align:right'}= orderpart.unitpd.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
-      %td{style:'text-align:right'}= orderpart.unitweight
-      %td{style:'text-align:right'}= orderpart.totalweight
-      %td{style:'text-align:right'}= orderpart.irate
+      %td{style:'text-align:right'}= (orderpart.irate.to_f * orderpart.qty.to_f * orderpart.unitpd.to_f).round.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+      %td= orderpart.unit
+      %td{style:'text-align:right'}= orderpart.bqty
+      %td{style:'text-align:right'}= orderpart.totalweight&.round(2)
       %td= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')

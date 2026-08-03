@@ -52,7 +52,16 @@
 }
 
 .center-table tbody td {
+  /* trに付けた role_color_class 等の背景色が透けて見えるように透過にする（table自体は白背景なので通常行は白のまま） */
+  background-color: transparent;
+}
+
+.zebra-table tbody tr:nth-child(odd) {
   background-color: #fff;
+}
+
+.zebra-table tbody tr:nth-child(even) {
+  background-color: #f2f2f2;
 }
 
 .navbar {
