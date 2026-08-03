@@ -31,7 +31,7 @@
     %th.title.bg-primary.text-primary-content{width:"90px"}  会社郵便番号
     %td{width:"80px"}= @adlist.cozip7
     %th.title.bg-primary.text-primary-content{width:"90px"}  会社住所
-    - coad = @adlist.coad1 + @adlist.coad2 + ' ' + @adlist.coad3
+    - coad = @adlist.coad1.to_s + @adlist.coad2.to_s + ' ' + @adlist.coad3.to_s
     %td{width:"810px"}= coad
 %table.table-bordered.table-condensed{align:"left",style:'margin-left:20px'}
   %tr

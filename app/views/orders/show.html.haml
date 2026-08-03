@@ -1,6 +1,8 @@
 %table
   %tr
     %td{style:"padding: 5px 5px 5px 30px;"}
+      = link_to "取引台帳", orders_path, class: "btn wtext btn-info"
+    %td{style:"padding: 5px 5px 5px 30px;"}
       %form{method:"post", action: "#{orders_keycopy_path}", name: "order_key_copy"}
         = hidden_field_tag('authenticity_token', form_authenticity_token)
         %input{type: "submit", value: "取引先、船名、機番を複製し新規取引登録", class: "btn wtext btn-info"}
@@ -14,23 +16,22 @@
       = link_to "台帳から削除", order_path, method: :delete, data: {confirm: "本当に削除しますか？"}, class: "btn wtext btn-info"
 %table.center-table.radius-table{width: "99%", align:"center"}
   %tr
-    %th.bg-primary.text-primary-content{width:"40px"} Id
-    %td{width:"70px"}= @order.id
-    %th.bg-primary.text-primary-content{width:"150px"} 取引管理No.
-    %td{width:"120px",style:'text-align:center; font-size:xx-large'}= @order.mno
-    %th.bg-primary.text-primary-content{width:"90px"} 会社名
-    %td{style:'text-align:center; font-size:x-large'}
-      - dp = ''
+    %th.bg-primary.text-primary-content{width:"150px", style: 'font-size: 14px;'} 取引管理No.
+    %td{width:"120px",style:'text-align:center;'}= @order.mno
+    %th.bg-primary.text-primary-content{width:"90px", style: 'font-size: 14px;'} 会社名
+    %td{style:'text-align:center;'}
       - adlist = Adlist.find_by(no: @order.adlist_id.to_s)
       - if adlist
-        - dp << adlist.company
-        - dp << ' '+adlist.section if adlist.section
-        = link_to dp, adlist
-    %th.bg-primary.text-primary-content{width:"60px"} 船名
-    %td{style:'text-align:center; font-size:xx-large'}
+        = link_to adlist.company, adlist
+    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 14px;'} 部署名
+    %td{style:'text-align:center;'}
+      - if adlist
+        = adlist.section
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 14px;'} 船名
+    %td{style:'text-align:center;'}
       = @order.shipname
-    %th.bg-primary.text-primary-content{width:"60px"} 船籍
-    %td{style:'text-align:center; font-size:xx-large'}
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 14px;'} 船籍
+    %td{style:'text-align:center;'}
       = @order.country
 %table.center-table.radius-table{width: "99%", align:"center"}
   %tr
@@ -39,7 +40,7 @@
     %th.bg-primary.text-primary-content{width:"60px"} 内容
     %td= @order.memo
     %th.bg-primary.text-primary-content{width:"60px"} 機番
-    %td{width:"160px",style:'text-align:center; font-size:xx-large'}
+    %td{width:"160px",style:'text-align:center;'}
       = @order.engno
     %th.bg-primary.text-primary-content{width:"150px"} 型式(機種)
     %td{width:"120px",style:'text-align:center; font-size:x-large'}
@@ -69,7 +70,7 @@
     %th.bg-primary.text-primary-content{width:"100px"} 納入期日
     %td{width:"150px"}= @order.rdate
     %th.bg-primary.text-primary-content{width:"160px"} 納入コメント
-    %td= @order.ncomment
+    %td{width: "300px"}= @order.ncomment
     %th.bg-primary.text-primary-content{width:"80px"} 点数
     %td= @order.pnum
     %th.bg-primary.text-primary-content{width:"150px"} A部品掛け率
@@ -78,8 +79,11 @@
     %td{width:"80px"}= @order.irate2
     %th.bg-primary.text-primary-content{width:"80px"} 値引き
     %td= @order.nebiki
-    %th.bg-primary.text-primary-content{width:"100px"} 更新日時
-    %td.datej= @order.updated_at.strftime("%Y/%m/%d %H:%M")
+    %th.bg-primary.text-primary-content{width:"50px", style: "font-size: 11px;"}
+      更新
+      %br
+      日時
+    %td.datej{width: "72px", style: "font-size: 9px;"}= @order.updated_at.strftime("%Y/%m/%d %H:%M")
 %table
   %tr
     %td
@@ -110,21 +114,21 @@
   %thead.bg-primary.text-primary-content
     %tr
       %th{width:"25px"} 順
-      %th{width:"140px"} 部品コード
-      %th{width:"100px"} ItemNo
+      %th{width:"120px"} 部品コード
+      %th{width:"130px"} ItemNo
       %th{width:""} 名称
       %th{width:""} 備考
       %th{width:"80px"} (掛率)
       %th{width:"60px"} 数量
-      %th{width:"120px"} 販売単価(円)
+      %th{width:"90px"} 販売単価
       %th{width:"110px"} 金額
-      %th{width:"90px"} 販売単位
+      %th{width:"50px", style: 'font-size: 11px; white-space: nowrap;'} 販売単位
       %th{width:"60px"} バラ
       %th{width:"90px"} 総重量kg
-      %th{width:"75px"} 更新日時
+      %th{width:"75px", style: 'font-size: 11px; white-space: nowrap;'} 更新日時
   %tbody
   - @orderparts.each do |orderpart|
-    %tr
+    %tr{class: (orderpart.kzaiko == "^" ? "!bg-info/20" : nil)}
       %td{style:'text-align:right'}= orderpart.sno
       - if Part.find_by(pcode: orderpart.partno)
         - part_id = Part.find_by(pcode: orderpart.partno).id
@@ -146,4 +150,4 @@
       %td= orderpart.unit
       %td{style:'text-align:right'}= orderpart.bqty
       %td{style:'text-align:right'}= orderpart.totalweight&.round(2)
-      %td= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')
+      %td{style: 'font-size: 9px; line-height: 1.1;'}= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')
