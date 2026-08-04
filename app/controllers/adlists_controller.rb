@@ -11,11 +11,14 @@ class AdlistsController < ApplicationController
     @gyo = params[:gyo]
     @new_order = params[:new_order]
     if @gyo.present?
-      @adlists = Adlist.where('ruby LIKE ? OR ruby LIKE ?', "#{@gyo}%", "#{hiragana_to_katakana(@gyo)}%").order(:id)
-    elsif @keyword && !@keyword.empty?
-      @adlists = Adlist.find_by_sql("SELECT * FROM adlists WHERE ruby like '#{@keyword}%' ORDER BY id")
+      patterns = kana_with_voiced_variants(@gyo).flat_map { |k| ["#{k}%", "#{hiragana_to_katakana(k)}%"] }
+      where_sql = patterns.map { 'ruby LIKE ?' }.join(' OR ')
+      @adlists = Adlist.where(where_sql, *patterns).reorder(Arel.sql('CAST(no AS INTEGER) ASC'))
+    elsif @keyword.present?
+      like = "%#{@keyword}%"
+      @adlists = Adlist.where('ruby LIKE ? OR company LIKE ? OR name LIKE ?', like, like, like).reorder(Arel.sql('CAST(no AS INTEGER) ASC'))
     else
-      @adlists = Adlist.order('id').page params[:page]
+      @adlists = Adlist.reorder(Arel.sql('CAST(no AS INTEGER) ASC')).page params[:page]
     end
 
     respond_to do |format|
@@ -247,6 +250,19 @@ class AdlistsController < ApplicationController
   end
 
   private
+
+  # 清音（濁点なし）から濁音・半濁音への対応表
+  DAKUTEN_MAP = {
+    "か" => %w[が], "き" => %w[ぎ], "く" => %w[ぐ], "け" => %w[げ], "こ" => %w[ご],
+    "さ" => %w[ざ], "し" => %w[じ], "す" => %w[ず], "せ" => %w[ぜ], "そ" => %w[ぞ],
+    "た" => %w[だ], "ち" => %w[ぢ], "つ" => %w[づ], "て" => %w[で], "と" => %w[ど],
+    "は" => %w[ば ぱ], "ひ" => %w[び ぴ], "ふ" => %w[ぶ ぷ], "へ" => %w[べ ぺ], "ほ" => %w[ぼ ぽ]
+  }.freeze
+
+  # 「た」なら「た」「だ」のように、清音とその濁音・半濁音をまとめて返す
+  def kana_with_voiced_variants(kana)
+    [kana] + DAKUTEN_MAP.fetch(kana, [])
+  end
 
   # ひらがなをカタカナに変換する（ひらがなとカタカナのコードポイントは 0x60 差分で対応）
   def hiragana_to_katakana(str)

@@ -7,7 +7,7 @@
       %ul
         - @adlist.errors.full_messages.each do |msg|
           %li= msg
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+  %table.table-bordered.table-condensed.center-table{width: "99%", align:"center"}
     %tr{bgcolor: "#e3e3e3"}
       %th.title{width:"100px"} よみがな
       %td= f.text_field :ruby, size:"36", placeholder:"必須"
@@ -22,7 +22,7 @@
       %td= f.text_field :section, size:"36", placeholder:"同一会社で部署の区別が必要なら入力"
       %th.title{width:"100px"} 部署２
       %td= f.text_field :section2, size:"36", placeholder:"さらに詳細に区別が必要なら入力"
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+  %table.table-bordered.table-condensed.center-table{width: "99%", align:"center"}
     %tr{bgcolor: "#e3e3e3"}
       %th.title{width:"100px"} 会社郵便番号
       %td= f.text_field :cozip7, size:"8", placeholder:"xxx-xxxx"
@@ -32,7 +32,7 @@
       %td= f.text_field :coad2, size:"36", placeholder:"詳細表示 丁目 番地 号"
       %th.title{width:"100px"} 会社住所３
       %td= f.text_field :coad3, size:"36", placeholder:"ビル名部屋名.."
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+  %table.table-bordered.table-condensed.center-table{width: "99%", align:"center"}
     %tr
       %th.title{width:"100px"} 会社メール
       %td= f.text_field :comail, size:"36", placeholder:"xxxx..xx@xxx.xxx"
@@ -55,7 +55,7 @@
       %td= f.text_field :name, size:"36", placeholder:"代表者名"
       %th.title{width:"100px"} 役職
       %td= f.text_field :position, size:"36", placeholder:"〇〇部長.."
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+  %table.table-bordered.table-condensed.center-table{width: "99%", align:"center"}
     %tr
       %th.title{width:"100px"} 郵便番号
       %td= f.text_field :zip7, size:"8", placeholder:"xxx-xxxx"
@@ -65,7 +65,7 @@
       %td= f.text_field :address2, size:"36", placeholder:"詳細表示 丁目 番地 号"
       %th.title{width:"100px"} 住所３
       %td= f.text_field :address3, size:"36", placeholder:"ビル名部屋名.."
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
+  %table.table-bordered.table-condensed.center-table{width: "99%", align:"center"}
     %tr{bgcolor: "#e3e3e3"}
       %th.title{width:"100px"} メール
       %td= f.text_field :email, size:"36", placeholder:"xxxx..xx@xxx.xxx"
@@ -79,4 +79,4 @@
       %th.title{width:"100px"} url
       %td= f.text_field :url, size:"36", placeholder:"http://xxxxx/xxxxx.."
   .actions
-    = f.submit
+    = f.submit class: "btn btn-primary"

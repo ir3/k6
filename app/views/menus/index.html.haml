@@ -14,6 +14,10 @@
               - kanas.each do |kana|
                 %li= link_to kana, adlists_path(gyo: kana)
       %td
+        = form_with url: adlists_path, method: :get, local: true, class: "flex gap-1 items-center" do |f|
+          = f.text_field :keyword, placeholder: "会社名・よみ等で検索", class: "input input-bordered input-sm"
+          = f.submit "検索", class: "btn btn-sm btn-secondary"
+      %td
         = link_to "船籍一覧", registries_path,  class: "btn wtext btn-info"
   %hr/
   .hoge
