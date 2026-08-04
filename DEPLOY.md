@@ -50,6 +50,36 @@ sudo systemctl restart k6
 
 `sudo systemctl restart k6` は毎回必須（本番は `config.cache_classes = true` でコード変更を自動リロードしないため、`git pull` だけでは反映されない）。
 
+### なぜ `assets:precompile` だけで完結するのか（`yarn build`を別途叩く必要がない理由）
+
+Propshaftの`assets:precompile`タスクの中身は実はこれだけ（[propshaft](https://github.com/rails/propshaft) `lib/propshaft/railties/assets.rake`、2026-08-04時点でインストールされているv1.3.2で確認）。
+
+```ruby
+task precompile: :environment do
+  Rails.application.assets.processor.process
+end
+```
+
+Sprockets時代と違い、Propshaft自体はJS/CSSの変換（バンドル・トランスパイル）は一切しない。やっているのは「`config.assets.paths`（`app/assets/builds/`含む）にある出来上がったファイルにダイジェスト（内容ハッシュ）を付けて`public/assets/`へ配置し、`.manifest.json`に論理名→ダイジェスト付きファイル名の対応を書き出す」ことだけ。
+
+実際のJS/CSSビルド（esbuild・Tailwind実行）は`jsbundling-rails`（v1.3.1）と`cssbundling-rails`（v1.4.3）が担当していて、この2つが`assets:precompile`タスクに前提条件としてフックしている（`jsbundling-rails`の`lib/tasks/jsbundling/build.rake`）。
+
+```ruby
+if Rake::Task.task_defined?("assets:precompile")
+  Rake::Task["assets:precompile"].enhance(["javascript:build"])
+end
+```
+
+（`cssbundling-rails`も同様に`css:build`をフック）。つまり`bin/rails assets:precompile`を叩くと、内部で
+
+1. `yarn build`（`javascript:build`）
+2. `yarn build:css`（`css:build`）
+3. Propshaft本体のダイジェスト付与＋`public/assets/`配置＋manifest更新
+
+の順で自動実行される。**だから`yarn build`/`yarn build:css`を手動で先に叩く必要はない**（叩いても実害はないが、`assets:precompile`が結局もう一度実行するだけの無駄な操作）。
+
+`assets:precompile`自体を省略できないのは、上述の通りnginx（[config/nginx/k6.conf](config/nginx/k6.conf)）が`/assets/`をPumaを一切経由せず直接静的配信するため。nginxはRubyを実行しないので、開発環境のPropshaftのように「リクエスト時にその場でダイジェストを計算して返す」ということができず、`public/assets/`に実ファイルとして正しいダイジェスト付きファイルが物理的に存在している必要がある。
+
 ## 手動で `bin/rails` コマンドを叩くときの注意（RAILS_ENV）
 
 サーバー上で `bin/rails` を単発で叩く（`assets:clobber`・`runner`・`console`など）ときは、**必ず `RAILS_ENV=production` を明示的に付ける**こと。
