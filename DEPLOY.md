@@ -80,6 +80,14 @@ end
 
 `assets:precompile`自体を省略できないのは、上述の通りnginx（[config/nginx/k6.conf](config/nginx/k6.conf)）が`/assets/`をPumaを一切経由せず直接静的配信するため。nginxはRubyを実行しないので、開発環境のPropshaftのように「リクエスト時にその場でダイジェストを計算して返す」ということができず、`public/assets/`に実ファイルとして正しいダイジェスト付きファイルが物理的に存在している必要がある。
 
+### `assets:clobber`は毎回やらなくていい（2026-08-04確認）
+
+`assets:clobber`は`public/assets`（output_path）を丸ごと削除するだけ（propshaftの`processor.rb`: `FileUtils.rm_r(output_path)`）。一方`assets:precompile`は既存のダイジェスト付きファイルを消さず「まだ無いものだけ追加」する設計なので、`clobber`なしで毎回`precompile`するだけでも壊れない。
+
+毎回`clobber`を挟むのはむしろ避けたほうがいい。デプロイ直前にサイトを開いていた人のブラウザには古いダイジェスト名（`application-旧hash.css`など）を参照したHTMLがキャッシュされていることがあり、`clobber`で物理ファイルごと消すと、その人はリロードするまで一時的にCSS/JSが崩れる。`precompile`だけなら新しいファイルが追加されるだけなので、この問題は起きない。
+
+`public/assets`配下のファイル数が異常に増えてきた時のお掃除用途としてのみ使えば十分（2026-08-04時点で34件、特に問題なし）。
+
 ## 手動で `bin/rails` コマンドを叩くときの注意（RAILS_ENV）
 
 サーバー上で `bin/rails` を単発で叩く（`assets:clobber`・`runner`・`console`など）ときは、**必ず `RAILS_ENV=production` を明示的に付ける**こと。
