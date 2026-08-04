@@ -13,13 +13,23 @@ Docker・Kamalは使わず、systemd + nginx の直接実行。
 ```bash
 cd /var/www/k6
 git pull
+
+# .ruby-versionが変わっていたら、rbenvで新バージョンを入れる
+RBENV_ROOT=/opt/anyenv/envs/rbenv /opt/anyenv/envs/rbenv/bin/rbenv install <新バージョン>
+
+# .node-versionが変わっていたら、nodenvで新バージョンを入れる
+NODENV_ROOT=/opt/anyenv/envs/nodenv /opt/anyenv/envs/nodenv/bin/nodenv install <新バージョン>
+NODENV_ROOT=/opt/anyenv/envs/nodenv /opt/anyenv/envs/nodenv/versions/<新バージョン>/bin/npm install -g yarn
+NODENV_ROOT=/opt/anyenv/envs/nodenv /opt/anyenv/envs/nodenv/bin/nodenv rehash
+
 bundle install
 
 # Rails本番環境変数をこのシェルにも読み込む（systemdのk6.serviceと同じ値）
 for kv in $(sudo systemctl show k6 --property=Environment | sed 's/^Environment=//'); do export "$kv"; done
 
-# node/yarnをPATHに通す（systemdのPATHには含まれていないため）
+# node/yarnをPATHに通す（↑でsystemd側のPATH（nodenv抜き）に上書きされるため、必ず"後"に実行）
 export PATH="/opt/anyenv/envs/nodenv/shims:/opt/anyenv/envs/nodenv/bin:$PATH"
+yarn -v   # 1.22.x系（nodenv shims）が出ることを確認。出なければ上のPATH設定を忘れている
 
 # アセットビルド + フィンガープリント生成（cssやjsを変更した場合は必須）
 yarn install
@@ -64,6 +74,8 @@ RAILS_ENV=production bin/rails assets:clobber
 > シークレットをunitファイルに平文で書く方式はセキュリティ上あまり推奨されない（`systemctl show` や `/proc` から読める）。余裕があれば `EnvironmentFile=` + `.env`（パーミッション600）や `bin/rails credentials` + `master.key` への移行を検討。
 
 ## Node/yarn のセットアップ（初回 or `.node-version` 更新時のみ）
+
+> 「通常のデプロイ手順」に統合済み（2026-08-04）。以下は詳細の補足。
 
 `.node-version` が更新された場合、サーバー側で該当バージョンの Node を入れ直す必要がある。
 
