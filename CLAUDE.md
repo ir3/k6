@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-**Docker は使用しない。** Dockerfile・docker-compose・Kamal は不要。デプロイは systemd + nginx の直接実行。
+**Docker は使用しない。** Dockerfile・docker-compose・Kamal は不要。デプロイは systemd + nginx の直接実行。手順・トラブルシューティングは [DEPLOY.md](DEPLOY.md) を参照。
 
 K6 is a Rails 8 application combining user management/authentication with business functions ported from kobeengine (a legacy Rails app). Built with Hotwire (Turbo + Stimulus), Tailwind CSS + DaisyUI, HAML templates, and SQLite (via Solid Cache/Queue/Cable). Authentication is custom (Rails 8 generator, not Devise). UI is Japanese-localized.
 
@@ -53,12 +53,14 @@ bin/rails db:schema:load
 bin/rails db:reset
 ```
 
-### Deployment (Kamal)
+### Deployment
+
+Docker/Kamalは使わない。systemd + nginx（ConoHa本番）への直接デプロイ。手順は [DEPLOY.md](DEPLOY.md) 参照。
 
 ```bash
-bin/kamal deploy
-bin/kamal console
-bin/kamal logs -f
+sudo systemctl status k6
+sudo systemctl restart k6
+sudo journalctl -u k6 -f
 ```
 
 ## Architecture
