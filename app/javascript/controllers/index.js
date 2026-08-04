@@ -15,3 +15,6 @@ application.register("row-link", RowLinkController)
 
 import RubyWasmController from "./ruby_wasm_controller"
 application.register("ruby-wasm", RubyWasmController)
+
+import TableFontSizeController from "./table_font_size_controller"
+application.register("table-font-size", TableFontSizeController)

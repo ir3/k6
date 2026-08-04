@@ -19,7 +19,14 @@
     = link_to(order.shipname, "/orders?shipname=#{order.shipname}") if order.shipname
   %td{style: td_style}= order.country
   %td{style: "#{td_style}text-align:right"}= order.pnum
-  %td{style: td_style}= order.orderitem
+  %td{style: td_style}
+    .kenmei-col
+      - if order.orderitem.to_s =~ /\A(\d{5})(（受注）|\(受注\))\z/
+        = Regexp.last_match(1)
+        %br/
+        = Regexp.last_match(2)
+      - else
+        = order.orderitem
   %td{style: td_style}= order.ono
   %td{style: td_style}= order.memo
   %td{style: td_style}

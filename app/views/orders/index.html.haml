@@ -1,6 +1,6 @@
 = paginate @orders, window: 4, outer_window: 5, left: 1, right: 3
-%table.center-table.radius-table{width: "99%", align:"center"}
-  %thead.bg-primary.text-primary-content
+%table.center-table.radius-table.list-table{width: "99%", align:"center"}
+  %thead.bg-primary.text-primary-content.th-compact
     %tr.headline
       - para = nil
       - para1 = "&keyword=#{session[:keyword]}" if session[:keyword]
@@ -25,7 +25,8 @@
       %th 船名
       %th{width:"45px"} 船籍
       %th{width:"45px"} 点数
-      %th 件名
+      %th
+        .kenmei-col 件名
       %th 客先注文番号
       %th 内容
       %th Tc Tcno Zp Zpno Glc Glcno Mg Mgno

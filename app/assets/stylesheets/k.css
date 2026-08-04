@@ -96,6 +96,17 @@
 .menu-table th {
   border: 1px solid #e0e0e0;
 }
+.kenmei-col {
+  /* table-layout: auto では th/td 自体の width 指定はセル間の余白配分で無視されがちなので、
+     中の div に固定幅を持たせてカラム幅を強制的に狭める */
+  width: 60px;
+  overflow-wrap: break-word;
+}
+.th-compact th {
+  /* 「取引管理No.」が折り返さない大きさに統一（小さめ） */
+  font-size: 0.75rem !important;
+  white-space: nowrap;
+}
 .alert {
   overflow: hidden;
   transition:

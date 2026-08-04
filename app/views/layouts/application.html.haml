@@ -15,7 +15,7 @@
     = stylesheet_link_tag "application", "data-turbo-track": "reload"
     = stylesheet_link_tag "k", "data-turbo-track": "reload"
     = javascript_include_tag "application", "data-turbo-track": "reload", type: "module"
-  %body
+  %body{data: {controller: "table-font-size"}}
     .navbar.bg-blue-900.text-white{style: "min-height: calc(4rem - 4px); padding-top: 0; padding-bottom: 0;"}
       - if session[:visited_menu]
         %a.btn.btn-ghost.normal-case.text-xl{style: "color: #fde047; font-size: 0.85rem;"} 神戸エンジンサービス
@@ -56,6 +56,7 @@
             %a About
           %li
             %a Contact
+      = render "shared/font_size_control"
     - flash.each do |type, message|
       = render AlertComponent.new(message: message, variant: type.to_sym, auto_dismiss: true)
     - if flash[:reset_url]
