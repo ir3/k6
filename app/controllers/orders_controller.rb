@@ -113,18 +113,28 @@ class OrdersController < ApplicationController
     keykind = params[:keykind]
     logger.debug  keyword
     logger.debug  keykind
+    if params[:mno_order]
+      if session[:mno_order] == 'DESC'
+        session[:mno_order] = 'ASC'
+      elsif session[:mno_order] == 'ASC'
+        session[:mno_order] = 'DESC'
+      end
+    else
+      session[:mno_order] = 'ASC'
+    end
+    mno_order = session[:mno_order]
     keykind_labels = { "etype" => "形式検索", "engno" => "機番検索", "shipname" => "船名検索", "company" => "会社名検索", "memo" => "メモ検索" }
     if keykind && !keykind.empty?
       if keykind == 'company'
         adlist_id = Adlist.find_by_sql("SELECT * FROM adlists WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%'").first
-        @orders = Order.where('adlist_id = ?', adlist_id.id)
+        @orders = Order.where('adlist_id = ?', adlist_id.id).order("id #{mno_order}")
       else
-        @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%'")
+        @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%' ORDER BY id #{mno_order}")
       end
       @search_condition = "#{keykind_labels[keykind] || keykind}: #{keyword}"
     elsif
       session[:yearmonth] = keyword
-      @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like '#{keyword}%'")
+      @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like '#{keyword}%' ORDER BY id #{mno_order}")
       @search_condition = "取引番号: #{keyword}"
     end
     @orders = paginate_orders(@orders)

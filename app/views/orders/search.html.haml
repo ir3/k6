@@ -3,7 +3,7 @@
 %table.center-table.radius-table.list-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content.th-compact
     %tr
-      %th 取引管理No.
+      %th{width:"95px"}= link_to '取引No↑↓', orders_search_path(keyword: params[:keyword], keykind: params[:keykind], mno_order: session[:mno_order]), class: "btn btn-sm wtext btn-info"
       %th 客No.
       %th 客先
       %th 型式

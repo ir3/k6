@@ -13,11 +13,11 @@
       - para = para4 if para4
       - if para
         - if para =~/keyword/
-          %th{width:"95px"}= link_to '取管No.↑↓', "/orders?mno_order=#{session[:mno_order]} ",  class: "btn wtext btn-info"
+          %th{width:"95px"}= link_to '取引No↑↓', "/orders?mno_order=#{session[:mno_order]} ",  class: "btn btn-sm wtext btn-info"
         - else
-          %th{width:"95px"}= link_to '取管No.↑↓', "/orders?mno_order=#{session[:mno_order]}#{para}",  class: "btn wtext btn-info"
+          %th{width:"95px"}= link_to '取引No↑↓', "/orders?mno_order=#{session[:mno_order]}#{para}",  class: "btn btn-sm wtext btn-info"
       - else
-        %th{width:"95px"}= link_to '取管No.↑↓', "/orders?mno_order=#{session[:mno_order]} ",  class: "btn wtext btn-info"
+        %th{width:"95px"}= link_to '取引No↑↓', "/orders?mno_order=#{session[:mno_order]} ",  class: "btn btn-sm wtext btn-info"
       %th{width:"50px"}  取引先No.
       %th{width:"210px"}   取引先
       %th 型式

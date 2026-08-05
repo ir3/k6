@@ -2,7 +2,7 @@
 %html{"data-theme" => "mytheme"}
   %head
     %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
-    %title= content_for(:title) || "K6"
+    %title= screen_title.present? ? "神戸エンジン #{screen_title}" : "神戸エンジン 業務システム"
     %meta{:content => "width=device-width,initial-scale=1", :name => "viewport"}/
     %meta{:content => "yes", :name => "apple-mobile-web-app-capable"}/
     %meta{:content => "yes", :name => "mobile-web-app-capable"}/
@@ -21,17 +21,10 @@
         %a.btn.btn-ghost.normal-case.text-xl{style: "color: #fde047; font-size: 0.85rem;"} 神戸エンジンサービス
       - else
         %a.btn.btn-ghost.normal-case.text-xl.text-white ようこそ
-      - if controller_name == "menus"
-        %span.text-white.ml-2 業務システム
-      - if controller_name == "orders"
-        - if action_name == "show"
-          %span.text-white.ml-2 注文部品詳細
-        - else
-          %span.text-white.ml-2 取引台帳
-          - if @search_condition
-            %span.text-white.text-xs.ml-2.opacity-80= @search_condition
-      - if content_for?(:page_title)
-        %span.text-white.text-lg.ml-2= yield(:page_title)
+      - if screen_title.present?
+        %span.text-white.text-lg.ml-2= screen_title
+        - if controller_name == "orders" && action_name != "show" && @search_condition
+          %span.text-white.text-xs.ml-2.opacity-80= @search_condition
       -if authenticated?
         -user = User.find(Current.user.id)
         =link_to "#{Current.user.email_address}さん", user_path(user), class: "ml-8"
