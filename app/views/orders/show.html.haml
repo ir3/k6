@@ -14,70 +14,70 @@
       = link_to "台帳を修正", edit_order_path,  class: "btn wtext btn-info"
     %td{style:"padding: 5px 5px 5px 30px;"}
       = link_to "台帳から削除", order_path, method: :delete, data: {confirm: "本当に削除しますか？"}, class: "btn wtext btn-info"
-%table.center-table.radius-table{width: "99%", align:"center"}
+%table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
-    %th.bg-primary.text-primary-content{width:"150px", style: 'font-size: 14px;'} 取引管理No.
+    %th.bg-primary.text-primary-content{width:"150px", style: 'font-size: 11px;'} 取引管理No.
     %td{width:"120px",style:'text-align:center;'}= @order.mno
-    %th.bg-primary.text-primary-content{width:"90px", style: 'font-size: 14px;'} 会社名
+    %th.bg-primary.text-primary-content{width:"90px", style: 'font-size: 11px;'} 会社名
     %td{style:'text-align:center;'}
       - adlist = Adlist.find_by(no: @order.adlist_id.to_s)
       - if adlist
         = link_to adlist.company, adlist
-    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 14px;'} 部署名
+    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 11px;'} 部署名
     %td{style:'text-align:center;'}
       - if adlist
         = adlist.section
-    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 14px;'} 船名
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 船名
     %td{style:'text-align:center;'}
       = @order.shipname
-    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 14px;'} 船籍
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 船籍
     %td{style:'text-align:center;'}
       = @order.country
-%table.center-table.radius-table{width: "99%", align:"center"}
+%table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
-    %th.bg-primary.text-primary-content{width:"60px"} 件名
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 件名
     %td= @order.orderitem
-    %th.bg-primary.text-primary-content{width:"60px"} 内容
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 内容
     %td= @order.memo
-    %th.bg-primary.text-primary-content{width:"60px"} 機番
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 機番
     %td{width:"160px",style:'text-align:center;'}
       = @order.engno
-    %th.bg-primary.text-primary-content{width:"150px"} 型式(機種)
-    %td{width:"120px",style:'text-align:center; font-size:x-large'}
+    %th.bg-primary.text-primary-content{width:"150px", style: 'font-size: 11px;'} 型式(機種)
+    %td{width:"120px",style:'text-align:center;'}
       = @order.etype
-    %th.bg-primary.text-primary-content{width:"100px"} 客先註番
+    %th.bg-primary.text-primary-content{width:"100px", style: 'font-size: 11px;'} 客先註番
     %td= @order.ono
-%table.center-table.radius-table{width: "99%", align:"center"}
+%table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
-    %th.bg-primary.text-primary-content{width:"40px"} TC
+    %th.bg-primary.text-primary-content{width:"40px", style: 'font-size: 11px;'} TC
     %td= @order.tc
-    %th.bg-primary.text-primary-content{width:"55px"} TCNo.
+    %th.bg-primary.text-primary-content{width:"55px", style: 'font-size: 11px;'} TCNo.
     %td= @order.tcno
-    %th.bg-primary.text-primary-content{width:"40px"} ZP
+    %th.bg-primary.text-primary-content{width:"40px", style: 'font-size: 11px;'} ZP
     %td= @order.zp
-    %th.bg-primary.text-primary-content{width:"55px"} ZPNo.
+    %th.bg-primary.text-primary-content{width:"55px", style: 'font-size: 11px;'} ZPNo.
     %td= @order.zpno
-    %th.bg-primary.text-primary-content{width:"40px"} GLC
+    %th.bg-primary.text-primary-content{width:"40px", style: 'font-size: 11px;'} GLC
     %td= @order.glc
-    %th.bg-primary.text-primary-content{width:"55px"} GLNo.
+    %th.bg-primary.text-primary-content{width:"55px", style: 'font-size: 11px;'} GLNo.
     %td= @order.glcno
-    %th.bg-primary.text-primary-content{width:"40px"} MG
+    %th.bg-primary.text-primary-content{width:"40px", style: 'font-size: 11px;'} MG
     %td= @order.mg
-    %th.bg-primary.text-primary-content{width:"55px"} MGNo.
+    %th.bg-primary.text-primary-content{width:"55px", style: 'font-size: 11px;'} MGNo.
     %td= @order.mgno
-%table.center-table.radius-table{width: "99%", align:"center"}
+%table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
-    %th.bg-primary.text-primary-content{width:"100px"} 納入期日
+    %th.bg-primary.text-primary-content{width:"100px", style: 'font-size: 11px;'} 納入期日
     %td{width:"150px"}= @order.rdate
-    %th.bg-primary.text-primary-content{width:"160px"} 納入コメント
+    %th.bg-primary.text-primary-content{width:"160px", style: 'font-size: 11px;'} 納入コメント
     %td{width: "300px"}= @order.ncomment
-    %th.bg-primary.text-primary-content{width:"80px"} 点数
+    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 11px;'} 点数
     %td= @order.pnum
-    %th.bg-primary.text-primary-content{width:"150px"} A部品掛け率
+    %th.bg-primary.text-primary-content{width:"150px", style: 'font-size: 11px;'} A部品掛け率
     %td{width:"80px"}= @order.irate
-    %th.bg-primary.text-primary-content{width:"140px"}  以外掛け率
+    %th.bg-primary.text-primary-content{width:"140px", style: 'font-size: 11px;'}  以外掛け率
     %td{width:"80px"}= @order.irate2
-    %th.bg-primary.text-primary-content{width:"80px"} 値引き
+    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 11px;'} 値引き
     %td= @order.nebiki
     %th.bg-primary.text-primary-content{width:"50px", style: "font-size: 11px;"}
       更新
@@ -113,18 +113,18 @@
 %table.center-table.radius-table.zebra-table.list-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr
-      %th{width:"25px"} 順
-      %th{width:"120px"} 部品コード
-      %th{width:"130px"} ItemNo
-      %th{width:""} 名称
-      %th{width:""} 備考
-      %th{width:"80px"} (掛率)
-      %th{width:"60px"} 数量
-      %th{width:"90px"} 販売単価
-      %th{width:"110px"} 金額
+      %th{width:"25px", style: 'font-size: 11px;'} 順
+      %th{width:"120px", style: 'font-size: 11px;'} 部品コード
+      %th{width:"130px", style: 'font-size: 11px;'} ItemNo
+      %th{width:"", style: 'font-size: 11px;'} 名称
+      %th{width:"", style: 'font-size: 11px;'} 備考
+      %th{width:"80px", style: 'font-size: 11px;'} (掛率)
+      %th{width:"60px", style: 'font-size: 11px;'} 数量
+      %th{width:"90px", style: 'font-size: 11px;'} 販売単価
+      %th{width:"110px", style: 'font-size: 11px;'} 金額
       %th{width:"50px", style: 'font-size: 11px; white-space: nowrap;'} 販売単位
-      %th{width:"60px"} バラ
-      %th{width:"90px"} 総重量kg
+      %th{width:"60px", style: 'font-size: 11px;'} バラ
+      %th{width:"90px", style: 'font-size: 11px;'} 総重量kg
       %th{width:"75px", style: 'font-size: 11px; white-space: nowrap;'} 更新日時
   %tbody
   - @orderparts.each do |orderpart|

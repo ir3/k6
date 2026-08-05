@@ -102,6 +102,11 @@
   width: 60px;
   overflow-wrap: break-word;
 }
+.row-compact th,
+.row-compact td {
+  /* 注文部品詳細の上部（取引管理No./件名/TC/納入期日の各行）の高さを揃えて低くする */
+  padding: 2px 10px !important;
+}
 .th-compact th {
   /* 「取引管理No.」が折り返さない大きさに統一（小さめ） */
   font-size: 0.75rem !important;
