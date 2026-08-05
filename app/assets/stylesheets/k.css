@@ -67,7 +67,9 @@
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 10;
+  /* テーブルヘッダー(z-index: 10)と同値だとDOM順で後ろのテーブルヘッダーが勝ち、
+     ナビバー内の管理者ドロップダウン等が裏に回り込むため、確実に上に来るよう高くする */
+  z-index: 30;
 }
 
 .center-table th,
