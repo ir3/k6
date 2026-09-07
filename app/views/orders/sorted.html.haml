@@ -1,0 +1,66 @@
+%table
+  %tr
+    %td{style:"padding: 5px 5px 5px 30px;"}
+      = link_to "取引台帳", orders_path, class: "btn wtext btn-info"
+    %td{style:"padding: 5px 5px 5px 30px;"}
+      = link_to "注文部品詳細へ戻る", order_path(@order), class: "btn wtext btn-info"
+
+%table.center-table.radius-table.row-compact{width: "99%", align:"center"}
+  %tr
+    %th.bg-primary.text-primary-content{width:"150px", style: 'font-size: 11px;'} 取引管理No.
+    %td{width:"120px",style:'text-align:center;'}= @order.mno
+    %th.bg-primary.text-primary-content{width:"90px", style: 'font-size: 11px;'} 会社名
+    %td{style:'text-align:center;'}
+      - if @adlist
+        = link_to @adlist.company, @adlist
+    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 11px;'} 部署名
+    %td{style:'text-align:center;'}= @adlist&.section
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 船名
+    %td{style:'text-align:center;'}= @order.shipname
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 型式
+    %td{style:'text-align:center;'}= @order.etype
+
+%h4{style: "margin: 16px 0 8px 30px;"} 帳票出力
+.flex.flex-wrap.gap-2{style: "margin: 0 0 16px 30px;"}
+  - XlsxReports::Registry.each do |kind, entry|
+    = link_to entry[:label], report_order_path(@order, kind: kind),
+      class: "btn wtext #{entry[:klass] ? 'btn-info' : 'btn-outline'}"
+
+%table.center-table.radius-table.zebra-table.list-table{width: "99%", align:"center"}
+  %thead.bg-primary.text-primary-content
+    %tr
+      %th{width:"25px", style: 'font-size: 11px;'} 順
+      %th{width:"120px", style: 'font-size: 11px;'} 部品コード
+      %th{width:"130px", style: 'font-size: 11px;'} ItemNo
+      %th{width:"", style: 'font-size: 11px;'} 名称
+      %th{width:"", style: 'font-size: 11px;'} 備考
+      %th{width:"80px", style: 'font-size: 11px;'} (掛率)
+      %th{width:"60px", style: 'font-size: 11px;'} 数量
+      %th{width:"90px", style: 'font-size: 11px;'} 販売単価
+      %th{width:"110px", style: 'font-size: 11px;'} 金額
+      %th{width:"50px", style: 'font-size: 11px; white-space: nowrap;'} 販売単位
+      %th{width:"60px", style: 'font-size: 11px;'} バラ
+      %th{width:"90px", style: 'font-size: 11px;'} 総重量kg
+  %tbody
+  - @orderparts.each do |orderpart|
+    %tr{class: (orderpart.kzaiko == "^" ? "!bg-info/20" : nil)}
+      %td{style:'text-align:right'}= orderpart.sno
+      - if Part.find_by(pcode: orderpart.partno)
+        - part_id = Part.find_by(pcode: orderpart.partno).id
+        %td= (link_to orderpart.partno, parts_path+"/#{part_id}")+ orderpart.kzaiko
+      - elsif Kepart.find_by(pcode: orderpart.partno)
+        - part_id = Kepart.find_by(pcode: orderpart.partno).id
+        %td= (link_to orderpart.partno, keparts_path+"/#{part_id}")+ orderpart.kzaiko
+      - else
+        %td= ''
+      %td= orderpart.itemno
+      - part = Part.find_by(pcode: orderpart.partno) || Kepart.find_by(pcode: orderpart.partno)
+      %td= part&.jname
+      %td= orderpart.info
+      %td{style:'text-align:right'}= orderpart.irate
+      %td{style:'text-align:right'}= orderpart.qty
+      %td{style:'text-align:right'}= orderpart.unitpd.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+      %td{style:'text-align:right'}= (orderpart.irate.to_f * orderpart.qty.to_f * orderpart.unitpd.to_f).round.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+      %td= orderpart.unit
+      %td{style:'text-align:right'}= orderpart.bqty
+      %td{style:'text-align:right'}= orderpart.totalweight&.round(2)

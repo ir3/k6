@@ -14,6 +14,8 @@
       = link_to "台帳を修正", edit_order_path,  class: "btn wtext btn-info"
     %td{style:"padding: 5px 5px 5px 30px;"}
       = link_to "台帳から削除", order_path, method: :delete, data: {confirm: "本当に削除しますか？"}, class: "btn wtext btn-info"
+    %td{style:"padding: 5px 5px 5px 30px;"}
+      = link_to "並び替え後表示(仮)", sorted_order_path(@order), class: "btn wtext btn-info"
 %table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
     %th.bg-primary.text-primary-content{width:"150px", style: 'font-size: 11px;'} 取引管理No.

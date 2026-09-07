@@ -289,6 +289,38 @@ class OrdersController < ApplicationController
     end
   end
 
+  # GET /orders/1/sorted
+  # 並び替え後表示画面。注文部品詳細で「並び替え」した後に遷移してくる想定の画面で、
+  # ここから請求書・納品書などの帳票出力ボタンを呼び出す。
+  # (「並び替え」自体の処理は別途 注文部品詳細 側に実装予定のため、現時点では並び替え済みの
+  #  Orderpart一覧をそのまま表示する)
+  def sorted
+    @order = Order.find(params[:id])
+    @adlist = Adlist.find_by(no: @order.adlist_id.to_s)
+    @orderparts = Orderpart.where(mno: @order.mno).reorder(:sno)
+  end
+
+  # GET /orders/1/report/:kind
+  def report
+    @order = Order.find(params[:id])
+    entry = XlsxReports::Registry[params[:kind]]
+
+    if entry.nil?
+      redirect_to sorted_order_path(@order), alert: "不明な帳票種別です"
+      return
+    end
+
+    klass = entry[:klass]&.safe_constantize
+    if klass.nil?
+      redirect_to sorted_order_path(@order), alert: "「#{entry[:label]}」はまだ未実装です"
+      return
+    end
+
+    report = klass.new(@order)
+    package = report.generate
+    send_data package.to_stream.read, filename: report.filename, type: Mime[:xlsx], disposition: "attachment"
+  end
+
   # GET /orders/new
   # GET /orders/new.json
   def new

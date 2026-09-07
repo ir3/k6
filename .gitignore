@@ -44,6 +44,9 @@
 # Access DB files (sensitive data)
 /db/access/
 
+# 帳票設計の参考にした原本xlsファイル(社外秘・アプリからは参照しない)
+/excel/
+
 # データインポート用ファイル
 db/*.tab
 db/*.txt

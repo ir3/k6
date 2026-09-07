@@ -22,7 +22,12 @@ Rails.application.routes.draw do
 
   match 'orders/search'  => 'orders#search',  via: %i[get post], as: 'orders_search'
   match 'orders/alllist' => 'orders#alllist', via: %i[get post], as: 'orders_alllist'
-  resources :orders
+  resources :orders do
+    member do
+      get :sorted
+      get "report/:kind", to: "orders#report", as: :report
+    end
+  end
   post 'orders/copy/'     => 'orders#copy'
   post 'orders/ocopy/'    => 'orders#ocopy'
   post 'orders/keycopy/'  => 'orders#keycopy'
