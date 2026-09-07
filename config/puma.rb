@@ -1,7 +1,8 @@
 threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
 threads threads_count, threads_count
 
-workers ENV.fetch("WEB_CONCURRENCY", 2)
+# クラスターモード(workers>0)だと開発環境でのコード自動リロードが効かなくなるため、本番限定にする
+workers ENV.fetch("WEB_CONCURRENCY", 2) if ENV["RAILS_ENV"] == "production"
 
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
