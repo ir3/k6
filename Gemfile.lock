@@ -454,6 +454,7 @@ DEPENDENCIES
   haml-rails
   jbuilder
   jsbundling-rails
+  json (< 3.0)
   kamal
   propshaft
   puma (>= 5.0)
