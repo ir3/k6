@@ -63,6 +63,8 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  # Procfile.dev で複数プロセス(web/js/css)をまとめて起動する
+  gem "foreman"
 end
 
 group :test do
