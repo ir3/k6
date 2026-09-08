@@ -33,5 +33,15 @@ module XlsxReports
       end
       sheet.add_row(columns.map { |c| c.total ? total[c.key] : nil }, style: total_styles)
     end
+
+    # 明細一覧を「1ページ目」「2ページ目以降」に分割する(旧ASPのp1max/pmax相当)。
+    # 1ページ目はレターヘッド等で場所を取る分、2ページ目以降より少なめの件数になることが多い。
+    def paginate_items(items, first_page_capacity, continuation_capacity)
+      return [ items ] if items.size <= first_page_capacity
+
+      pages = [ items.first(first_page_capacity) ]
+      items[first_page_capacity..].each_slice(continuation_capacity) { |chunk| pages << chunk }
+      pages
+    end
   end
 end
