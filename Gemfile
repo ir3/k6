@@ -2,6 +2,9 @@ source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails"
+# json 3.0.0 は cookies.signed 利用時に ArgumentError が発生する非互換があるため、
+# 上流（Rails/ActiveSupport側）の対応が入るまで 2.x に固定する
+gem "json", "< 3.0"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use sqlite3 as the database for Active Record

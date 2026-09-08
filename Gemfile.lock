@@ -414,6 +414,7 @@ DEPENDENCIES
   haml-rails
   jbuilder
   jsbundling-rails
+  json (< 3.0)
   kaminari
   propshaft
   puma (>= 5.0)
