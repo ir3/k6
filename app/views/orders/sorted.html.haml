@@ -22,8 +22,8 @@
     %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 型式
     %td{style:'text-align:center;'}= @order.etype
 
-%h4{style: "margin: 16px 0 8px 30px;"} 帳票出力
-.flex.flex-wrap.gap-2{style: "margin: 0 0 16px 30px;"}
+.flex.flex-wrap.items-center.gap-2{style: "margin: 16px 0 16px 30px;"}
+  %h4 帳票出力
   - XlsxReports::Registry.each do |kind, entry|
     = link_to entry[:label], report_order_path(@order, kind: kind),
       class: "btn wtext #{entry[:klass] ? 'btn-info' : 'btn-outline'}"
