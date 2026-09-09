@@ -43,7 +43,7 @@
       %th{width:"110px", style: 'font-size: 11px;'} 金額
   %tbody
   - @orderparts.each do |orderpart|
-    %tr{class: (orderpart.kzaiko == "^" ? "!bg-info/20" : nil)}
+    %tr{style: (orderpart.kzaiko == "^" ? "background-color: #00ffff;" : nil)}
       %td{style:'text-align:right'}= orderpart.sno
       - if Part.find_by(pcode: orderpart.partno)
         - part_id = Part.find_by(pcode: orderpart.partno).id
