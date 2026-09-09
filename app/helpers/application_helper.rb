@@ -4,6 +4,7 @@ module ApplicationHelper
   def screen_title
     return "業務システム" if controller_name == "menus"
     return "注文部品詳細" if controller_name == "orders" && action_name == "show"
+    return "並び替え後表示" if controller_name == "orders" && action_name == "sorted"
     return "取引台帳" if controller_name == "orders"
 
     content_for(:page_title)
