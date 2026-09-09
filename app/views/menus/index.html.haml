@@ -33,7 +33,7 @@
           %span.TB12.text-blue-600.text-xs 取引番号
           %br/
           %form{method:"post", action: "#{orders_search_path}"}
-            %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{maxlength: "9", name: "keyword", size: "9", type: "text", style: "ime-mode:disabled;", value: "#{ym}"}/
+            %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{maxlength: "11", name: "keyword", size: "11", type: "text", style: "ime-mode:disabled; width: 7.5rem;", value: "#{ym}"}/
             %br/
             %input.btn.wtext.btn-info{name: "submit", type: "submit", value: "取引番号"}/
             = hidden_field_tag('authenticity_token', form_authenticity_token)
