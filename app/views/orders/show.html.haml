@@ -127,7 +127,7 @@
       %th{width:"50px", style: 'font-size: 11px; white-space: nowrap;'} 販売単位
       %th{width:"60px", style: 'font-size: 11px;'} バラ
       %th{width:"90px", style: 'font-size: 11px;'} 総重量kg
-      %th{width:"75px", style: 'font-size: 11px; white-space: nowrap;'} 更新日時
+      %th.updated-at-col{width:"75px", style: 'font-size: 11px; white-space: nowrap;'} 更新日時
   %tbody
   - @orderparts.each do |orderpart|
     %tr{class: (orderpart.kzaiko == "^" ? "!bg-info/20" : nil)}
@@ -152,4 +152,4 @@
       %td= orderpart.unit
       %td{style:'text-align:right'}= orderpart.bqty
       %td{style:'text-align:right'}= orderpart.totalweight&.round(2)
-      %td{style: 'font-size: 9px; line-height: 1.1;'}= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')
+      %td.updated-at-col{style: 'font-size: 9px; line-height: 1.1;'}= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')

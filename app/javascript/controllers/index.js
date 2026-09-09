@@ -18,3 +18,6 @@ application.register("ruby-wasm", RubyWasmController)
 
 import TableFontSizeController from "./table_font_size_controller"
 application.register("table-font-size", TableFontSizeController)
+
+import UpdatedAtToggleController from "./updated_at_toggle_controller"
+application.register("updated-at-toggle", UpdatedAtToggleController)

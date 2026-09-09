@@ -114,6 +114,10 @@
   font-size: 0.75rem !important;
   white-space: nowrap;
 }
+.hide-updated-at-col .updated-at-col {
+  /* 部品詳細テーブル最後尾の「更新日時」列の表示/非表示切り替え用 */
+  display: none;
+}
 .alert {
   overflow: hidden;
   transition:
