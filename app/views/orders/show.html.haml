@@ -122,11 +122,11 @@
       %th{width:"", style: 'font-size: 11px;'} 備考
       %th{width:"80px", style: 'font-size: 11px;'} (掛率)
       %th{width:"60px", style: 'font-size: 11px;'} 数量
-      %th{width:"90px", style: 'font-size: 11px;'} 販売単価
-      %th{width:"110px", style: 'font-size: 11px;'} 金額
       %th{width:"50px", style: 'font-size: 11px; white-space: nowrap;'} 販売単位
       %th{width:"60px", style: 'font-size: 11px;'} バラ
       %th{width:"90px", style: 'font-size: 11px;'} 総重量kg
+      %th{width:"90px", style: 'font-size: 11px;'} 販売単価
+      %th{width:"110px", style: 'font-size: 11px;'} 金額
       %th.updated-at-col{width:"75px", style: 'font-size: 11px; white-space: nowrap;'} 更新日時
   %tbody
   - @orderparts.each do |orderpart|
@@ -142,14 +142,14 @@
         %td= ''
       %td= orderpart.itemno
       - #part = Part.find_by_sql("SELECT jname FROM parts WHERE pcode = '#{orderpart.partno}'")
-      - part = Part.find_by(pcode: orderpart.partno)
-      %td= part.jname if part
+      - part = Part.find_by(pcode: orderpart.partno) || Kepart.find_by(pcode: orderpart.partno)
+      %td= part&.jname
       %td= orderpart.info
       %td{style:'text-align:right'}= orderpart.irate
       %td{style:'text-align:right'}= orderpart.qty
-      %td{style:'text-align:right'}= orderpart.unitpd.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
-      %td{style:'text-align:right'}= (orderpart.irate.to_f * orderpart.qty.to_f * orderpart.unitpd.to_f).round.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
-      %td= orderpart.unit
+      %td= orderpart.unit.presence || part&.sel_unit
       %td{style:'text-align:right'}= orderpart.bqty
       %td{style:'text-align:right'}= orderpart.totalweight&.round(2)
+      %td{style:'text-align:right'}= orderpart.unitpd.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+      %td{style:'text-align:right'}= (orderpart.irate.to_f * orderpart.qty.to_f * orderpart.unitpd.to_f).round.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
       %td.updated-at-col{style: 'font-size: 9px; line-height: 1.1;'}= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')
