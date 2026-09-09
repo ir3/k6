@@ -42,6 +42,82 @@ Excel(.xls/.xlsx)とLibreOffice等のレンダラーで、線の太さの見え�
   開発中でもPumaが複数ワーカーで動いてしまい、コードの自動リロードが効かないことがある
   (`workers ENV.fetch("WEB_CONCURRENCY", 2) if ENV["RAILS_ENV"] == "production"`で対処済み)。
 
+## 行を跨ぐ丸カッコを描く(図形/DrawingML)
+
+SeikyuReportの「お届け先」欄で、A6:A8・C6:C8の3行に跨る丸カッコを描きたかった。
+セルの値や罫線だけで表現しようとして何度も失敗し、最終的に実際のExcel図形
+(オートシェイプ)を生成後のxlsxにXMLで直接注入する方式に落ち着いた。
+
+### 失敗した方法
+
+1. **Unicode括弧パーツ文字(U+239B/239C/239D等)を1行ずつ積む** —
+   フォントによって曲線の繋がり方がバラバラで、小さいカギ括弧が
+   3つ並んでいるだけの見た目になり、1本の大きなカッコに見えなかった。
+2. **セル罫線で「[」「]」の箱を作る** — 上下の行に元々ある罫線
+   (「殿」の太下線、次のラベル行の外枠上辺など)と繋がってしまい、
+   意図した「隙間のある括弧」ではなく単なる四角い箱に見えた。
+3. **縦に結合したセルに大きいフォントサイズの"("/")"文字を入れる**
+   (`Axlsx::RichText`使用) — XML上はフォントサイズを大きく(54pt等)
+   設定できているのに、プレビュー(QuickLook)でもExcelでも
+   結合範囲の合計の高さではなく、**先頭行(アンカー行)自身の高さに
+   クリップされてしまう**。複数行結合セル+オーバーサイズフォントの
+   組み合わせは多くのレンダラーで正しく扱われない、という結論に至った。
+
+### 最終的な解決策: 実際のExcel図形(leftBracket/rightBracket)を後からXML注入
+
+`caxlsx`にはオートシェイプ(図形)を追加する高レベルAPIが無い
+(`add_image`/`add_chart`はあるが汎用`add_shape`は無い)。そのため、
+`Axlsx::Package`が生成した完成後のxlsx(zip)に対して、`rubyzip`で
+`xl/drawings/drawing1.xml`を追加し、`xl/worksheets/sheet1.xml`に
+`<drawing r:id="..."/>`を挿入、`[Content_Types].xml`にOverrideを足す、
+という手順を後処理として行う(`app/services/xlsx_reports/seikyu_report.rb`の
+`BracketShapePatchedPackage`/`inject_extra_shapes`を参照)。
+`Axlsx::Package`を`SimpleDelegator`でラップし、`serialize`/`to_stream`
+どちらの出力にも同じ後処理が効くようにしている。
+
+図形自体は`<a:prstGeom prst="leftBracket">`/`"rightBracket"`という
+OOXML標準のプリセット形状(角丸の大きな片カッコ)を使う。
+
+```xml
+<xdr:twoCellAnchor>
+  <xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>5</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+  <xdr:to><xdr:col>0</xdr:col><xdr:colOff>127000</xdr:colOff><xdr:row>8</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+  <xdr:sp macro="" textlink="">
+    <xdr:nvSpPr><xdr:cNvPr id="1" name="LeftBracket"/><xdr:cNvSpPr/></xdr:nvSpPr>
+    <xdr:spPr>
+      <a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm>
+      <a:prstGeom prst="leftBracket"><a:avLst><a:gd name="adj" fmla="val 40000"/></a:avLst></a:prstGeom>
+      <a:noFill/>
+      <a:ln w="19050"><a:solidFill><a:srgbClr val="000000"/></a:solidFill></a:ln>
+    </xdr:spPr>
+    <xdr:txBody><a:bodyPr/><a:lstStyle/><a:p/></xdr:txBody>
+  </xdr:sp>
+  <xdr:clientData/>
+</xdr:twoCellAnchor>
+```
+
+### ハマりどころ
+
+- **列幅いっぱいに図形が伸びる**: `twoCellAnchor`の`from`/`to`を
+  そのまま列の左端〜右端(colOff=0〜0)にすると、幅の広い列
+  (品名列など)では図形が横長に引き伸ばされ「列を跨ぐカッコ」に
+  見えてしまう。列幅に依存させず、`colOff`に固定のEMU値
+  (`BRACKET_WIDTH_EMU = 127_000` ≒10pt)を使って太さを固定する。
+- **「列の右端」は列幅に依存するので直接指定できない**: 列の実際の
+  ピクセル幅は環境(フォント)依存で正確に計算できない。右端に
+  ぴったり合わせたい場合は、その列自身ではなく**隣接する次の列の
+  左端(colOff=0)**を起点にする(列境界は列幅に関わらず必ず一致するため)。
+- **カッコの曲がり具合は`adj`ガイド値で調整**: `leftBracket`/`rightBracket`
+  のデフォルト`adj`は16667(角ばって見える)。`<a:gd name="adj" fmla="val 40000"/>`
+  のように上げると、直線部分が短く曲線が強い「カッコらしい」形になる
+  (最大50000で直線部分がほぼ無くなる)。
+- **QuickLook(macOS)は図形を一切描画しない**: セルの値・罫線・結合は
+  QuickLookのExcelプレビューで確認できるが、DrawingMLの図形(オートシェイプ)は
+  表示されない。図形の検証は見た目ではなく、`caxlsx`gem同梱のXSDスキーマ
+  (`lib/schema/dml-spreadsheetDrawing.xsd`・`sml.xsd`)を`xmllint --noout --schema`で
+  当てて構文的な正しさを確認し、最終的な見た目は実際にExcelで開いて
+  ユーザーに確認してもらう、という2段構えの検証フローにした。
+
 ## アーキテクチャ
 
 ```
