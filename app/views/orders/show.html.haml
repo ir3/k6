@@ -152,7 +152,8 @@
   - n_subtotal = n_group.select { |np| np.tvalid.to_i == 1 }.sum { |np| np.totala.to_i }
   - total = a_subtotal + b_subtotal + c_subtotal + n_subtotal
   - after_discount = total - @order.nebiki.to_i
-  - tax = (after_discount * 10 / 100.0).round
+  - tax_rate = 10
+  - tax = (after_discount * tax_rate / 100.0).round
   - grand_total = after_discount + tax
   %tbody
   - a_group.each do |e|
@@ -174,4 +175,4 @@
     = render "order_part_summary_row", label: "部品番号不明小計", value: c_subtotal
   = render "order_part_summary_row", label: "合計", value: total
   = render "order_part_discount_row", order: @order, after_discount: after_discount
-  = render "order_part_summary_row", label: "値引き&消費税合計(10%)", value: grand_total
+  = render "order_part_tax_row", tax_rate: tax_rate, tax: tax, grand_total: grand_total
