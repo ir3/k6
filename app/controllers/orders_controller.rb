@@ -113,6 +113,13 @@ class OrdersController < ApplicationController
     keykind = params[:keykind]
     logger.debug  keyword
     logger.debug  keykind
+
+    # 取引番号(9桁)がそのまま一致する場合は、取引台帳を経由せず注文部品詳細へ直行する
+    if keykind.blank? && keyword.to_s.match?(/\A\d{9}\z/)
+      order = Order.find_by(mno: keyword)
+      return redirect_to(order_path(order)) if order
+    end
+
     if params[:mno_order]
       if session[:mno_order] == 'DESC'
         session[:mno_order] = 'ASC'
