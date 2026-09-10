@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_09_235931) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_053342) do
   create_table "adlists", force: :cascade do |t|
     t.string "address1"
     t.string "address2"
@@ -66,6 +66,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_235931) do
     t.integer "stock"
     t.datetime "updated_at", null: false
     t.float "weightkg"
+  end
+
+  create_table "ksystems", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "key", null: false
+    t.datetime "updated_at", null: false
+    t.string "value"
+    t.index ["key"], name: "index_ksystems_on_key", unique: true
   end
 
   create_table "n_orderparts", force: :cascade do |t|
@@ -146,6 +154,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_235931) do
     t.string "shipname"
     t.string "st"
     t.date "syuday"
+    t.integer "tax_rate"
     t.string "tc"
     t.string "tcno"
     t.string "tcondition"

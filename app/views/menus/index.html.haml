@@ -213,3 +213,10 @@
           %br/
           %input.btn.wtext.btn-info{type: "submit", value: "英文検索"}/
     %hr{size: "3"}/
+  .flex.items-center.gap-1.my-1
+    %span.TB12.text-blue-600.text-xs 消費税率[%](全体)
+    %form{method: "post", action: menu_tax_rate_path}
+      = hidden_field_tag(:_method, "patch")
+      = hidden_field_tag('authenticity_token', form_authenticity_token)
+      %input.input.input-bordered.input-sm.border-2.border-neutral.bg-base-100{type: "number", name: "default_tax_rate", value: Order.default_tax_rate, style: "width: 4rem; text-align:right;"}
+      %input.btn.btn-sm.wtext.btn-info{type: "submit", value: "税率変更"}

@@ -419,6 +419,6 @@ class OrdersController < ApplicationController
   def order_params
     params.require(:order).permit(:shipname, :engno, :orderitem, :memo, :ono, :etype,
                                   :country, :tc, :tcno, :zp, :zpno, :glc, :glcno, :mg,
-                                  :mgno, :rdate, :ncomment, :irate, :irate2, :nebiki)
+                                  :mgno, :rdate, :ncomment, :irate, :irate2, :nebiki, :tax_rate)
   end
 end

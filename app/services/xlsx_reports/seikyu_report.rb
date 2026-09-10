@@ -20,13 +20,12 @@ module XlsxReports
     BANK_INFO_ROW1 = [ "三井住友銀行兵庫支店　当座No.2117831", "三菱UFJ銀行神戸支店　普通 No.2445381" ].freeze
     BANK_INFO_ROW2 = [ "T9-1400-0101-1890", "みずほ銀行神戸支店　当座 No.0122296" ].freeze
 
-    DEFAULT_TAX_RATE = 10 # % (旧ASPはSession値、デフォルト8%だったが現行税率に合わせる)
-
     # 旧ASP: p1max=22(表紙は1〜21件、22件目から次紙) / pmax=26(次紙以降は26件ずつ)
     FIRST_PAGE_ITEMS = 21
     CONTINUATION_PAGE_ITEMS = 26
 
-    def initialize(order, tax_rate: DEFAULT_TAX_RATE)
+    # 税率はOrder#tax_rate(取引個別の指定)があればそれを、無ければOrder.default_tax_rateに従う
+    def initialize(order, tax_rate: order.effective_tax_rate)
       @order = order
       # adlist_idはadlistsのid ではなく no列を指すという既存実装(orders/show.html.haml)の慣習に合わせる
       @adlist = Adlist.find_by(no: order.adlist_id.to_s)

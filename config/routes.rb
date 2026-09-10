@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   #root to: 'welcom#index'
 
   get "menu" => "menus#index", as: "menu"
+  patch "menu/tax_rate" => "menus#update_tax_rate", as: "menu_tax_rate"
 
   # kobeengine
   resources :adlists
