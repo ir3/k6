@@ -1,7 +1,7 @@
 - row_bg = order.orderitem.to_s.include?('（受注）') ? '#e0f4ff' : '#f0f0f0'
 - td_style = "background-color: #{row_bg};"
 %tr{style: "background-color: #{row_bg};"}
-  %td{style: td_style}
+  %td.mno-col{style: td_style}
     = link_to order.mno, order_path(id: order.id)
   %td{style: "#{td_style}text-align:right"}
     = link_to order.adlist_id.to_s, "/orders?keykind=companyid&keyword=#{order.adlist_id}"
@@ -20,14 +20,9 @@
   %td{style: td_style}= order.country
   %td{style: "#{td_style}text-align:right"}= order.pnum
   %td{style: td_style}
-    .kenmei-col
-      - if order.orderitem.to_s =~ /\A(\d{5})(（受注）|\(受注\))\z/
-        = Regexp.last_match(1)
-        %br/
-        = Regexp.last_match(2)
-      - else
-        = order.orderitem
-  %td{style: td_style}= order.ono
+    .kenmei-col= order.orderitem
+  %td{style: td_style}
+    .ono-col= order.ono
   %td{style: td_style}= order.memo
   %td{style: td_style}
     - disp = ' '
