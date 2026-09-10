@@ -1,12 +1,13 @@
 %tr
   %td{colspan: 4, style: 'background-color:#c8dce8;'}
-  %td{colspan: 2, style: 'background-color:#c8dce8;'}
-    %form{method: "post", action: order_path(order), style: "display:flex; gap:4px; align-items:center; justify-content:flex-end;"}
-      = hidden_field_tag(:_method, "patch")
-      = hidden_field_tag('authenticity_token', form_authenticity_token)
-      %input.input.input-bordered.input-xs.border-2.border-neutral.bg-base-100{type: "number", name: "order[tax_rate]", value: order.tax_rate, placeholder: Order.default_tax_rate.to_s, style: "width: 3.5rem; text-align:right;"}
-      %input{type: "submit", value: "消費税率変更", class: "btn btn-xs wtext btn-info"}
-  %td{colspan: 2, style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold; white-space:nowrap;'}= "消費税(#{tax_rate}%)"
+  %td{colspan: 4, style: 'background-color:#c8dce8;'}
+    .flex{style: 'align-items:center; justify-content:flex-end; gap:0.5em;'}
+      %form{method: "post", action: order_path(order), style: "display:flex; gap:4px; align-items:center;"}
+        = hidden_field_tag(:_method, "patch")
+        = hidden_field_tag('authenticity_token', form_authenticity_token)
+        %input.input.input-bordered.input-xs.border-2.border-neutral.bg-base-100{type: "number", name: "order[tax_rate]", value: order.tax_rate, placeholder: Order.default_tax_rate.to_s, style: "width: 3.5rem; text-align:right;"}
+        %input{type: "submit", value: "消費税率変更(個別)", class: "btn btn-xs wtext btn-info"}
+      %span{style: 'color:#777; font-weight:bold; white-space:nowrap;'}= "消費税(#{tax_rate}%)"
   %td{style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= tax.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
   %td{colspan: 2, style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold; white-space:nowrap;'} 値引き&消費税合計
   %td{style: 'background-color:#e9ffc8; color:#777; text-align:right; font-weight:bold; font-size: 1.3em;'}= grand_total.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
