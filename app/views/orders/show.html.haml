@@ -70,15 +70,11 @@
     %th.bg-primary.text-primary-content{width:"70px", style: 'font-size: 11px; white-space:nowrap;'} 納入期日
     %td{width:"100px", style: 'white-space:nowrap;'}= @order.rdate
     %th.bg-primary.text-primary-content{width:"90px", style: 'font-size: 11px; white-space:nowrap;'} 納入コメント
-    %td{style: 'white-space:nowrap;'}= @order.ncomment
-    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 点数
-    %td= @order.pnum
-    %th.bg-primary.text-primary-content{width:"120px", style: 'font-size: 11px;'} A部品掛け率
-    %td{width:"80px"}= @order.irate
-    %th.bg-primary.text-primary-content{width:"110px", style: 'font-size: 11px;'}  以外掛け率
-    %td{width:"80px"}= @order.irate2
-    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 11px;'} 値引き
-    %td= @order.nebiki
+    %td
+      %div{style: "width:450px; white-space:nowrap;"}= @order.ncomment
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px; white-space:nowrap;'} 点数
+    %td
+      %div{style: "width:40px; white-space:nowrap;"}= @order.pnum
     %th.bg-primary.text-primary-content.updated-at-col{width:"50px", style: "font-size: 11px;"}
       更新
       %br
@@ -110,6 +106,14 @@
       %br= @order.seiday
     %td
       入金(確認)日
+%table.center-table.radius-table.row-compact{width: "99%", align:"center"}
+  %tr
+    %th.bg-primary.text-primary-content{width:"120px", style: 'font-size: 11px;'} A部品掛け率
+    %td{width:"80px"}= @order.irate
+    %th.bg-primary.text-primary-content{width:"110px", style: 'font-size: 11px;'}  以外掛け率
+    %td{width:"80px"}= @order.irate2
+    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 11px;'} 値引き
+    %td= @order.nebiki
 %table.center-table.radius-table.row-compact.zebra-table.list-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr
