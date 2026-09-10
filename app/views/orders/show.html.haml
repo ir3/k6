@@ -157,18 +157,21 @@
   %tbody
   - a_group.each do |e|
     = render "order_part_row", **e
-  = render "order_part_summary_row", label: "A部品小計", value: a_subtotal
+  - if a_subtotal != 0
+    = render "order_part_summary_row", label: "A部品小計", value: a_subtotal
   - b_group.each do |e|
     = render "order_part_row", **e
-  = render "order_part_summary_row", label: "B部品小計", value: b_subtotal
+  - if b_subtotal != 0
+    = render "order_part_summary_row", label: "B部品小計", value: b_subtotal
   - if n_group.any?
     - n_group.each do |n_orderpart|
       = render "n_orderpart_row", n_orderpart: n_orderpart
-    = render "order_part_summary_row", label: "部品番号無小計", value: n_subtotal
+    - if n_subtotal != 0
+      = render "order_part_summary_row", label: "部品番号無小計", value: n_subtotal
   - if c_group.any?
     - c_group.each do |e|
       = render "order_part_row", **e
     = render "order_part_summary_row", label: "部品番号不明小計", value: c_subtotal
   = render "order_part_summary_row", label: "合計", value: total
-  = render "order_part_summary_row", label: "値引き後合計", value: after_discount
+  = render "order_part_discount_row", order: @order, after_discount: after_discount
   = render "order_part_summary_row", label: "値引き&消費税合計(10%)", value: grand_total

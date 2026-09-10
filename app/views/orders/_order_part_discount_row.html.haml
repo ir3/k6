@@ -1,0 +1,14 @@
+%tr
+  %td{colspan: 3, style: 'background-color:#c8dce8;'}
+  %td{colspan: 2, style: 'background-color:#c8dce8;'}
+    %form{method: "post", action: order_path(order), style: "display:flex; gap:4px; align-items:center; justify-content:flex-end;"}
+      = hidden_field_tag(:_method, "patch")
+      = hidden_field_tag('authenticity_token', form_authenticity_token)
+      %input.input.input-bordered.input-xs.border-2.border-neutral.bg-base-100{type: "number", name: "order[nebiki]", value: order.nebiki, style: "width: 5rem; text-align:right;"}
+      %input{type: "submit", value: "値引き額入力", class: "btn btn-xs wtext btn-info"}
+  %td{style: 'background-color:#c8dce8; color:#777; text-align:center; white-space:nowrap;'} 値引き額
+  %td{style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= order.nebiki.to_i.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+  %td{colspan: 2, style: 'background-color:#c8dce8;'}
+  %td{colspan: 2, style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold; white-space:nowrap;'} 値引き後合計
+  %td{style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= after_discount.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+  %td.updated-at-col{style: 'background-color:#c8dce8;'}
