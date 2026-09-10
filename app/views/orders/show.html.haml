@@ -84,11 +84,11 @@
     %td{width:"80px"}= @order.irate2
     %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 11px;'} 値引き
     %td= @order.nebiki
-    %th.bg-primary.text-primary-content{width:"50px", style: "font-size: 11px;"}
+    %th.bg-primary.text-primary-content.updated-at-col{width:"50px", style: "font-size: 11px;"}
       更新
       %br
       日時
-    %td.datej{width: "72px", style: "font-size: 9px;"}= @order.updated_at.strftime("%Y/%m/%d %H:%M")
+    %td.datej.updated-at-col{width: "72px", style: "font-size: 9px;"}= @order.updated_at.strftime("%Y/%m/%d %H:%M")
 %table
   %tr
     %td
