@@ -1,11 +1,6 @@
 %table
   %tr
     %td{style:"padding: 5px 5px 5px 30px;"}
-      %form.flex.items-center.gap-1{method: "post", action: "#{orders_search_path}"}
-        %input.box.input.input-bordered.input-sm.border-2.border-neutral.bg-base-100{maxlength: "11", name: "keyword", size: "11", type: "text", style: "ime-mode:disabled; width: 7.5rem;", value: "#{session[:yearmonth]}"}
-        %input.btn.btn-sm.wtext.btn-info{name: "submit", type: "submit", value: "取引番号"}
-        = hidden_field_tag('authenticity_token', form_authenticity_token)
-    %td{style:"padding: 5px 5px 5px 30px;"}
       %form{method:"post", action: "#{orders_keycopy_path}", name: "order_key_copy"}
         = hidden_field_tag('authenticity_token', form_authenticity_token)
         %input{type: "submit", value: "取引先、船名、機番を複製し新規取引登録", class: "btn wtext btn-info"}
