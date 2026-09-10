@@ -168,7 +168,7 @@
     - n_group.each do |n_orderpart|
       = render "n_orderpart_row", n_orderpart: n_orderpart
     - if n_subtotal != 0
-      = render "order_part_summary_row", label: "部品番号無小計", value: n_subtotal
+      = render "order_part_summary_row", label: "その他小計", value: n_subtotal
   - if c_group.any?
     - c_group.each do |e|
       = render "order_part_row", **e

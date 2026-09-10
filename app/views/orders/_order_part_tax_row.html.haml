@@ -4,5 +4,5 @@
   %td{style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= tax.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
   %td{colspan: 2, style: 'background-color:#c8dce8;'}
   %td{colspan: 2, style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold; white-space:nowrap;'} 値引き&消費税合計
-  %td{style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= grand_total.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+  %td{style: 'background-color:#e9ffc8; color:#777; text-align:right; font-weight:bold; font-size: 1.3em;'}= grand_total.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
   %td.updated-at-col{style: 'background-color:#c8dce8;'}
