@@ -1,0 +1,4 @@
+%tr
+  %td{colspan: 11, style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= label
+  %td{style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= value.round.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+  %td.updated-at-col{style: 'background-color:#c8dce8;'}

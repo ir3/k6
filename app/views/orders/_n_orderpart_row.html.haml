@@ -1,0 +1,14 @@
+%tr{style: (n_orderpart.tvalid.to_i.zero? ? "text-decoration: line-through; opacity: 0.5;" : nil)}
+  %td{style:'text-align:right'}= n_orderpart.sno
+  %td= ''
+  %td= n_orderpart.itemno
+  %td= n_orderpart.partsname
+  %td= n_orderpart.info
+  %td{style:'text-align:right'}= n_orderpart.rate
+  %td{style:'text-align:right'}= n_orderpart.qty
+  %td= ''
+  %td= ''
+  %td{style:'text-align:right'}= n_orderpart.weight
+  %td{style:'text-align:right'}= n_orderpart.unitpd.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+  %td{style:'text-align:right'}= n_orderpart.totala.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+  %td.updated-at-col{style: 'font-size: 9px; line-height: 1.1;'}= n_orderpart.updated_at&.strftime('%Y/%m/%d %H:%M')

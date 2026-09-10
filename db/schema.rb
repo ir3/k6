@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_03_011248) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_235931) do
   create_table "adlists", force: :cascade do |t|
     t.string "address1"
     t.string "address2"
@@ -66,6 +66,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_011248) do
     t.integer "stock"
     t.datetime "updated_at", null: false
     t.float "weightkg"
+  end
+
+  create_table "n_orderparts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "etc"
+    t.string "info"
+    t.string "itemno"
+    t.string "mark"
+    t.integer "mno"
+    t.string "partsname"
+    t.float "qty"
+    t.float "rate"
+    t.integer "sno"
+    t.integer "totala"
+    t.integer "tvalid"
+    t.integer "unitpd"
+    t.datetime "updated_at", null: false
+    t.float "weight"
+    t.index ["mno"], name: "index_n_orderparts_on_mno"
   end
 
   create_table "orderparts", force: :cascade do |t|
