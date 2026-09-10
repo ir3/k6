@@ -288,7 +288,9 @@ class OrdersController < ApplicationController
     session[:order_id] = @order.id
     session[:mno] = @order.mno
     # @orderparts = Orderpart.find_by_sql("SELECT * FROM orderparts WHERE (deleted_at IS NULL) AND mno=#{@order.mno}")
-    @orderparts = Orderpart.where(mno: @order.mno).reorder(:sno)
+    # 「順(SNo)」ソートは並び替え後表示(#sorted)側の役割なので、ここではレコード作成順(古いものが上)で表示する。
+    # Orderpartのdefault_scopeはid DESC(新しいものが上)なのでreorderで上書きする
+    @orderparts = Orderpart.where(mno: @order.mno).reorder(:id)
 
     respond_to do |format|
       format.html # show.html.erb
@@ -301,10 +303,13 @@ class OrdersController < ApplicationController
   # ここから請求書・納品書などの帳票出力ボタンを呼び出す。
   # (「並び替え」自体の処理は別途 注文部品詳細 側に実装予定のため、現時点では並び替え済みの
   #  Orderpart一覧をそのまま表示する)
+  # 明細はOrderpart(部品番号あり)とNOrderpart(部品番号無)を「順(SNo)」で一本化したものを使う。
+  # 帳票出力(JuchuMemoReport等)も同じOrderSortedItemsを参照するため、この画面と帳票の
+  # 明細内容・並び順は常に一致する。
   def sorted
     @order = Order.find(params[:id])
     @adlist = Adlist.find_by(no: @order.adlist_id.to_s)
-    @orderparts = Orderpart.where(mno: @order.mno).reorder(:sno)
+    @items = OrderSortedItems.for(@order)
   end
 
   # GET /orders/1/report/:kind

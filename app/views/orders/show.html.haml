@@ -147,7 +147,8 @@
   - a_subtotal = a_group.sum { |e| amount_of.call(e[:orderpart]) }
   - b_subtotal = b_group.sum { |e| amount_of.call(e[:orderpart]) }
   - c_subtotal = c_group.sum { |e| amount_of.call(e[:orderpart]) }
-  - n_group = NOrderpart.where(mno: @order.mno).order(:sno)
+  -# 「順(SNo)」ソートは並び替え後表示側の役割なので、ここではレコード作成順(古いものが上、Orderpartと同じ向き)で表示する
+  - n_group = NOrderpart.where(mno: @order.mno).order(:id)
   - n_subtotal = n_group.select { |np| np.tvalid.to_i == 1 }.sum { |np| np.totala.to_i }
   - total = a_subtotal + b_subtotal + c_subtotal + n_subtotal
   - after_discount = total - @order.nebiki.to_i

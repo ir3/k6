@@ -53,5 +53,10 @@ module XlsxReports
     def set_column_widths(sheet, *widths)
       sheet.column_widths(*widths)
     end
+
+    # 直前にadd_rowした行の高さを指定する(pt単位)。1ページに収まる行数を稼ぐため全体的に詰めている。
+    def set_last_row_height(sheet, height)
+      sheet.rows[sheet.rows.size - 1].height = height
+    end
   end
 end

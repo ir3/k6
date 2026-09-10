@@ -7,7 +7,7 @@ module XlsxReports
     "mitsumori_irai" => { label: "部品見積依頼出力" },
     "mitsumori_with_no" => { label: "部品番号あり見積出力" },
     "mitsumori_without_no" => { label: "部品番号なし見積出力" },
-    "juchu_memo" => { label: "受注メモ出力" },
+    "juchu_memo" => { label: "受注メモ出力", klass: "XlsxReports::JuchuMemoReport" },
     "seikyu_a" => { label: "請求書A", klass: "XlsxReports::SeikyuReport" },
     "seikyu_a_hikae" => { label: "請求書A控" },
     "nohin_a" => { label: "納品書A" },

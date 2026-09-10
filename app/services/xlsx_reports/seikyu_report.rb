@@ -29,7 +29,9 @@ module XlsxReports
       @order = order
       # adlist_idはadlistsのid ではなく no列を指すという既存実装(orders/show.html.haml)の慣習に合わせる
       @adlist = Adlist.find_by(no: order.adlist_id.to_s)
-      @orderparts = Orderpart.where(mno: order.mno).reorder(:sno)
+      # 部品番号あり(Orderpart)・無(NOrderpart)を「順(SNo)」で一本化した明細一覧。
+      # orders#sorted画面・JuchuMemoReportと共有するOrderSortedItems参照。
+      @items = OrderSortedItems.for(order)
       @tax_rate = tax_rate
       @bracket_anchor_rows = nil
       @dept_label = nil
@@ -160,11 +162,6 @@ module XlsxReports
         <xdr:clientData/>
         </xdr:twoCellAnchor>
       XML
-    end
-
-    # 直前にadd_rowした行の高さを指定する(pt単位)。1ページに収まる行数を稼ぐため全体的に詰めている。
-    def set_last_row_height(sheet, height)
-      sheet.rows[sheet.rows.size - 1].height = height
     end
 
     # 列幅の定義にのみ使う(明細行はcolumnsを介さず2行1組で個別に組み立てるため)
@@ -343,21 +340,17 @@ module XlsxReports
     end
 
     def build_items
-      @orderparts.map do |orderpart|
-        # orders/show.html.haml と同じく、Part台帳になければKepart(KE部品)台帳も見る
-        part = Part.find_by(pcode: orderpart.partno) || Kepart.find_by(pcode: orderpart.partno)
-        amount = (orderpart.irate.to_f * orderpart.qty.to_f * orderpart.unitpd.to_f).round
+      @items.map do |item|
         {
-          no: orderpart.sno,
-          itemno: orderpart.itemno,
-          info: orderpart.info,
-          partno: orderpart.partno,
-          name: part&.jname,
-          qty: orderpart.qty,
-          # orderpart.unitはほぼ未入力のため、品名と同じくPart/Kepart台帳のsel_unitを補完的に見る
-          unit: orderpart.unit.presence || part&.sel_unit,
-          price: orderpart.unitpd,
-          amount: amount
+          no: item.sno,
+          itemno: item.itemno,
+          info: item.info,
+          partno: item.code,
+          name: item.name,
+          qty: item.qty,
+          unit: item.unit,
+          price: item.unitpd,
+          amount: item.amount
         }
       end
     end
