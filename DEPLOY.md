@@ -32,6 +32,11 @@ export PATH="/opt/anyenv/envs/nodenv/shims:/opt/anyenv/envs/nodenv/bin:$PATH"
 yarn -v   # 1.22.x系（nodenv shims）が出ることを確認。出なければ上のPATH設定を忘れている
 
 # アセットビルド + フィンガープリント生成（cssやjsを変更した場合は必須）
+# ↑の`for kv in ...`（SECRET_KEY_BASE等の読み込み）を済ませたシェルで実行すること。
+# これを飛ばして`yarn install`から単独で実行すると、`assets:precompile`が
+# `ArgumentError: Missing secret_key_base for 'production' environment`で落ちる
+# （本番はmaster.keyを置かず、SECRET_KEY_BASEをk6.serviceの環境変数としてのみ
+# 持っているため。2026-09-11に実際発生）。
 yarn install
 cp app/assets/stylesheets/k.css app/assets/builds/k.css
 RAILS_ENV=production bin/rails assets:precompile
