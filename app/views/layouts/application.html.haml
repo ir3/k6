@@ -23,7 +23,7 @@
         %a.btn.btn-ghost.normal-case.text-xl.text-white ようこそ
       - if screen_title.present?
         %span.text-white.text-lg.ml-2.whitespace-nowrap= screen_title
-        = render "shared/order_search"
+        = render "shared/order_search" if authenticated?
         - if controller_name == "orders" && action_name != "show" && @search_condition
           %span.text-white.text-xs.ml-2.opacity-80= @search_condition
       -if authenticated?
