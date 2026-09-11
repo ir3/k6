@@ -156,3 +156,11 @@ th.mno-col, td.mno-col {
   padding-top: 0;
   padding-bottom: 0;
 }
+.join .btn {
+  /* ページネーションのボタンは文字が小さく読みにくいとの指摘があったため14pxに
+     拡大。ボタンの高さは他画面のbtn-smボタン(検索ボタン等)と見た目を揃えるため
+     既定の32px(btn-smのデフォルト)のまま変えない。
+     「.join .btn」(クラス2つ)は「.btn」(クラス1つ)より詳細度が高いので、
+     !important無しでfont-sizeを上書きできる */
+  font-size: 14px;
+}
