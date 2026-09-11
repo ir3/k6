@@ -26,19 +26,19 @@
         %td{colspan: "8"}
           取引管理
           %span.TB12.text-blue-600.text-xs
-            取引台帳の閲覧は、取引番号の一部(または全部)を入力してボタンをクリックするか、
+            取引台帳の閲覧は、取引No.の一部(または全部)を入力してボタンをクリックするか、
             検索したい文字を入力してボタンをクリックします。
       %tr
         %td
-          %span.TB12.text-blue-600.text-xs 取引番号
+          %span.TB12.text-blue-600.text-xs 取引No.
           %br/
           %form{method:"post", action: "#{orders_search_path}"}
             %input.box.input.input-bordered.border-2.border-neutral.bg-base-100{maxlength: "9", name: "keyword", size: "9", type: "text", style: "ime-mode:disabled; width: 6.5rem;", value: "#{ym}"}/
             %br/
-            %input.btn.wtext.btn-info{name: "submit", type: "submit", value: "取引番号"}/
+            %input.btn.wtext.btn-info{name: "submit", type: "submit", value: "取引No."}/
             = hidden_field_tag('authenticity_token', form_authenticity_token)
         %td
-          %span.TB12.text-blue-600.text-xs 取引番号
+          %span.TB12.text-blue-600.text-xs 取引No.
           %br/
           %form{method: "post", action: "#{orders_alllist_path}"}
             = hidden_field_tag('authenticity_token', form_authenticity_token)
@@ -47,7 +47,7 @@
             %input{name: "fixed", type: "hidden", value: "0"}/
             %input.btn.wtext.btn-info{type: "submit", value: "未受決分"}/
         %td
-          %span.TB12.text-blue-600.text-xs 取引番号
+          %span.TB12.text-blue-600.text-xs 取引No.
           %br/
           %form{method: "post", action: "#{orders_alllist_path}"}
             = hidden_field_tag('authenticity_token', form_authenticity_token)

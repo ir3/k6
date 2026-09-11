@@ -48,7 +48,7 @@ class OrdersController < ApplicationController
         @search_condition = "取引先ID: #{@keyword}"
       else
         @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like'%#{@keyword}%' ORDER BY id #{mno_order}")
-        @search_condition = "取引番号: #{@keyword}"
+        @search_condition = "取引No.: #{@keyword}"
       end
     elsif @shipname && !@shipname.empty?
       session[:shipname] = @shipname.to_s
@@ -114,7 +114,7 @@ class OrdersController < ApplicationController
     logger.debug  keyword
     logger.debug  keykind
 
-    # 取引番号(9桁)がそのまま一致する場合は、取引台帳を経由せず注文部品詳細へ直行する
+    # 取引No.(9桁)がそのまま一致する場合は、取引台帳を経由せず注文部品詳細へ直行する
     if keykind.blank? && keyword.to_s.match?(/\A\d{9}\z/)
       order = Order.find_by(mno: keyword)
       return redirect_to(order_path(order)) if order
@@ -142,7 +142,7 @@ class OrdersController < ApplicationController
     elsif
       session[:yearmonth] = keyword
       @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like '#{keyword}%' ORDER BY id #{mno_order}")
-      @search_condition = "取引番号: #{keyword}"
+      @search_condition = "取引No.: #{keyword}"
     end
     @orders = paginate_orders(@orders)
 
