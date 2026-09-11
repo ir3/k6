@@ -126,6 +126,8 @@
   /* 「取引管理No.」が折り返さない大きさに統一（小さめ） */
   font-size: 0.75rem !important;
   white-space: nowrap;
+  /* row-compactと同じ理由で、見出し行の上下余白もぎりぎりまで詰める */
+  padding: 2px 10px !important;
 }
 .hide-updated-at-col .updated-at-col {
   /* 部品詳細テーブル最後尾の「更新日時」列の表示/非表示切り替え用 */
