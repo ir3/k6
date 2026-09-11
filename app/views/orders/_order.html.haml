@@ -12,7 +12,8 @@
       - dp << adlist.company if adlist.company
       - dp << ' '+adlist.section if adlist.section
       = link_to dp, adlist
-  %td{style: td_style}= order.etype
+  %td{style: td_style}
+    .etype-col= order.etype
   %td{style: td_style}
     = link_to(order.engno, "/orders?engno=#{order.engno}") if order.engno
   %td{style: td_style}
