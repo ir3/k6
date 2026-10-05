@@ -301,6 +301,35 @@ class OrdersController < ApplicationController
     end
   end
 
+  # POST /orders/1/add_part
+  # 注文部品詳細の「部品番号を入力して部品選択」。部品番号で部品明細を追加し、注文部品詳細へ戻る。
+  def add_part
+    @order = Order.find(params[:id])
+    result = OrderPartAdder.new(@order, params[:partsno]).call
+
+    if result.success?
+      flash[:notice] = added_part_message(result)
+      flash[:warning] = result.warnings.join(" ") if result.warnings.any?
+    else
+      flash[:alert] = result.error
+    end
+    redirect_to @order
+  end
+
+  # POST /orders/1/add_part_name
+  # 注文部品詳細の「部品番号が不明な分を部品名入力」。部品名だけで部品番号なしの明細を仮登録する。
+  def add_part_name
+    @order = Order.find(params[:id])
+    result = OrderPartNameAdder.new(@order, params[:partsname]).call
+
+    if result.success?
+      flash[:notice] = "部品名「#{result.row.partsname}」を部品番号なしで追加しました。"
+    else
+      flash[:alert] = result.error
+    end
+    redirect_to @order
+  end
+
   # GET /orders/1/sorted
   # 並び替え後表示画面。注文部品詳細で「並び替え」した後に遷移してくる想定の画面で、
   # ここから請求書・納品書などの帳票出力ボタンを呼び出す。
@@ -464,6 +493,12 @@ class OrdersController < ApplicationController
     return true if parts.any?(&:blank?)
 
     Date.valid_date?(*parts.map(&:to_i))
+  end
+
+  def added_part_message(result)
+    message = "部品 #{result.partno} を追加しました。"
+    message += "（在庫台帳にあるため、在庫分と通常の#{result.rows.size}行）" if result.rows.size > 1
+    message
   end
 
   # 掛け率は「0以上の数値」だけ受け付ける（空欄は未設定として許可）。

@@ -19,4 +19,18 @@ class Order < ActiveRecord::Base
   def effective_tax_rate
     tax_rate || self.class.default_tax_rate
   end
+
+  # 部品明細の並び順(sno)の刻み
+  PART_SNO_STEP = 10
+
+  # 部品明細(部品番号あり: orderparts、部品番号なし: n_orderparts)に追加する行の並び順の番号。
+  # 既存の最大値+10。旧ASPの「件数×10+10」は欠番や削除で重複したので使わない
+  # （実データでは12%の注文でsnoが重複していた）。
+  def next_part_sno
+    current = [
+      Orderpart.where(mno: mno).reorder(nil).maximum(:sno),
+      NOrderpart.where(mno: mno).maximum(:sno)
+    ].compact.max
+    current.to_i + PART_SNO_STEP
+  end
 end

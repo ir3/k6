@@ -28,6 +28,8 @@ Rails.application.routes.draw do
   resources :orders do
     member do
       get :sorted
+      post :add_part
+      post :add_part_name
       get "report/:kind", to: "orders#report", as: :report
     end
   end

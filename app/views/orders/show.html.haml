@@ -106,13 +106,25 @@
       = link_to "台帳から削除", order_path, method: :delete, data: {confirm: "本当に削除しますか？"}, class: "btn wtext btn-info"
     %td{style:"padding: 5px 5px 5px 30px;"}
       = link_to "並び替え後表示(仮)", sorted_order_path(@order), class: "btn wtext btn-info"
+-# 旧 partsin.asp の「部品番号を入力して部品選択」。部品番号で部品明細を追加する(partsreg3.asp 相当)
+%form.flex.items-center.gap-2{method: "post", action: add_part_order_path(@order), style: "margin: 6px 0; padding-left: 30px;"}
+  = hidden_field_tag("authenticity_token", form_authenticity_token, id: nil)
+  = text_field_tag :partsno, nil, size: 12, maxlength: 30, autocomplete: "off", placeholder: "部品番号", class: "input input-bordered input-xs border-2 border-neutral bg-base-100", style: "ime-mode:disabled; width: 10rem;"
+  = submit_tag "部品番号を入力して部品選択", name: nil, class: "btn btn-xs wtext btn-info"
 -# 掛け率の入力欄は表の中のセルに散らばるので、空のフォームを表の外に置き、form 属性で関連付ける
 %form#order_rate_form{method: "post", action: order_path(@order)}
   = hidden_field_tag(:_method, "patch", id: nil)
   = hidden_field_tag("authenticity_token", form_authenticity_token, id: nil)
+-# 旧 partsin.asp の「部品番号が不明な分を部品名入力」。部品名だけで部品番号なしの明細を仮登録する(partsreg5.asp 相当)。
+-# 掛け率と同じく、セルに置く入力欄は空のフォームに form 属性で関連付ける
+%form#order_part_name_form{method: "post", action: add_part_name_order_path(@order)}
+  = hidden_field_tag("authenticity_token", form_authenticity_token, id: nil)
 - rate_cls = "input input-bordered input-xs border-2 border-neutral bg-base-100"
 %table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
+    %td{style: "text-align: left; white-space: nowrap;"}
+      = text_field_tag :partsname, nil, form: "order_part_name_form", maxlength: OrderPartNameAdder::MAX_LENGTH, autocomplete: "off", placeholder: "部品名", class: rate_cls, style: "width: 22rem;"
+      = submit_tag "部品番号が不明な分を部品名入力", form: "order_part_name_form", name: nil, class: "btn btn-xs wtext btn-info"
     %th.bg-primary.text-primary-content{width:"120px", style: 'font-size: 11px;'} A部品掛け率
     %td{width:"80px"}= number_field_tag "order[irate]", @order.irate, form: "order_rate_form", step: "any", min: 0, class: rate_cls, style: "width: 5rem; text-align: right;"
     %th.bg-primary.text-primary-content{width:"110px", style: 'font-size: 11px;'}  以外掛け率

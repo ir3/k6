@@ -206,4 +206,115 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     patch order_url(@order), params: { order: { "rdate(1i)" => [ "2026" ], "rdate(2i)" => "11", "rdate(3i)" => "30" } }
     assert_response :redirect
   end
+
+  # --- 部品番号を入力して部品選択 ---
+
+  test "show has the part number form" do
+    get order_url(@order)
+    assert_select "form[action='#{add_part_order_path(@order)}'][method='post']" do
+      assert_select "input[name='partsno']"
+      assert_select "input[type='submit'][value='部品番号を入力して部品選択']"
+    end
+  end
+
+  test "add_part adds the row and goes back to the order with a message" do
+    Part.create!(pcode: "A00401252", newprice: 140, weightkg: 0.5)
+    assert_difference -> { Orderpart.where(mno: @order.mno).count }, 1 do
+      post add_part_order_url(@order), params: { partsno: "a00401252" }
+    end
+    assert_redirected_to order_url(@order)
+    follow_redirect!
+    assert_select ".alert-success", /部品 A00401252 を追加しました。/
+    assert_select ".alert-warning", false
+  end
+
+  test "add_part adds a stock row and a normal row for a part in the stock ledger" do
+    Part.create!(pcode: "A00401252", newprice: 140)
+    Stock.create!(partno: "A00401252", num: 3)
+    assert_difference -> { Orderpart.where(mno: @order.mno).count }, 2 do
+      post add_part_order_url(@order), params: { partsno: "A00401252" }
+    end
+    follow_redirect!
+    assert_select ".alert-success", /在庫台帳にあるため、在庫分と通常の2行/
+    assert_equal [ "^", nil ], Orderpart.where(mno: @order.mno).reorder(:id).pluck(:kzaiko)
+  end
+
+  test "add_part shows a warning when the new price is not set" do
+    Part.create!(pcode: "A00401252", newprice: 0)
+    post add_part_order_url(@order), params: { partsno: "A00401252" }
+    follow_redirect!
+    assert_select ".alert-success"
+    assert_select ".alert-warning", /単価0/
+  end
+
+  test "add_part with an unknown number shows an error and adds nothing" do
+    assert_no_difference -> { Orderpart.where(mno: @order.mno).count } do
+      post add_part_order_url(@order), params: { partsno: "ZZZ999" }
+    end
+    assert_redirected_to order_url(@order)
+    follow_redirect!
+    assert_select ".alert-error", /見つかりません/
+  end
+
+  test "add_part with a blank number shows an error" do
+    post add_part_order_url(@order), params: { partsno: "" }
+    follow_redirect!
+    assert_select ".alert-error", /入力してください/
+  end
+
+  # --- 部品番号が不明な分を部品名入力 ---
+
+  test "show has the part name form in the rate row" do
+    get order_url(@order)
+    assert_select "form#order_part_name_form[action='#{add_part_name_order_path(@order)}'][method='post']"
+    assert_select "input[name='partsname'][form='order_part_name_form']"
+    assert_select "input[type='submit'][form='order_part_name_form'][value='部品番号が不明な分を部品名入力']"
+    # 掛け率と同じ表の同じ行にある
+    assert_select "table tr:has(input[name='partsname']):has(input[name='order[irate]'])"
+  end
+
+  test "add_part_name adds a no-part-number row and goes back to the order with a message" do
+    assert_difference -> { NOrderpart.where(mno: @order.mno).count }, 1 do
+      post add_part_name_order_url(@order), params: { partsname: "ﾎﾞﾙﾄ ﾅｯﾄ" }
+    end
+    assert_redirected_to order_url(@order)
+    follow_redirect!
+    assert_select ".alert-success", /部品名「ﾎﾞﾙﾄ ﾅｯﾄ」を部品番号なしで追加しました。/
+  end
+
+  test "a row added by name is shown as a valid row and counted in the other subtotal" do
+    NOrderpart.create!(mno: @order.mno, sno: 10, partsname: "既存の行", qty: 2, rate: 0, unitpd: 1000, totala: 2000, tvalid: 1)
+    post add_part_name_order_url(@order), params: { partsname: "追加した部品名" }
+    follow_redirect!
+    assert_response :success
+    # 取り消し線(無効行)にならず、小計は既存の行だけ(追加行は単価0)
+    assert_select "tr", text: /追加した部品名/
+    assert_select "tr[style*='line-through']", text: /追加した部品名/, count: 0
+    assert_select "tr", text: /その他小計.*2,000/m
+  end
+
+  test "add_part_name with a blank name shows an error and adds nothing" do
+    assert_no_difference -> { NOrderpart.count } do
+      post add_part_name_order_url(@order), params: { partsname: "  " }
+    end
+    follow_redirect!
+    assert_select ".alert-error", /部品名を入力してください/
+  end
+
+  test "add_part_name needs a login" do
+    delete session_url
+    assert_no_difference -> { NOrderpart.count } do
+      post add_part_name_order_url(@order), params: { partsname: "部品名" }
+    end
+    assert_redirected_to new_session_url(format: :html)
+  end
+
+  test "add_part needs a login" do
+    Part.create!(pcode: "A00401252", newprice: 140)
+    delete session_url
+    assert_no_difference -> { Orderpart.count } do
+      post add_part_order_url(@order), params: { partsno: "A00401252" }
+    end
+    assert_redirected_to new_session_url(format: :html)
+  end
 end
