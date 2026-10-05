@@ -367,11 +367,14 @@ class OrdersController < ApplicationController
 
   # GET /orders/new
   # GET /orders/new.json
+  # 取引台帳追加（新規取引登録）。管理番号は表示だけで、登録の瞬間に採番し直す(create)。
   def new
-    @order = Order.new
+    @order = Order.new(rdate: Date.current)
+    @order.mno = Order.next_mno
+    @order.orderitem = default_orderitem(@order.mno)
 
     respond_to do |format|
-      format.html # new.html.erb
+      format.html # new.html.haml
       format.json { render json: @order }
     end
   end
@@ -384,15 +387,22 @@ class OrdersController < ApplicationController
 
   # POST /orders
   # POST /orders.json
+  # 管理番号は画面からは受け取らず、ここで採番する（orderin.asp 相当。採番は Order.next_mno）。
   def create
-    @order = Order.new(params[:order])
+    @order = Order.new(order_params)
+    Order::NEW_ORDER_DEFAULTS.each { |attr, value| @order[attr] = value if @order[attr].nil? }
+
+    problems = new_order_problems
+    saved = problems.empty? && save_with_new_mno(problems)
 
     respond_to do |format|
-      if @order.save
-        format.html { redirect_to @order, notice: 'Order was successfully created.' }
+      if saved
+        format.html { redirect_to @order, notice: "取引台帳を登録しました。管理番号 #{@order.mno}" }
         format.json { render json: @order, status: :created, location: @order }
       else
-        format.html { render action: 'new' }
+        problems.each { |message| @order.errors.add(:base, message) }
+        # Turbo は 4xx でないとフォーム送信の応答を描画しないので 422 にする
+        format.html { render action: "new", status: :unprocessable_entity }
         format.json { render json: @order.errors, status: :unprocessable_entity }
       end
     end
@@ -493,6 +503,47 @@ class OrdersController < ApplicationController
     return true if parts.any?(&:blank?)
 
     Date.valid_date?(*parts.map(&:to_i))
+  end
+
+  # 新規登録の件名の既定値は管理番号の下5桁（複製の ocopy や実データの件名「10012（受注）」と同じ形）
+  def default_orderitem(mno)
+    mno&.to_s&.slice(4, 5)
+  end
+
+  # 新規登録の入力を保存前に確認する。取引先は必須（実データでは取引先なしの注文は0件）。
+  def new_order_problems
+    problems = []
+    if @order.adlist_id.blank?
+      problems << "取引先を選択してください。"
+    elsif !Adlist.exists?(no: @order.adlist_id.to_s)
+      problems << "選択された取引先が見つかりません。取引先を選び直してください。"
+    end
+    problems << "納入期日が正しい日付ではありません。" unless valid_rdate_params?
+    problems
+  end
+
+  # 登録の瞬間に管理番号を採番して保存する。保存できなければ false を返し、理由を problems に足す。
+  # 画面に表示した番号(expected_mno)と採番結果が違えば、登録せずに新しい番号を見せて確認してもらう。
+  def save_with_new_mno(problems)
+    Order.transaction do
+      mno = Order.next_mno
+      if mno.nil?
+        problems << "今月の管理番号が上限(#{Order::MNO_SEQ_MAX})に達したため登録できません。"
+        raise ActiveRecord::Rollback
+      end
+
+      expected = params[:expected_mno].presence
+      if expected && expected.to_i != mno
+        problems << "ほかの方が先に登録したため、管理番号が #{expected} から #{mno} に変わりました。内容を確認して、もう一度登録してください。"
+        @order.mno = mno
+        raise ActiveRecord::Rollback
+      end
+
+      @order.mno = mno
+      @order.orderitem = default_orderitem(mno) if @order.orderitem.blank?
+      @order.save!
+    end
+    problems.empty?
   end
 
   def added_part_message(result)

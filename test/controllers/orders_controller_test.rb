@@ -262,6 +262,149 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".alert-error", /入力してください/
   end
 
+  # --- 取引台帳追加（新規取引登録） ---
+
+  def new_order_params(overrides = {})
+    { adlist_id: "9001", shipname: "新規丸", etype: "6L28HX", country: "日本",
+      "rdate(1i)" => "2026", "rdate(2i)" => "11", "rdate(3i)" => "20" }.merge(overrides)
+  end
+
+  test "the nav bar has a new order button right after Menu on every screen" do
+    [ menu_url, orders_url ].each do |url|
+      get url
+      links = css_select(".menu-horizontal li a").map { |a| [ a.text.strip, a["href"] ] }
+      assert_equal [ [ "Home", welcom_index_path ], [ "Menu", menu_path ], [ "新規取引登録", new_order_path ] ], links.first(3), url
+      assert_select ".menu-horizontal a.btn[href='#{new_order_path}']", text: "新規取引登録"
+    end
+  end
+
+  test "new shows the shared form with the next management number and the title" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      Order.create!(mno: 202_610_012, adlist_id: 1)
+      get new_order_url
+    end
+    assert_response :success
+    assert_select "title", /取引台帳追加/
+    assert_select "form[action='#{orders_path}'][method='post']" do
+      assert_select "input[type='submit'][value='登録実行']"
+      assert_select "input[name='expected_mno'][value='202610013']"
+      assert_select "input[name='order[orderitem]'][value='10013']"
+      assert_select "input[name='order[adlist_id]']"
+    end
+    assert_select "th", text: "管理番号"
+    assert_select "td", text: "202610013"
+    assert_select "td", text: "（取引先を選択してください）"
+    assert_select "textarea[name='order[ncomment]']", text: /御社御下命後４日/
+    assert_select "a.btn[href='#{orders_path}']", text: "登録しないで戻り"
+    # 修正画面専用の更新日時は出さない
+    assert_select "th", text: "更新日時", count: 0
+  end
+
+  test "new has the same fields as edit" do
+    get new_order_url
+    new_fields = css_select("form [name^='order[']").map { |e| e["name"] }.uniq.sort
+    get edit_order_url(@order)
+    edit_fields = css_select("form [name^='order[']").map { |e| e["name"] }.uniq.sort
+    assert_equal edit_fields, new_fields
+  end
+
+  test "create registers the order with a freshly numbered management number" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      Order.create!(mno: 202_610_012, adlist_id: 1)
+      assert_difference -> { Order.reorder(nil).count }, 1 do
+        post orders_url, params: { expected_mno: "202610013", order: new_order_params }
+      end
+      order = Order.reorder(:id).last
+      assert_redirected_to order_url(order)
+      assert_equal 202_610_013, order.mno
+      assert_equal "10013", order.orderitem
+      assert_equal [ 9001, "新規丸", "6L28HX", "日本", Date.new(2026, 11, 20) ], [ order.adlist_id, order.shipname, order.etype, order.country, order.rdate ]
+      assert_equal [ 1.0, 0.0, 1 ], [ order.irate, order.irate2, order.tvalid ]
+      follow_redirect!
+      assert_select ".alert-success", /取引台帳を登録しました。管理番号 202610013/
+    end
+  end
+
+  test "create keeps the order item the user typed" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      post orders_url, params: { order: new_order_params(orderitem: "ボルト 10本") }
+      assert_equal "ボルト 10本", Order.reorder(:id).last.orderitem
+    end
+  end
+
+  test "create ignores a management number sent from outside" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      # setup の注文が 202610001 なので、次は 202610002
+      post orders_url, params: { order: new_order_params(mno: "999999999") }
+      assert_equal 202_610_002, Order.reorder(:id).last.mno
+    end
+  end
+
+  test "create needs an adlist and refuses a missing or unknown one" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      [ [ "", /取引先を選択してください/ ], [ "8888", /取引先が見つかりません/ ] ].each do |adlist_id, message|
+        assert_no_difference -> { Order.reorder(nil).count } do
+          post orders_url, params: { order: new_order_params(adlist_id: adlist_id, shipname: "入力保持") }
+        end
+        assert_response :unprocessable_entity
+        assert_select ".alert-error", message
+        assert_select "input[name='order[shipname]'][value='入力保持']"
+      end
+    end
+  end
+
+  test "create rejects an impossible delivery date" do
+    assert_no_difference -> { Order.reorder(nil).count } do
+      post orders_url, params: { order: new_order_params("rdate(2i)" => "2", "rdate(3i)" => "31") }
+    end
+    assert_response :unprocessable_entity
+    assert_select ".alert-error", /納入期日が正しい日付ではありません/
+  end
+
+  test "create shows the new number instead of registering when someone else took the number" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      Order.create!(mno: 202_610_013, adlist_id: 1) # 画面を開いた後に、ほかの人が13番を登録した
+      assert_no_difference -> { Order.reorder(nil).count } do
+        post orders_url, params: { expected_mno: "202610013", order: new_order_params }
+      end
+      assert_response :unprocessable_entity
+      assert_select ".alert-error", /202610013 から 202610014 に変わりました/
+      assert_select "input[name='expected_mno'][value='202610014']"
+      assert_select "td", text: "202610014"
+      assert_select "input[name='order[shipname]'][value='新規丸']"
+    end
+  end
+
+  test "create refuses when the month has used up all 999 numbers" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      Order.create!(mno: 202_610_999, adlist_id: 1)
+      assert_no_difference -> { Order.reorder(nil).count } do
+        post orders_url, params: { order: new_order_params }
+      end
+      assert_response :unprocessable_entity
+      assert_select ".alert-error", /上限\(999\)/
+    end
+  end
+
+  test "create is not fooled by an abnormal huge number in the data" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      Order.create!(mno: 405_024_078, adlist_id: 1)
+      # setup の注文が 202610001 なので、次は 202610002（405024079 にはならない）
+      post orders_url, params: { order: new_order_params }
+      assert_equal 202_610_002, Order.reorder(:id).last.mno
+    end
+  end
+
+  test "new and create need a login" do
+    delete session_url
+    get new_order_url
+    assert_redirected_to new_session_url(format: :html)
+    assert_no_difference -> { Order.reorder(nil).count } do
+      post orders_url, params: { order: new_order_params }
+    end
+    assert_redirected_to new_session_url(format: :html)
+  end
+
   # --- 部品番号が不明な分を部品名入力 ---
 
   test "show has the part name form in the rate row" do

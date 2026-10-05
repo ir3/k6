@@ -5,6 +5,7 @@ module ApplicationHelper
     return "業務システム" if controller_name == "menus"
     return "注文部品詳細" if controller_name == "orders" && action_name == "show"
     return "並び替え後表示" if controller_name == "orders" && action_name == "sorted"
+    return "取引台帳追加" if controller_name == "orders" && %w[new create].include?(action_name)
     return "取引台帳修正" if controller_name == "orders" && %w[edit update].include?(action_name)
     return "取引台帳" if controller_name == "orders"
 
