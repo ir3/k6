@@ -2,7 +2,7 @@
 -# open: true の時は、あわせてモーダルを開く(編集画面側)。モーダル内は開いたままなので不要。
 - open = local_assigns.fetch(:open, false)
 .flex.flex-col.gap-1
-  - OrdersHelper::KANA_ROWS.each do |row|
+  - kana_rows.each do |row|
     .flex.flex-wrap.gap-1
       - row.each do |kana|
         - data = { turbo_frame: "adlist_picker" }

@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class OrdersController < ApplicationController
+  # 掛け率は数字と小数点だけ（"0x1A" や "1e3" のような Ruby が数値と解釈する書き方は通さない）
+  RATE_FORMAT = /\A\d+(\.\d+)?\z/
+
   before_action :require_authentication
 
   # GET /orders
@@ -368,10 +371,12 @@ class OrdersController < ApplicationController
 
   # PUT /orders/1
   # PUT /orders/1.json
-  # 取引台帳修正画面のほか、注文部品詳細の値引き・消費税率の行からも呼ばれる
+  # 取引台帳修正画面のほか、注文部品詳細の掛け率・値引き・消費税率の行からも呼ばれる
   # （それらは日付や取引先を送らないので、order_edit_problems では対象外になる）。
   def update
     @order = Order.find(params[:id])
+    return reject_invalid_rates unless valid_rate_params?
+
     attrs = order_params
     adlist_changed = attrs[:adlist_id].present? && attrs[:adlist_id].to_i != @order.adlist_id
     @order.assign_attributes(attrs)
@@ -455,9 +460,27 @@ class OrdersController < ApplicationController
   # date_select は2月31日のような日付も選べてしまい、そのまま保存すると nil になって納入期日が消える。
   # 日付を送っていない更新（値引き・消費税率の行など）は対象外。
   def valid_rdate_params?
-    parts = %w[1i 2i 3i].map { |i| params.dig(:order, "rdate(#{i})") }
+    parts = %w[1i 2i 3i].map { |i| params.dig(:order, "rdate(#{i})").to_s }
     return true if parts.any?(&:blank?)
 
     Date.valid_date?(*parts.map(&:to_i))
+  end
+
+  # 掛け率は「0以上の数値」だけ受け付ける（空欄は未設定として許可）。
+  # 掛け率を送っていない更新（取引台帳修正画面など）は対象外。
+  def valid_rate_params?
+    %w[irate irate2].all? do |key|
+      value = params.dig(:order, key).to_s.strip
+      value.empty? || value.match?(RATE_FORMAT)
+    end
+  end
+
+  # 掛け率は注文部品詳細の入力欄から送られてくるので、エラーはそちらへ戻して表示する
+  def reject_invalid_rates
+    message = "掛け率は0以上の数値（例: 0.85）で入力してください。"
+    respond_to do |format|
+      format.html { redirect_to @order, alert: message }
+      format.json { render json: { error: message }, status: :unprocessable_entity }
+    end
   end
 end

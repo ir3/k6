@@ -73,7 +73,9 @@
 }
 
 .center-table th,
-.center-table thead th {
+.center-table thead th,
+.picker-table th {
+  /* .picker-table は取引先選択モーダルの一覧。他の表のヘッダーと同じ色にする */
   background-color: #c8dce8 !important;
   color: #777 !important;
   font-weight: normal !important;

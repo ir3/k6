@@ -106,14 +106,18 @@
       = link_to "台帳から削除", order_path, method: :delete, data: {confirm: "本当に削除しますか？"}, class: "btn wtext btn-info"
     %td{style:"padding: 5px 5px 5px 30px;"}
       = link_to "並び替え後表示(仮)", sorted_order_path(@order), class: "btn wtext btn-info"
+-# 掛け率の入力欄は表の中のセルに散らばるので、空のフォームを表の外に置き、form 属性で関連付ける
+%form#order_rate_form{method: "post", action: order_path(@order)}
+  = hidden_field_tag(:_method, "patch", id: nil)
+  = hidden_field_tag("authenticity_token", form_authenticity_token, id: nil)
+- rate_cls = "input input-bordered input-xs border-2 border-neutral bg-base-100"
 %table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
     %th.bg-primary.text-primary-content{width:"120px", style: 'font-size: 11px;'} A部品掛け率
-    %td{width:"80px"}= @order.irate
+    %td{width:"80px"}= number_field_tag "order[irate]", @order.irate, form: "order_rate_form", step: "any", min: 0, class: rate_cls, style: "width: 5rem; text-align: right;"
     %th.bg-primary.text-primary-content{width:"110px", style: 'font-size: 11px;'}  以外掛け率
-    %td{width:"80px"}= @order.irate2
-    %th.bg-primary.text-primary-content{width:"80px", style: 'font-size: 11px;'} 値引き
-    %td= @order.nebiki
+    %td{width:"80px"}= number_field_tag "order[irate2]", @order.irate2, form: "order_rate_form", step: "any", min: 0, class: rate_cls, style: "width: 5rem; text-align: right;"
+    %td= submit_tag "掛け率変更", form: "order_rate_form", name: nil, class: "btn btn-xs wtext btn-info"
 %table.center-table.radius-table.row-compact.zebra-table.list-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr
