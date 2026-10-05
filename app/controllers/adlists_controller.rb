@@ -11,9 +11,7 @@ class AdlistsController < ApplicationController
     @gyo = params[:gyo]
     @new_order = params[:new_order]
     if @gyo.present?
-      patterns = kana_with_voiced_variants(@gyo).flat_map { |k| ["#{k}%", "#{hiragana_to_katakana(k)}%"] }
-      where_sql = patterns.map { 'ruby LIKE ?' }.join(' OR ')
-      @adlists = Adlist.where(where_sql, *patterns).reorder(Arel.sql('CAST(no AS INTEGER) ASC'))
+      @adlists = adlists_by_gyo(@gyo)
     elsif @keyword.present?
       like = "%#{@keyword}%"
       @adlists = Adlist.where('ruby LIKE ? OR company LIKE ? OR name LIKE ?', like, like, like).reorder(Arel.sql('CAST(no AS INTEGER) ASC'))
@@ -29,6 +27,18 @@ class AdlistsController < ApplicationController
                   filename: 'lists.xlsx',
                   type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       end
+    end
+  end
+
+  # GET /adlists/picker
+  # 取引台帳修正の取引先選択モーダル用。Turbo Frame(adlist_picker)に取引先一覧を返す。
+  # 50音で絞り込んだ場合は全件、絞り込みなし(全)の場合はページ送りにする(indexと同じ方針)。
+  def picker
+    @gyo = params[:gyo]
+    @adlists = if @gyo.present?
+      adlists_by_gyo(@gyo)
+    else
+      Adlist.reorder(Arel.sql("CAST(no AS INTEGER) ASC")).page(params[:page])
     end
   end
 
@@ -267,6 +277,13 @@ class AdlistsController < ApplicationController
   # ひらがなをカタカナに変換する（ひらがなとカタカナのコードポイントは 0x60 差分で対応）
   def hiragana_to_katakana(str)
     str.each_char.map { |c| c.ord.between?(0x3041, 0x3096) ? [ c.ord + 0x60 ].pack("U") : c }.join
+  end
+
+  # 読みの頭文字（ひらがな・カタカナ、濁音含む）で絞り込み、取引先No順に返す
+  def adlists_by_gyo(gyo)
+    patterns = kana_with_voiced_variants(gyo).flat_map { |k| [ "#{k}%", "#{hiragana_to_katakana(k)}%" ] }
+    where_sql = patterns.map { "ruby LIKE ?" }.join(" OR ")
+    Adlist.where(where_sql, *patterns).reorder(Arel.sql("CAST(no AS INTEGER) ASC"))
   end
 
   # Never trust parameters from the scary internet, only allow the white list through.

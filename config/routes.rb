@@ -13,6 +13,8 @@ Rails.application.routes.draw do
   patch "menu/tax_rate" => "menus#update_tax_rate", as: "menu_tax_rate"
 
   # kobeengine
+  # 取引台帳修正の取引先選択モーダル用（resources :adlists より前に置かないと :id に取られる）
+  get  'adlists/picker'   => 'adlists#picker',   as: 'adlists_picker'
   resources :adlists
   get  'search'           => 'adlists#search',   as: 'search'
   post 'adlists/out/'     => 'adlists#out'

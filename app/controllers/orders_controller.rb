@@ -368,16 +368,23 @@ class OrdersController < ApplicationController
 
   # PUT /orders/1
   # PUT /orders/1.json
+  # 取引台帳修正画面のほか、注文部品詳細の値引き・消費税率の行からも呼ばれる
+  # （それらは日付や取引先を送らないので、order_edit_problems では対象外になる）。
   def update
     @order = Order.find(params[:id])
+    attrs = order_params
+    adlist_changed = attrs[:adlist_id].present? && attrs[:adlist_id].to_i != @order.adlist_id
+    @order.assign_attributes(attrs)
+    problems = order_edit_problems(adlist_changed)
 
     respond_to do |format|
-      #      if @order.update_attributes(params[:order])
-      if @order.update(order_params)
-        format.html { redirect_to @order, notice: 'Order was successfully updated.' }
+      if problems.empty? && @order.save
+        format.html { redirect_to @order, notice: "取引台帳を修正しました。" }
         format.json { head :no_content }
       else
-        format.html { render action: 'edit' }
+        problems.each { |message| @order.errors.add(:base, message) }
+        # Turbo は 4xx でないとフォーム送信の応答を描画しないので 422 にする
+        format.html { render action: "edit", status: :unprocessable_entity }
         format.json { render json: @order.errors, status: :unprocessable_entity }
       end
     end
@@ -429,8 +436,28 @@ class OrdersController < ApplicationController
   end
 
   def order_params
-    params.require(:order).permit(:shipname, :engno, :orderitem, :memo, :ono, :etype,
+    params.require(:order).permit(:adlist_id, :shipname, :engno, :orderitem, :memo, :ono, :etype,
                                   :country, :tc, :tcno, :zp, :zpno, :glc, :glcno, :mg,
                                   :mgno, :rdate, :ncomment, :irate, :irate2, :nebiki, :tax_rate)
+  end
+
+  # 画面から来た値のうち、モデルでは弾かれない（または別の値に化ける）ものを保存前に確認する。
+  # adlist_changed は取引先が変更された時だけ true（変更なしなら既存データの不整合を理由に止めない）。
+  def order_edit_problems(adlist_changed)
+    problems = []
+    if adlist_changed && !Adlist.exists?(no: @order.adlist_id.to_s)
+      problems << "選択された取引先が見つかりません。取引先を選び直してください。"
+    end
+    problems << "納入期日が正しい日付ではありません。" unless valid_rdate_params?
+    problems
+  end
+
+  # date_select は2月31日のような日付も選べてしまい、そのまま保存すると nil になって納入期日が消える。
+  # 日付を送っていない更新（値引き・消費税率の行など）は対象外。
+  def valid_rdate_params?
+    parts = %w[1i 2i 3i].map { |i| params.dig(:order, "rdate(#{i})") }
+    return true if parts.any?(&:blank?)
+
+    Date.valid_date?(*parts.map(&:to_i))
   end
 end

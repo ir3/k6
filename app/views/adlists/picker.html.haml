@@ -1,0 +1,30 @@
+-# 取引台帳修正の取引先選択モーダルの中身（Turbo Frame: adlist_picker）。
+-# 行をクリックすると adlist-picker コントローラが会社名・部署名・取引先Noを編集中のフォームへ反映する。
+= turbo_frame_tag "adlist_picker" do
+  .flex.items-center.justify-between.mb-3
+    %h3.text-lg.font-bold= "取引先選択（#{@gyo.presence || '全'}）"
+    %button.btn.btn-sm.btn-ghost{type: "button", data: {action: "adlist-picker#close"}} 閉じる ✕
+  .mb-3= render "orders/kana_buttons"
+  %p.text-xs.mb-1{class: "text-base-content/60"} 取引先の行をクリックすると、会社名・部署名が編集中の画面に反映されます。
+  .overflow-y-auto{style: "max-height: 50vh;"}
+    %table.table.table-sm.table-pin-rows
+      %thead
+        %tr
+          %th{width: "70px"} 取引先No.
+          %th 会社名
+          %th 部署名
+          %th よみ
+      %tbody
+        - @adlists.each do |adlist|
+          %tr{class: "cursor-pointer hover:bg-info/20",
+              data: {action: "click->adlist-picker#select", no: adlist.no,
+                     company: adlist_company_name(adlist), section: adlist_section_name(adlist)}}
+            %td= adlist.no
+            %td= adlist_company_name(adlist)
+            %td= adlist_section_name(adlist)
+            %td= adlist.ruby
+        - if @adlists.empty?
+          %tr
+            %td.text-center{colspan: 4} 該当する取引先がありません
+  - unless @gyo.present?
+    = paginate @adlists

@@ -1,92 +1,109 @@
-- if notice
-  %p#notice= notice
-- else
-%table
-  %tr
-    %td{style:'text-align:center; font-size:xx-large'}
-      %i.fa.fa-home{style:"color:white;font-size:100%;vertical-align: middle"}
-      取引台帳修正
-  - if @order.errors.any?
-    #error_explanation
-      %h2= "#{pluralize(@order.errors.count, "error")} prohibited this order from being saved:"
-      %ul
-        - @order.errors.full_messages.each do |msg|
-          %li= msg
-= form_for @order do |f|
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
-    %tr{bgcolor: "#e3e3e3"}
-      %th.title{width:"40px"} Id
-      %td{width:"70px"}= @order.id
-      %th.title{width:"80px"} 取引管理No.
-      %td{width:"120px",style:'text-align:center; font-size:xx-large'}= @order.mno
-      %th.title{width:"45px"} 会社名
-      %td{width: "400px",style:'font-size:x-large'}
-        - dp = ''
-        - dp << Adlist.find(@order.adlist_id).company
-        - dp << ' '+Adlist.find(@order.adlist_id).section if Adlist.find(@order.adlist_id).section
-        = dp
-      %th.title{width:"45px"} 船名
-      %td{style:'font-size:xx-large'}
-        = f.text_field :shipname, size:"30"
-      %th.title{width:"45px"} 機番
-      %td{style:'font-size:xx-large'}
-        = f.text_field :engno, size:"10"
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
-    %tr{bgcolor: "#e3e3e3"}
-      %th.title{width:"45px"} 件名
-      %td= f.text_field :orderitem
-      %th.title{width:"45px"} 内容
-      %td{style:'font-size:x-large'}
-        = f.text_field :memo, size:"40"
-      %th.title{width:"45px"} 客先註番
-      %td= f.text_field :ono
-      %th.title{width:"90px"} 型式(機種)
-      %td{style:'font-size:x-large'}
-        = f.text_field :etype, size:"10"
-      %th.title{width:"45px"} 船籍
-      %td{style:'font-size:xx-large'}
-        = f.text_field :country, size:"8"
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
-    %tr{bgcolor: "#e3e3e3"}
-      %th.title{width:"40px"} TC
-      %td= f.text_field :tc, size:"12"
-      %th.title{width:"55px"} TCNo.
-      %td= f.text_field :tcno, size:"12"
-      %th.title{width:"40px"} ZP
-      %td= f.text_field :zp, size:"12"
-      %th.title{width:"55px"} ZPNo.
-      %td= f.text_field :zpno, size:"12"
-      %th.title{width:"40px"} GLC
-      %td= f.text_field :glc, size:"12"
-      %th.title{width:"55px"} GLNo.
-      %td= f.text_field :glcno, size:"12"
-      %th.title{width:"40px"} MG
-      %td= f.text_field :mg, size:"12"
-      %th.title{width:"55px"} MGNo.
-      %td= f.text_field :mgno, size:"12"
-  %table.table-bordered.table-condensed{width: "99%", align:"center"}
-    %tr{bgcolor: "#e3e3e3"}
-      %th.title{width:"45px"} 納入期日
-      %td{width:"100px"}
-        = f.date_select :rdate
-      %th.title{width:"60px"} 納入コメント
-      %td{style:'font-size:x-large'}
-        = f.text_field :ncomment, size:"40"
-      %th.title{width:"55px"} A部品掛け率
-      %td{style:'font-size:xx-large'}
-        = f.text_field :irate, size:"2"
-      %th.title{width:"55px"}  以外掛け率
-      %td{style:'font-size:xx-large'}
-        = f.text_field :irate2, size:"2"
-      %th.title{width:"45px"} 値引き
-      %td{style:'font-size:xx-large'}
-        = f.number_field :nebiki, size:"7",min: 0, max: 9999999
-      %th.title{width:"45px"} 更新日時
-      %td{width:"150px"}= @order.updated_at.strftime("%Y/%m/%d %H:%M")
+-# 取引台帳修正（asp/orderup.asp をもとにした画面）
+-# ASPの「日付」は納入期日(rdate)、「納入期日」(textarea)は納入コメント(ncomment)として扱う。
+-# 取引先は50音ボタンのモーダルで選ぶ（画面遷移しないので入力途中の内容は保持される）。
+- input_cls = "input input-bordered input-sm border-2 border-neutral bg-base-100"
+- ta_cls    = "textarea textarea-bordered border-2 border-neutral bg-base-100 w-full"
+- sel_cls   = "select select-bordered select-sm border-2 border-neutral bg-base-100"
+- latin     = "ime-mode:disabled;"
+- adlist    = Adlist.find_by(no: @order.adlist_id.to_s)
+- company   = adlist ? adlist_company_name(adlist) : "（取引先未登録）"
+- section   = adlist_section_name(adlist)
+- base_year = (@order.rdate || Date.current).year
 
-  .actions
-    = f.submit '修正実行'
+- if @order.errors.any?
+  .alert.alert-error.mb-3{role: "alert"}
+    %ul
+      - @order.errors.full_messages.each do |msg|
+        %li= msg
 
-= link_to '注文詳細(削除もここから)', @order
-\|
-= link_to '一覧へ', orders_path
+.mb-3.flex.gap-2
+  = link_to "注文部品詳細へ戻る", order_path(@order), class: "btn btn-sm btn-info"
+  = link_to "取引台帳へ", orders_path, class: "btn btn-sm btn-info"
+
+%div{data: {controller: "adlist-picker", adlist_picker_adlist_id_value: @order.adlist_id.to_s,
+            adlist_picker_company_value: company, adlist_picker_section_value: section}}
+  = form_with model: @order, url: order_path(@order), method: :patch do |f|
+    = f.hidden_field :adlist_id, data: {adlist_picker_target: "adlistId"}
+    %table.center-table.radius-table.row-compact.edit-table{width: "99%", align: "center"}
+      %tr
+        %th 納入期日
+        %td= f.date_select :rdate, {use_month_numbers: true, date_separator: " / ", start_year: [base_year, Date.current.year - 1].min, end_year: [base_year, Date.current.year + 1].max}, {class: "#{sel_cls} w-24"}
+        %th 管理番号
+        %td= @order.mno
+      %tr
+        %th{rowspan: 3} 取引先選択
+        %td{rowspan: 3}= render "orders/kana_buttons", open: true
+        %th 会社名
+        %td{data: {adlist_picker_target: "company"}}= company
+      %tr
+        %th 部署名
+        %td{data: {adlist_picker_target: "section"}}= section
+      %tr
+        %th 船名
+        %td= f.text_field :shipname, class: "#{input_cls} w-80"
+      %tr
+        %th 型式(機種)
+        %td= f.text_field :etype, class: "#{input_cls} w-80"
+        %th 注文番号
+        %td= f.text_field :ono, class: "#{input_cls} w-80"
+      %tr
+        %th 機番
+        %td= f.text_field :engno, class: "#{input_cls} w-80"
+        %th 船籍
+        %td= f.select :country, country_options(@order.country), {}, {class: "#{sel_cls} w-80"}
+      %tr
+        %th T/C形式
+        %td= f.text_field :tc, class: "#{input_cls} w-48", style: latin
+        %th T/C No.
+        %td= f.text_field :tcno, class: "#{input_cls} w-48", style: latin
+      %tr
+        %th ZP形式
+        %td= f.text_field :zp, class: "#{input_cls} w-48", style: latin
+        %th ZP No.
+        %td= f.text_field :zpno, class: "#{input_cls} w-48", style: latin
+      %tr
+        %th GLC形式
+        %td= f.text_field :glc, class: "#{input_cls} w-48", style: latin
+        %th GLC No.
+        %td= f.text_field :glcno, class: "#{input_cls} w-48", style: latin
+      %tr
+        %th MG形式
+        %td= f.text_field :mg, class: "#{input_cls} w-48", style: latin
+        %th MG No.
+        %td= f.text_field :mgno, class: "#{input_cls} w-48", style: latin
+      %tr
+        %th 件名
+        %td{colspan: 3}= f.text_field :orderitem, class: "#{input_cls} w-full"
+      %tr
+        %th 内容
+        %td{colspan: 3}= f.text_area :memo, rows: 8, class: ta_cls
+      %tr
+        %th 納入コメント
+        -# 未設定(nil)の時だけ既定の文言を入れる（ASPと同じ）
+        - comment_opts = {rows: 2, class: ta_cls}
+        - comment_opts[:value] = "御社御下命後４日" if @order.ncomment.nil?
+        %td{colspan: 3}= f.text_area :ncomment, comment_opts
+
+    -# orderup.asp には無いが、この画面でしか変更できない掛け率と、値引き・更新日時
+    %table.center-table.radius-table.row-compact.edit-table.mt-3{width: "99%", align: "center"}
+      %tr
+        %th A部品掛け率
+        %td= f.text_field :irate, class: "#{input_cls} w-24"
+        %th 以外掛け率
+        %td= f.text_field :irate2, class: "#{input_cls} w-24"
+        %th 値引き
+        %td= f.number_field :nebiki, min: 0, max: 9_999_999, class: "#{input_cls} w-32"
+        %th 更新日時
+        %td= @order.updated_at.strftime("%Y/%m/%d %H:%M")
+
+    .mt-3.flex.justify-center.gap-3
+      = f.submit "修正実行", class: "btn btn-primary"
+      %button.btn{type: "reset", data: {action: "adlist-picker#reset"}} リセット
+
+  -# 取引先選択モーダル。フォームの外に置く（中のボタンが修正フォームを送信しないように）。
+  %dialog.modal{data: {adlist_picker_target: "dialog"}}
+    .modal-box.max-w-5xl
+      = turbo_frame_tag "adlist_picker" do
+        %p 50音ボタンで取引先を選んでください。
+    %form.modal-backdrop{method: "dialog"}
+      %button{type: "submit"} 閉じる

@@ -1,0 +1,10 @@
+-# 取引先選択の50音ボタン。押すと取引先一覧(Turbo Frame: adlist_picker)を読み込む。
+-# open: true の時は、あわせてモーダルを開く(編集画面側)。モーダル内は開いたままなので不要。
+- open = local_assigns.fetch(:open, false)
+.flex.flex-col.gap-1
+  - OrdersHelper::KANA_ROWS.each do |row|
+    .flex.flex-wrap.gap-1
+      - row.each do |kana|
+        - data = { turbo_frame: "adlist_picker" }
+        - data[:action] = "click->adlist-picker#open" if open
+        = link_to kana, adlists_picker_path(gyo: (kana == "全" ? nil : kana)), class: "btn btn-xs btn-secondary w-8 px-0", data: data

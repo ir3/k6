@@ -4,6 +4,9 @@
 
 import { application } from "./application"
 
+import AdlistPickerController from "./adlist_picker_controller"
+application.register("adlist-picker", AdlistPickerController)
+
 import AlertController from "./alert_controller"
 application.register("alert", AlertController)
 
