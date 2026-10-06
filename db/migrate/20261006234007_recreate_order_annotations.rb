@@ -1,13 +1,9 @@
-class DropOrderAnnotations < ActiveRecord::Migration[8.1]
-  def up
-    drop_table :order_annotations
-  end
-
-  def down
+class RecreateOrderAnnotations < ActiveRecord::Migration[8.1]
+  def change
     create_table :order_annotations do |t|
       t.integer :tvalid
       t.integer :mno
-      t.text :comment
+      t.text    :comment
 
       t.timestamps
     end

@@ -10,292 +10,301 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_101000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_234007) do
   create_table "adlists", force: :cascade do |t|
+    t.string "no"
+    t.string "kbn"
+    t.string "name"
+    t.string "ruby"
+    t.integer "gender"
+    t.datetime "birthday"
+    t.datetime "kbirthday"
+    t.string "zip7"
     t.string "address1"
     t.string "address2"
     t.string "address3"
-    t.datetime "birthday"
+    t.string "tel"
+    t.string "fax"
+    t.string "mtel"
+    t.string "url"
+    t.string "company"
+    t.string "section"
+    t.string "section2"
+    t.string "position"
+    t.string "cozip7"
     t.string "coad1"
     t.string "coad2"
     t.string "coad3"
-    t.string "cofax"
-    t.string "comail"
-    t.string "comobile"
-    t.string "company"
-    t.string "copok"
     t.string "cotel"
-    t.string "courl"
-    t.string "cozip7"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
+    t.string "comail"
+    t.string "cofax"
+    t.string "comobile"
+    t.string "copok"
     t.string "email"
-    t.string "fax"
-    t.integer "gender"
-    t.datetime "kbirthday"
-    t.string "kbn"
     t.text "memo"
-    t.string "mtel"
-    t.string "name"
-    t.string "no"
-    t.string "position"
-    t.string "ruby"
-    t.string "section"
-    t.string "section2"
-    t.string "tel"
+    t.string "courl"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "url"
-    t.string "zip7"
   end
 
   create_table "keparts", force: :cascade do |t|
-    t.string "comment"
-    t.string "cordno"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.string "ename"
-    t.string "form"
-    t.string "itemno"
-    t.string "jname"
-    t.integer "munit"
-    t.integer "newprice"
     t.string "pcode"
-    t.integer "price"
-    t.string "sel_unit"
+    t.string "form"
     t.string "size"
+    t.string "jname"
+    t.string "ename"
+    t.integer "newprice"
+    t.integer "price"
     t.integer "stock"
-    t.datetime "updated_at", null: false
+    t.string "sel_unit"
     t.float "weightkg"
+    t.integer "munit"
+    t.string "itemno"
+    t.string "cordno"
+    t.string "comment"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "ksystems", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "key", null: false
-    t.datetime "updated_at", null: false
     t.string "value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["key"], name: "index_ksystems_on_key", unique: true
   end
 
   create_table "n_orderparts", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "etc"
-    t.string "info"
-    t.string "itemno"
-    t.string "mark"
-    t.integer "mno"
-    t.string "partsname"
-    t.float "qty"
-    t.float "rate"
-    t.integer "sno"
-    t.integer "totala"
     t.integer "tvalid"
+    t.integer "mno"
+    t.integer "sno"
+    t.string "partsname"
+    t.string "mark"
+    t.string "itemno"
+    t.string "info"
+    t.float "qty"
     t.integer "unitpd"
-    t.datetime "updated_at", null: false
+    t.float "rate"
+    t.integer "totala"
     t.float "weight"
+    t.string "etc"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["mno"], name: "index_n_orderparts_on_mno"
   end
 
-  create_table "orderparts", force: :cascade do |t|
-    t.integer "bqty"
-    t.string "cordno"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.string "info"
-    t.float "irate"
-    t.string "itemno"
-    t.string "kzaiko"
+  create_table "order_annotations", force: :cascade do |t|
+    t.integer "tvalid"
     t.integer "mno"
-    t.date "ndate"
-    t.string "partno"
-    t.integer "qty"
+    t.text "comment"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mno"], name: "index_order_annotations_on_mno"
+  end
+
+  create_table "orderparts", force: :cascade do |t|
+    t.integer "mno"
     t.integer "sno"
-    t.integer "total2"
-    t.integer "totala"
-    t.float "totalweight"
+    t.string "itemno"
+    t.string "cordno"
+    t.string "kzaiko"
+    t.string "partno"
+    t.string "info"
+    t.integer "qty"
+    t.integer "bqty"
     t.string "unit"
     t.integer "unitpd"
     t.integer "unitpi"
     t.integer "unitpi2"
+    t.float "irate"
+    t.integer "totala"
+    t.integer "total2"
+    t.date "ndate"
     t.float "unitweight"
+    t.float "totalweight"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "orders", force: :cascade do |t|
-    t.integer "adlist_id"
-    t.string "country"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.string "engno"
-    t.string "etype"
-    t.string "glc"
-    t.string "glcno"
-    t.string "hno"
-    t.string "idate"
-    t.string "inspection"
-    t.float "irate"
-    t.float "irate2"
-    t.string "ldate"
-    t.string "mdate"
-    t.string "memo"
-    t.string "mg"
-    t.string "mgno"
-    t.date "mitday"
+    t.integer "tvalid"
     t.integer "mno"
+    t.string "st"
+    t.integer "adlist_id"
+    t.date "rdate"
     t.string "ncomment"
     t.string "ndate"
-    t.integer "nebiki"
     t.string "nplase"
-    t.string "odate"
-    t.string "ono"
-    t.string "orderitem"
-    t.integer "pnum"
-    t.date "rdate"
-    t.date "seiday"
+    t.string "ldate"
+    t.string "tcondition"
+    t.string "etype"
+    t.string "engno"
     t.string "shipname"
-    t.string "st"
-    t.date "syuday"
-    t.integer "tax_rate"
+    t.string "country"
+    t.integer "pnum"
+    t.string "inspection"
+    t.string "hno"
+    t.string "orderitem"
+    t.string "memo"
+    t.string "tname"
+    t.string "idate"
+    t.string "odate"
+    t.string "mdate"
+    t.float "irate"
+    t.integer "nebiki"
+    t.float "irate2"
     t.string "tc"
     t.string "tcno"
-    t.string "tcondition"
-    t.string "tname"
-    t.integer "tvalid"
-    t.datetime "updated_at", null: false
     t.string "zp"
     t.string "zpno"
+    t.string "glc"
+    t.string "glcno"
+    t.string "mg"
+    t.string "mgno"
+    t.string "ono"
+    t.date "mitday"
+    t.date "syuday"
+    t.date "seiday"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "tax_rate"
   end
 
   create_table "parts", force: :cascade do |t|
-    t.string "comment"
-    t.string "cordno"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.string "ename"
-    t.string "form"
-    t.string "itemno"
-    t.string "jname"
-    t.integer "munit"
-    t.integer "newprice"
     t.string "pcode"
-    t.integer "price"
-    t.string "sel_unit"
+    t.string "form"
+    t.string "jname"
+    t.string "ename"
     t.string "stock"
-    t.datetime "updated_at", null: false
+    t.string "sel_unit"
+    t.integer "price"
+    t.integer "newprice"
     t.float "weightkg"
+    t.integer "munit"
+    t.string "itemno"
+    t.string "cordno"
+    t.string "comment"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "registries", force: :cascade do |t|
-    t.string "country"
     t.string "countryid"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
+    t.string "country"
     t.float "rate"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "sessions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "ip_address"
-    t.datetime "updated_at", null: false
-    t.string "user_agent"
     t.integer "user_id", null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
   create_table "stock_settings", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "memo"
-    t.integer "nonview"
-    t.string "opartno"
     t.string "partno", null: false
     t.integer "snum"
-    t.datetime "updated_at", null: false
     t.integer "znum"
+    t.string "opartno"
+    t.string "memo"
+    t.integer "nonview"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["partno"], name: "index_stock_settings_on_partno", unique: true
   end
 
   create_table "stockbs", force: :cascade do |t|
-    t.string "cname"
-    t.string "cordno"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.integer "ikubun"
-    t.date "indate"
-    t.integer "inprice"
-    t.integer "invalue"
-    t.integer "irprice"
-    t.integer "irvalue"
-    t.string "itemno"
+    t.string "partno"
     t.integer "kind"
-    t.string "memo"
-    t.integer "mno"
-    t.integer "novalid"
+    t.date "indate"
     t.integer "num"
-    t.integer "okubun"
+    t.integer "inprice"
+    t.integer "irprice"
+    t.integer "invalue"
+    t.integer "irvalue"
+    t.date "outdate"
     t.integer "onum"
+    t.integer "mno"
     t.integer "orprice"
     t.integer "orvalue"
-    t.date "outdate"
-    t.string "partno"
+    t.string "itemno"
+    t.string "cordno"
+    t.string "memo"
+    t.string "cname"
     t.string "sname"
+    t.integer "novalid"
+    t.integer "ikubun"
+    t.integer "okubun"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["id"], name: "index_stockbs_on_id"
   end
 
   create_table "stocks", force: :cascade do |t|
-    t.string "cname"
-    t.string "cordno"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.integer "ikubun"
-    t.date "indate"
-    t.integer "inprice"
-    t.integer "invalue"
-    t.integer "irprice"
-    t.integer "irvalue"
-    t.string "itemno"
+    t.string "partno"
     t.integer "kind"
-    t.string "memo"
-    t.integer "mno"
-    t.integer "novalid"
+    t.date "indate"
     t.integer "num"
-    t.integer "okubun"
+    t.integer "inprice"
+    t.integer "irprice"
+    t.integer "invalue"
+    t.integer "irvalue"
+    t.date "outdate"
     t.integer "onum"
+    t.integer "mno"
     t.integer "orprice"
     t.integer "orvalue"
-    t.date "outdate"
-    t.string "partno"
+    t.string "itemno"
+    t.string "cordno"
+    t.string "memo"
+    t.string "cname"
     t.string "sname"
+    t.integer "novalid"
+    t.integer "ikubun"
+    t.integer "okubun"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["id"], name: "index_stocks_on_id"
   end
 
   create_table "tasks", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.boolean "done"
-    t.date "due"
     t.string "name"
     t.text "notes"
     t.integer "priority"
+    t.date "due"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "user_profiles", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.integer "user_id", null: false
     t.string "firstname"
     t.string "lastname"
+    t.integer "state"
     t.datetime "sign_in_at"
     t.datetime "sign_out_at"
-    t.integer "state"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
     t.index ["user_id"], name: "index_user_profiles_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.string "password_digest", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
