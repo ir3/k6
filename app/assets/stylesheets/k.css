@@ -175,3 +175,11 @@ th.mno-col, td.mno-col {
      !important無しでfont-sizeを上書きできる */
   font-size: 14px;
 }
+.TB12 {
+  /* 画面の操作の説明や補足(注釈)に使う青い小さな文字。旧ASP(fsys.css の .TB12)を引き継ぐ。
+     メニュー画面の「.TB12.text-blue-600.text-xs」と同じ見た目(Tailwindの blue-600 と 12px)にそろえている。
+     見出し(th)は濃い青地に明るい文字なので、青文字は使わず、表の外の説明文に付ける */
+  font-size: 12px;
+  line-height: 1rem;
+  color: #2563eb;
+}

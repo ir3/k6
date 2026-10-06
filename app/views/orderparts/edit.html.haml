@@ -83,7 +83,7 @@
 %div{style: "margin: 12px 0 0 30px;"}
   = form_with model: @orderpart, url: orderpart_path(@orderpart), method: :patch, scope: :orderpart, html: {class: "flex items-center gap-2 mb-2"} do |f|
     %span 数量入力
-    %span 数量をクリックして選択するか数字を入力してください。
+    %span.TB12 数量をクリックして選択するか数字を入力してください。
     = f.text_field :qty, value: @orderpart.qty, size: 10, maxlength: 7, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 6rem; text-align: right;"
     = f.submit "数量入力", name: nil, class: btn_cls
   -# 0〜99 のどれかを押すと、その数量で登録する（1つのフォームに100個の送信ボタン）
@@ -100,7 +100,7 @@
 - if sel_unit.to_s.match?(/\A\d+(\.\d+)?\z/) && sel_unit.to_f.positive?
   - each_price = price / sel_unit.to_f
   %div{style: "margin: 16px 0 0 30px;"}
-    %p バラ指定の場合、例えば10個単位で1袋、4袋＋9個（合計5袋）という場合、バラを49と入力します。
+    %p.TB12 バラ指定の場合、例えば10個単位で1袋、4袋＋9個（合計5袋）という場合、バラを49と入力します。
     %table.center-table.radius-table.row-compact{style: "margin: 6px 0;"}
       %tr.bg-primary.text-primary-content
         %th バラ売単価

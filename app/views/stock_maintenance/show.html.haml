@@ -52,7 +52,7 @@
     %td{style: centered}= submit_tag "非表示設定", form: "stock_form_hide", name: nil, disabled: @setting.hidden?, class: btn_cls
     %td{style: centered}= submit_tag "表示設定", form: "stock_form_reveal", name: nil, disabled: !@setting.hidden?, class: btn_cls
 - if @part.nil?
-  %p{style: "margin: 4px 0 0 30px;"} この部品は部品台帳に登録がないので、部品の情報は表示できません（在庫台帳の履歴だけ表示します）。
+  %p.TB12{style: "margin: 4px 0 0 30px;"} この部品は部品台帳に登録がないので、部品の情報は表示できません（在庫台帳の履歴だけ表示します）。
 %p{style: "margin: 4px 0 0 30px;"} 現在は在庫を#{@setting.hidden? ? "非表示" : "表示"}に設定しています。
 
 %table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
@@ -85,10 +85,10 @@
 
 %p{style: "margin: 14px 0 4px 30px;"}
   この部品の入出荷状況
-  %span{style: "font-size: 0.85em;"} （入庫は＋、出庫は−の数量で在庫台帳に記録されています。出荷先・船名・取引No.から注文部品詳細に移れます）
+  %span.TB12 （入庫は＋、出庫は−の数量で在庫台帳に記録されています。出荷先・船名・取引No.から注文部品詳細に移れます）
 - if @history.truncated?
   %p{style: "margin: 0 0 4px 30px;"}
-    直近 #{@history.rows.size} 件を表示しています（全 #{@history.total} 件）。
+    %span.TB12 直近 #{@history.rows.size} 件を表示しています（全 #{@history.total} 件）。
     = link_to "過去全表示", stock_maintenance_path(partno: partno, all: 1), class: btn_cls
 
 %table.center-table.radius-table.row-compact.zebra-table.list-table{width: "99%", align: "center"}
@@ -122,5 +122,5 @@
         %td{style: centered}= (row.order ? link_to(row.mno, order_path(row.order)) : row.mno)
         %td{style: "font-size: 0.85em;"}= row.updated_at.strftime("%Y/%m/%d %H:%M")
 
-%p{style: "margin: 8px 0 0 30px; font-size: 0.85em;"}
+%p.TB12{style: "margin: 8px 0 0 30px;"}
   出荷の情報（日付、出荷先、船名）は、取引台帳で注文に対して在庫を引き当てた場合には、自動的に書き込まれます。

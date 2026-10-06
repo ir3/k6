@@ -5,7 +5,7 @@
     %h3.text-lg.font-bold= "取引先選択（#{@gyo.presence || '全'}）"
     %button.btn.btn-sm.btn-ghost{type: "button", data: {action: "adlist-picker#close"}} 閉じる ✕
   .mb-3= render "orders/kana_buttons"
-  %p.text-xs.mb-1{class: "text-base-content/60"} 取引先の行をクリックすると、会社名・部署名が編集中の画面に反映されます。
+  %p.TB12.mb-1 取引先の行をクリックすると、会社名・部署名が編集中の画面に反映されます。
   .overflow-y-auto{style: "max-height: 50vh;"}
     %table.table.table-sm.table-pin-rows.picker-table
       %thead
