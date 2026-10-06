@@ -21,6 +21,8 @@ module XlsxReports
       # 部品番号あり(Orderpart)・無(NOrderpart)を「順(SNo)」で一本化した明細一覧。
       # orders#sorted画面と共有するOrderSortedItems参照。
       @items = OrderSortedItems.for(order)
+      # 注文注釈(旧Access「注文注釈」)。旧ASPは同一MNoの最後の1件を1ページ目の合計行の下に出す
+      @annotation = OrderAnnotation.where(mno: order.mno).order(:id).last&.comment.presence
     end
 
     def filename
@@ -73,6 +75,7 @@ module XlsxReports
           page_subtotal = page_items.sum { |item| item[:amount] }
           cumulative += page_subtotal
           build_footer(sheet, total_pages: pages.size, page_subtotal: page_subtotal, cumulative: cumulative)
+          build_annotation(sheet) if page_no == 1 && @annotation
 
           set_column_widths(sheet, *columns.map(&:width))
         end
@@ -280,6 +283,14 @@ module XlsxReports
     def build_footer(sheet, total_pages:, page_subtotal:, cumulative:)
       add_summary_row(sheet, "小計", page_subtotal)
       add_summary_row(sheet, "累計", cumulative) if total_pages > 1
+    end
+
+    # 注文注釈を1ページ目の小計(累計)の下、枠外にB〜I結合で表示する(旧ASPのB47相当)
+    def build_annotation(sheet)
+      sheet.add_row([ nil, @annotation ], style: [ nil, style(sheet, halign: :left, valign: :center) ])
+      set_last_row_height(sheet, 20)
+      row = sheet.rows.size
+      sheet.merge_cells("B#{row}:I#{row}")
     end
   end
 
