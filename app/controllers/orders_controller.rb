@@ -279,9 +279,10 @@ class OrdersController < ApplicationController
     session[:order_id] = @order.id
     session[:mno] = @order.mno
     # @orderparts = Orderpart.find_by_sql("SELECT * FROM orderparts WHERE (deleted_at IS NULL) AND mno=#{@order.mno}")
-    # 「順(SNo)」ソートは並び替え後表示(#sorted)側の役割なので、ここではレコード作成順(古いものが上)で表示する。
-    # Orderpartのdefault_scopeはid DESC(新しいものが上)なのでreorderで上書きする
-    @orderparts = Orderpart.where(mno: @order.mno).reorder(:id)
+    # 各グループの中を「順(SNo)」順(同じ順は作成順＝古いものが上)で表示する。順が空の行は 0 として扱う
+    # （並び替え後表示 OrderSortedItems と同じ）。Orderpartのdefault_scopeはid DESC(新しいものが上)なのでreorderで上書きする。
+    # A部品・B部品・部品番号不明のグループ分けは、画面側でこの並びのまま行う
+    @orderparts = Orderpart.where(mno: @order.mno).reorder(Arel.sql("COALESCE(sno, 0)"), :id)
 
     respond_to do |format|
       format.html # show.html.erb

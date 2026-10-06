@@ -65,8 +65,10 @@ class OrderpartsController < ApplicationController
   end
 
   # GET /orderparts/1/edit
+  # 注文部品詳細編集（旧 partsin2.asp）。注文部品詳細の「順」から開く
   def edit
     @orderpart = Orderpart.find(params[:id])
+    prepare_edit_screen
   end
 
   # POST /orderparts
@@ -86,31 +88,48 @@ class OrderpartsController < ApplicationController
   end
 
   # PUT /orderparts/1
-  # PUT /orderparts/1.json
+  # 編集画面のフォームから、順・ItemNo・備考・数量・バラ売り数量を1項目ずつ登録する
   def update
     @orderpart = Orderpart.find(params[:id])
+    result = OrderpartEditor.new(@orderpart, params.fetch(:orderpart, {}).permit(*OrderpartEditor::LABELS.keys)).call
 
-    respond_to do |format|
-      #      if @orderpart.update_attributes(params[:orderpart])
-      if @orderpart.update(orderpart_params)
-        format.html { redirect_to @orderpart, notice: 'Orderpart was successfully updated.' }
-        format.json { head :no_content }
-      else
-        format.html { render action: 'edit' }
-        format.json { render json: @orderpart.errors, status: :unprocessable_entity }
-      end
+    if result.success?
+      # 更新(POST+_method)のリダイレクトは 303 にする（Turbo/fetch が元のメソッドのまま追従しないように）
+      redirect_to edit_orderpart_path(@orderpart), status: :see_other, notice: "#{result.label}を登録しました。"
+    else
+      @orderpart.reload
+      prepare_edit_screen
+      flash.now[:alert] = result.error
+      render :edit, status: :unprocessable_entity
     end
   end
 
   # DELETE /orderparts/1
-  # DELETE /orderparts/1.json
+  # 「この部品を削除する」。部品明細の行を物理削除して、注文部品詳細に戻る（旧ASPの注文削除と同じ扱い）
   def destroy
     @orderpart = Orderpart.find(params[:id])
-    @orderpart.destroy
+    order = Order.find_by(mno: @orderpart.mno)
+    @orderpart.destroy!
 
-    respond_to do |format|
-      format.html { redirect_to orderparts_url }
-      format.json { head :no_content }
-    end
+    redirect_to(order ? order_path(order) : orders_path, status: :see_other,
+                notice: "部品 #{@orderpart.partno}#{@orderpart.kzaiko} を削除しました。")
+  end
+
+  private
+
+  # 編集画面に出す、注文・部品台帳の情報
+  def prepare_edit_screen
+    @order = Order.find_by(mno: @orderpart.mno)
+    @part = @orderpart.master_part
+    @part_path = @part.is_a?(Kepart) ? kepart_path(@part) : part_path(@part) if @part
+    @name = part_name(@part)
+  end
+
+  # 注文の船籍が日本なら和文名称、それ以外は英文名称（partsin2.asp と同じ）。無ければもう一方
+  def part_name(part)
+    return nil unless part
+
+    japanese = @order&.country.to_s.start_with?("日")
+    (japanese ? [ part.jname, part.ename ] : [ part.ename, part.jname ]).find(&:present?)
   end
 end

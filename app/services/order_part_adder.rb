@@ -18,6 +18,14 @@ class OrderPartAdder
     def success? = error.nil?
   end
 
+  # 部品台帳(Part/Kepart)の重量(kg)を計測単位で割った1個あたりの重量。小数3桁、負や未設定は0。
+  # 数量を変えたときの重量の再計算(OrderpartEditor)でも使う。
+  def self.unit_weight(part)
+    weight = part.weightkg.to_f
+    weight /= part.munit if part.munit.to_i.positive?
+    weight.round(3).positive? ? weight.round(3) : 0.0
+  end
+
   def initialize(order, input)
     @order = order
     @input = input
@@ -59,20 +67,13 @@ class OrderPartAdder
   # 単価は新販売単価、数量は1、掛け率は注文のA部品掛け率（未設定なら等倍）
   def create_row(part, kzaiko: nil)
     price = part.newprice.to_i
-    weight = unit_weight(part)
+    weight = self.class.unit_weight(part)
     Orderpart.create!(
       mno: @order.mno, sno: @order.next_part_sno, partno: part.pcode, kzaiko: kzaiko,
       itemno: part.itemno.presence || DEFAULT_ITEMNO, cordno: part.cordno.presence || DEFAULT_CORDNO,
       qty: 1, unitpd: price, irate: @order.irate || 1.0, totala: price,
       unitweight: weight, totalweight: weight
     )
-  end
-
-  # 部品台帳の重量(kg)を計測単位で割った1個あたりの重量。小数3桁、負や未設定は0
-  def unit_weight(part)
-    weight = part.weightkg.to_f
-    weight /= part.munit if part.munit.to_i.positive?
-    weight.round(3).positive? ? weight.round(3) : 0.0
   end
 
   def warnings_for(part)

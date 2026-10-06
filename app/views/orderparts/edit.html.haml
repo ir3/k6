@@ -1,7 +1,120 @@
-%h1 Editing orderpart
+-# 注文部品詳細編集（旧 partsin2.asp）。注文部品詳細の「順」から開く。
+- input_cls = "input input-bordered input-sm border-2 border-neutral bg-base-100"
+- btn_cls = "btn btn-sm wtext btn-info"
+- number = ->(value) { value.to_i.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ",") }
+- rate = @orderpart.irate.to_f
+- price = @orderpart.unitpd.to_i
+- calculated = rate * price
+- sel_unit = @orderpart.unit.presence || @part&.sel_unit
+- stock_row = @orderpart.kzaiko == "^"
+- row_style = stock_row ? "background-color: #00ffff;" : nil
 
-= render 'form'
+.mb-3.flex.items-center.gap-3
+  = link_to "注文部品詳細へ戻る", (@order ? order_path(@order) : orders_path), class: btn_cls
+  - if @order
+    %span 取引No. #{@order.mno}　#{@order.shipname}
 
-= link_to 'Show', @orderpart
-\|
-= link_to 'Back', orderparts_path
+%table.center-table.radius-table.row-compact{width: "99%", align: "center"}
+  %tr.bg-primary.text-primary-content
+    %th{width: "40px"} 順
+    %th{width: "15%"} 部品コード
+    %th{width: "8%"} ItemNo
+    %th 名称
+    %th 備考
+    %th{width: "7%"} 単位
+    %th{width: "7%"} 重量
+  %tr{style: row_style}
+    %td{style: "text-align: center;"}= @orderpart.sno
+    %td{style: "text-align: center; font-weight: bold;"}
+      - if @part_path
+        = link_to @orderpart.partno, @part_path
+      - else
+        = @orderpart.partno
+      = @orderpart.kzaiko
+    %td= @orderpart.itemno
+    %td= @name
+    %td= @orderpart.info
+    %td{style: "text-align: center;"}= sel_unit
+    %td{style: "text-align: right;"}= @orderpart.totalweight&.round(2)
+
+%table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+  %tr.bg-primary.text-primary-content
+    %th{width: "10%"} 数量
+    %th{width: "12%"} 単価
+    %th{width: "14%"} 数量*単価の金額
+    %th{width: "10%"} 販売単位
+  %tr{style: row_style}
+    %td{style: "text-align: right;"}= @orderpart.qty
+    %td{style: "text-align: right;"}= number.call(price)
+    %td{style: "text-align: right;"}= number.call(@orderpart.qty.to_i * price)
+    %td{style: "text-align: right;"}= @part&.sel_unit
+
+-# 旧 partsin2.asp の新価格・旧価格はどちらも同じ単価(UnitPD)だったので、1行にまとめる
+%table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+  %tr{style: row_style}
+    %th.bg-primary.text-primary-content{width: "80px"} 価格
+    %td{style: "text-align: right;"}= number.call(price)
+    %th.bg-primary.text-primary-content{width: "80px"} 掛け率
+    %td{style: "text-align: right;"}= @orderpart.irate
+    %th.bg-primary.text-primary-content{width: "140px"} 単純計算単価
+    %td{style: "text-align: right;"}= number.call(calculated)
+    %th.bg-primary.text-primary-content{width: "140px"} 計算後単価(上)
+    %td{style: "text-align: right;"}= number.call(PriceRounding.round_up(calculated))
+    %th.bg-primary.text-primary-content{width: "140px"} 計算後単価(捨)
+    %td{style: "text-align: right;"}= number.call(PriceRounding.round_half_up(calculated))
+
+-# 各フォームは1項目ずつ登録する（旧 partseditA / partseditI / partseditB / partsreg2）
+- update_path = orderpart_path(@orderpart)
+- form_cls = "flex items-center gap-2"
+.flex.flex-wrap.items-center{style: "margin: 12px 0 0 30px; gap: 8px 32px;"}
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span 順入力
+    = f.text_field :sno, value: @orderpart.sno, size: 8, maxlength: 6, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 6rem; text-align: right;"
+    = f.submit "順変更", name: nil, class: btn_cls
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span ItemNo
+    = f.text_field :itemno, value: @orderpart.itemno, size: 30, maxlength: OrderpartEditor::TEXT_MAX_LENGTH[:itemno], autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 14rem;"
+    = f.submit "ItemNo登録", name: nil, class: btn_cls
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span 備考入力
+    = f.text_field :info, value: @orderpart.info, size: 60, maxlength: OrderpartEditor::TEXT_MAX_LENGTH[:info], autocomplete: "off", class: input_cls, style: "width: 32rem;"
+    = f.submit "備考登録", name: nil, class: btn_cls
+
+%div{style: "margin: 12px 0 0 30px;"}
+  = form_with model: @orderpart, url: orderpart_path(@orderpart), method: :patch, scope: :orderpart, html: {class: "flex items-center gap-2 mb-2"} do |f|
+    %span 数量入力
+    %span 数量をクリックして選択するか数字を入力してください。
+    = f.text_field :qty, value: @orderpart.qty, size: 10, maxlength: 7, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 6rem; text-align: right;"
+    = f.submit "数量入力", name: nil, class: btn_cls
+  -# 0〜99 のどれかを押すと、その数量で登録する（1つのフォームに100個の送信ボタン）
+  = form_with model: @orderpart, url: orderpart_path(@orderpart), method: :patch, scope: :orderpart do |f|
+    %table.qty-grid{style: "border-collapse: collapse;"}
+      - 5.times do |row|
+        %tr
+          - 20.times do |col|
+            - qty = row * 20 + col
+            %td{style: "border: 1px solid #999; padding: 0;"}
+              = button_tag qty, type: "submit", name: "orderpart[qty]", value: qty, class: "w-full cursor-pointer #{'bg-warning font-bold' if qty == @orderpart.qty}", style: "width: 2.2rem; padding: 2px 0; text-align: center;"
+
+-# 販売単位が数字の部品(例: 10個で1袋)は、バラ売りの数量も入れられる（旧 partsin2.asp の2004/03/18追加分）
+- if sel_unit.to_s.match?(/\A\d+(\.\d+)?\z/) && sel_unit.to_f.positive?
+  - each_price = price / sel_unit.to_f
+  %div{style: "margin: 16px 0 0 30px;"}
+    %p バラ指定の場合、例えば10個単位で1袋、4袋＋9個（合計5袋）という場合、バラを49と入力します。
+    %table.center-table.radius-table.row-compact{style: "margin: 6px 0;"}
+      %tr.bg-primary.text-primary-content
+        %th バラ売単価
+        %th バラ売数
+        %th バラ売数*バラ売単価
+      %tr{style: row_style}
+        %td{style: "text-align: right;"}= number.call(each_price.round)
+        %td{style: "text-align: right;"}= @orderpart.bqty
+        %td{style: "text-align: right;"}= number.call((each_price * @orderpart.bqty.to_i).round)
+    = form_with model: @orderpart, url: orderpart_path(@orderpart), method: :patch, scope: :orderpart, html: {class: "flex items-center gap-2"} do |f|
+      %span バラ売り数量入力
+      = f.text_field :bqty, value: @orderpart.bqty, size: 10, maxlength: 7, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 6rem; text-align: right;"
+      = f.submit "バラ売り数量入力", name: nil, class: btn_cls
+
+%hr{style: "margin: 16px 0;"}
+%div{style: "margin-left: 30px;"}
+  = button_to "この部品を削除する", orderpart_path(@orderpart), method: :delete, form: {data: {turbo_confirm: "部品 #{@orderpart.partno}#{@orderpart.kzaiko} を削除します。元に戻せません。よろしいですか？"}}, class: btn_cls

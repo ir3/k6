@@ -1,5 +1,6 @@
 %tr{style: (orderpart.kzaiko == "^" ? "background-color: #00ffff;" : nil)}
-  %td{style:'text-align:right'}= orderpart.sno
+  -# 「順」を押すと注文部品詳細編集(旧 partsin2.asp)へ。順が空でも押せるように「-」を出す
+  %td{style:'text-align:right'}= link_to((orderpart.sno.nil? ? "-" : orderpart.sno), edit_orderpart_path(orderpart))
   - if part_source == :part
     %td= (link_to orderpart.partno, parts_path+"/#{part.id}")+ orderpart.kzaiko
   - elsif part_source == :kepart
