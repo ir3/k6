@@ -661,4 +661,48 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_url(format: :html)
     assert_not_nil Order.find_by(id: @order.id)
   end
+  # 取引台帳の並び順。初期値は降順（新しい取引が上）で、見出しの「取引No↕」で昇降を切り替える。
+  def listed_mnos
+    response.body.scan(/2026100\d\d/).uniq
+  end
+
+  def setup_three_orders
+    Order.create!(mno: 202610002, adlist_id: 9001)
+    Order.create!(mno: 202610003, adlist_id: 9001)
+  end
+
+  test "the order list is in descending order by default" do
+    setup_three_orders
+    travel_to Time.zone.local(2026, 10, 6, 12) do
+      get orders_url
+    end
+    assert_equal %w[202610003 202610002 202610001], listed_mnos
+  end
+
+  test "the search result is in descending order by default" do
+    setup_three_orders
+    get orders_search_url(keyword: "202610")
+    assert_equal %w[202610003 202610002 202610001], listed_mnos
+  end
+
+  test "the mno heading toggles the order and opening the list again returns to descending" do
+    setup_three_orders
+    travel_to Time.zone.local(2026, 10, 6, 12) do
+      get orders_url
+      get orders_url(mno_order: "DESC")
+      assert_equal %w[202610001 202610002 202610003], listed_mnos
+      get orders_url(mno_order: "ASC")
+      assert_equal %w[202610003 202610002 202610001], listed_mnos
+      get orders_url(mno_order: "DESC")
+      assert_equal %w[202610001 202610002 202610003], listed_mnos
+      get orders_url
+      assert_equal %w[202610003 202610002 202610001], listed_mnos
+    end
+  end
+
+  test "toggling without a remembered order starts from descending and goes ascending" do
+    setup_three_orders
+    get orders_search_url(keyword: "202610", mno_order: "x")
+    assert_equal %w[202610001 202610002 202610003], listed_mnos
+  end
 end

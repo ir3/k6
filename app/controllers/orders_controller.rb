@@ -15,16 +15,7 @@ class OrdersController < ApplicationController
     @keykind  = params[:keykind]
     logger.debug  @keyword
     logger.debug  @keykind
-    if params[:mno_order]
-      if session[:mno_order] == 'DESC'
-        session[:mno_order] = 'ASC'
-      elsif session[:mno_order] == 'ASC'
-        session[:mno_order] = 'DESC'
-      end
-    else
-      session[:mno_order] = 'ASC'
-    end
-    mno_order = session[:mno_order]
+    mno_order = resolve_mno_order
     ym = Time.now.strftime('%Y%m')
     session[:keyword] = nil
     session[:keykind] = nil
@@ -123,16 +114,7 @@ class OrdersController < ApplicationController
       return redirect_to(order_path(order)) if order
     end
 
-    if params[:mno_order]
-      if session[:mno_order] == 'DESC'
-        session[:mno_order] = 'ASC'
-      elsif session[:mno_order] == 'ASC'
-        session[:mno_order] = 'DESC'
-      end
-    else
-      session[:mno_order] = 'ASC'
-    end
-    mno_order = session[:mno_order]
+    mno_order = resolve_mno_order
     keykind_labels = { "etype" => "形式検索", "engno" => "機番検索", "shipname" => "船名検索", "company" => "会社名検索", "memo" => "メモ検索" }
     if keykind && !keykind.empty?
       if keykind == 'company'
@@ -454,6 +436,19 @@ class OrdersController < ApplicationController
   end
 
   private
+
+  # 取引No.の並び順(ASC/DESC)。取引台帳の表示は新しい取引が上に来る降順を初期値にする。
+  # 見出しの「取引No↕」(mno_order パラメータ付き)を押すたびに昇降を切り替え、
+  # パラメータなしで開き直すと降順に戻る。
+  def resolve_mno_order
+    current = session[:mno_order] == "ASC" ? "ASC" : "DESC"
+    session[:mno_order] =
+      if params[:mno_order]
+        current == "DESC" ? "ASC" : "DESC"
+      else
+        "DESC"
+      end
+  end
 
   # find_by_sql の結果（配列）と ActiveRecord::Relation のどちらでもページネーションできるようにする
   def paginate_orders(orders)
