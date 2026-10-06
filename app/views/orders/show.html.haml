@@ -103,7 +103,7 @@
     %td{style:"padding: 5px 5px 5px 30px;"}
       = link_to "台帳を修正", edit_order_path,  class: "btn wtext btn-info"
     %td{style:"padding: 5px 5px 5px 30px;"}
-      = link_to "台帳から削除", order_path, method: :delete, data: {confirm: "本当に削除しますか？"}, class: "btn wtext btn-info"
+      = button_to "台帳から削除", order_path(@order), method: :delete, form: {data: {turbo_confirm: "取引 #{@order.mno} を削除します。部品明細も削除されます。よろしいですか？"}}, class: "btn wtext btn-info"
     %td{style:"padding: 5px 5px 5px 30px;"}
       = link_to "並び替え後表示(仮)", sorted_order_path(@order), class: "btn wtext btn-info"
 -# 旧 partsin.asp の「部品番号を入力して部品選択」。部品番号で部品明細を追加する(partsreg3.asp 相当)

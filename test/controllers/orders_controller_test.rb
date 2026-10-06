@@ -592,4 +592,73 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to new_session_url(format: :html)
   end
+  # 注文の削除（asp/orderdel.asp 相当）。注文は論理削除、部品明細と部品番号なし明細は物理削除、
+  # 在庫台帳は触らない。
+  def setup_parts_and_stock
+    other = Order.create!(mno: 202610002, adlist_id: 9001)
+    Orderpart.create!(mno: @order.mno, sno: 10, partno: "X1")
+    Orderpart.create!(mno: @order.mno, sno: 20, partno: "X2", deleted_at: Time.current)
+    Orderpart.create!(mno: other.mno, sno: 10, partno: "Y1")
+    NOrderpart.create!(mno: @order.mno, sno: 30, partsname: "名前だけの部品")
+    Stock.create!(partno: "X1", num: 1, mno: @order.mno)
+  end
+
+  test "destroy soft-deletes the order and goes back to the list with a message" do
+    delete order_url(@order)
+    assert_redirected_to orders_url
+    assert_equal 303, response.status
+    assert_equal "取引 202610001 を削除しました。", flash[:notice]
+    assert_nil Order.find_by(id: @order.id)
+    assert_not_nil Order.unscoped.find(@order.id).deleted_at
+  end
+
+  test "destroy physically deletes the part rows of the order only" do
+    setup_parts_and_stock
+    delete order_url(@order)
+    # 削除済みの行も含め、その注文のorderpartsは物理的に無くなる。別の注文のは残る
+    assert_equal 0, Orderpart.unscoped.where(mno: 202610001).count
+    assert_equal 1, Orderpart.unscoped.where(mno: 202610002).count
+  end
+
+  test "destroy also deletes the no-part-number rows of the order only" do
+    setup_parts_and_stock
+    NOrderpart.create!(mno: 202610002, sno: 10, partsname: "別の注文の部品名のみ")
+    delete order_url(@order)
+    assert_equal 0, NOrderpart.where(mno: 202610001).count
+    assert_equal 1, NOrderpart.where(mno: 202610002).count
+  end
+
+  test "destroy leaves the stock rows as the old ASP did" do
+    setup_parts_and_stock
+    delete order_url(@order)
+    assert_equal 1, Stock.where(mno: 202610001).count
+  end
+
+  test "a deleted order is gone from the list and its number is not reused" do
+    delete order_url(@order)
+    get orders_url
+    assert_select "table.list-table tbody tr", false
+    assert_equal 202_610_002, Order.next_mno(Date.new(2026, 10, 5))
+  end
+
+  test "destroy of an already deleted order is not found" do
+    delete order_url(@order)
+    delete order_url(@order)
+    assert_response :not_found
+  end
+
+  test "the order screen has a delete button that confirms with Turbo and uses DELETE" do
+    get order_url(@order)
+    assert_select "form[action=?][data-turbo-confirm]", order_path(@order) do
+      assert_select "input[name=_method][value=delete]"
+      assert_select "button", text: "台帳から削除"
+    end
+  end
+
+  test "destroy needs a login and deletes nothing" do
+    delete session_url
+    delete order_url(@order)
+    assert_redirected_to new_session_url(format: :html)
+    assert_not_nil Order.find_by(id: @order.id)
+  end
 end

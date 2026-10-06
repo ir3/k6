@@ -40,6 +40,18 @@ class Order < ActiveRecord::Base
     seq <= MNO_SEQ_MAX ? base + seq : nil
   end
 
+  # 注文の削除（旧 orderdel.asp 相当）。
+  # 注文台帳は論理削除（deleted_at）、部品明細(orderparts)と部品番号なし明細(n_orderparts)は物理削除。
+  # 在庫台帳(stocks)は旧ASPと同じく触らない。
+  # （n_orderparts は旧ASPでは残っていたが、削除した注文に孤立行が残らないよう一緒に消す）
+  def delete_with_parts!
+    transaction do
+      Orderpart.unscoped.where(mno: mno).delete_all
+      NOrderpart.where(mno: mno).delete_all
+      update!(deleted_at: Time.current)
+    end
+  end
+
   # 部品明細の並び順(sno)の刻み
   PART_SNO_STEP = 10
 

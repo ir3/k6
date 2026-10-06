@@ -444,13 +444,11 @@ class OrdersController < ApplicationController
   # DELETE /orders/1.json
   def destroy
     @order = Order.find(params[:id])
-    #    @order.destroy
-    @orderparts = Orderpart.where(mno: @order.mno)
-    @orderparts.each(&:soft_destroy!)
-    @order.soft_destroy!
+    @order.delete_with_parts!
 
     respond_to do |format|
-      format.html { redirect_to orders_url }
+      # DELETE のリダイレクトは 303 にする（302 だと Turbo/fetch が DELETE のまま追従してしまう）
+      format.html { redirect_to orders_url, status: :see_other, notice: "取引 #{@order.mno} を削除しました。" }
       format.json { head :no_content }
     end
   end
