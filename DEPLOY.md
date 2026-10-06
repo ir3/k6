@@ -55,20 +55,41 @@ sudo systemctl restart k6
 
 `sudo systemctl restart k6` は毎回必須（本番は `config.cache_classes = true` でコード変更を自動リロードしないため、`git pull` だけでは反映されない）。
 
-### 在庫メンテナンスの初回デプロイ時だけ必要なデータ取り込み（2026-10-06）
+### データは Mac で作った DB を丸ごとコピーする（個別の取り込みは ConoHa ではしない）
 
-在庫メンテナンス画面（`/stock_maintenance`）は、部品ごとの設定を `stock_settings` テーブルに持つ（標準在庫数・予測量・旧部品コード・補足情報・非表示）。
-初回デプロイでは、`db:migrate` でテーブルを作ったあとに、旧Accessの `標準在庫` `必要在庫` `在庫部品備考` `在庫非表示` から取り込む。
-取り込まないと、これらの欄は空のまま表示される（画面は動く）。
+Access のデータは **Mac で SQLite3 に変換（`db/import/` のスクリプト）し、その DB を ConoHa へ丸ごとコピー**する。
+ConoHa で `db/import/*.rb` を個別に流したり、テーブルだけ流し込んだりはしない。
+在庫メンテナンスの `stock_settings`（標準在庫数・予測量・旧部品コード・補足情報・非表示）も、Mac で
+`bin/rails runner db/import/import_stock_settings.rb` を実行して取り込み、コピーに含める。
+コピーする DB はマイグレーション済み（`schema_migrations` が最新）なので、コピー後に ConoHa で `db:migrate` は要らない。
+
+**WAL に注意。** Mac の開発 DB は WAL モードで、直近の変更は `development.sqlite3-wal` に入っている。
+`development.sqlite3` だけを `scp` すると、その変更が抜ける。開発サーバーが動いたままでも安全に取れる
+`.backup` でスナップショットを作ってから送る。
 
 ```bash
-RAILS_ENV=production bin/rails db:migrate
-# db/access/fsdb.mdb と mdbtools（mdb-export）が必要
-RAILS_ENV=production bin/rails runner db/import/import_stock_settings.rb
+# Mac 側: 整合したスナップショットを作る（開発サーバーは止めなくてよい）
+cd ~/k6
+sqlite3 storage/development.sqlite3 ".backup /tmp/k6_production.sqlite3"
+sqlite3 /tmp/k6_production.sqlite3 "PRAGMA journal_mode=delete;"   # コピー用ファイルを単一ファイルにする
+rm -f /tmp/k6_production.sqlite3-shm /tmp/k6_production.sqlite3-wal
+scp /tmp/k6_production.sqlite3 conoha:/tmp/
 ```
 
-- 何度実行してもよいが、Access にある項目は画面で更新した値を**上書きする**ので、運用開始後は再実行しない。
-- 本番サーバーに fsdb.mdb / mdbtools が無い場合は、手元で取り込んだ `stock_settings`（約470行）を本番DBに持ち込む。
+```bash
+# ConoHa 側: アプリを止めてから差し替える
+sudo systemctl stop k6
+cd /var/www/k6/storage
+cp production.sqlite3 production.sqlite3.bak   # 念のため（不要になったら消す）
+# 本番側にも WAL が残っている。古い WAL を新しいDBに適用してしまわないよう、必ず一緒に消す
+rm -f production.sqlite3-wal production.sqlite3-shm
+mv /tmp/k6_production.sqlite3 production.sqlite3
+# 所有者・権限は k6.service の User に合わせる（元の production.sqlite3 と同じにする）
+sudo systemctl start k6
+```
+
+- **開発 DB の中身がそのまま本番に入る。** 動作確認用のアカウント（`preview-check@kobeengine.com`）も含まれる。
+- ConoHa 側で増えたデータ（注文・在庫の更新・ユーザー）はコピーで上書きされる。コピー前に、Mac 側が最新であることを確認する。
 
 ### なぜ `assets:precompile` だけで完結するのか（`yarn build`を別途叩く必要がない理由）
 
