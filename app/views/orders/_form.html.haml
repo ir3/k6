@@ -58,7 +58,7 @@
         %th 機番
         %td{colspan: 3}= f.text_field :engno, class: "#{input_cls} w-80"
         %th 船籍
-        %td{colspan: 3}= f.select :country, country_options(@order.country), {}, {class: "#{sel_cls} w-80"}
+        %td{colspan: 3}= f.select :country, country_options(@order.country), {include_blank: (creating ? "（自動）" : false)}, {class: "#{sel_cls} w-80"}
       %tr
         %th T/C形式
         %td= f.text_field :tc, class: "#{input_cls} w-48", style: latin
@@ -87,7 +87,7 @@
         %th 納入コメント
         -# 未設定(nil)の時だけ既定の文言を入れる（ASPと同じ）
         - comment_opts = {rows: 2, class: ta_cls}
-        - comment_opts[:value] = "御社御下命後４日" if @order.ncomment.nil?
+        - comment_opts[:value] = Order::DEFAULT_NCOMMENT if @order.ncomment.nil?
         %td{colspan: 7}= f.text_area :ncomment, comment_opts
 
     .mt-3.flex.justify-center.gap-3

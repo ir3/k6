@@ -716,4 +716,88 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     get orders_search_url(keyword: "202610", mno_order: "x")
     assert_equal %w[202610001 202610002 202610003], listed_mnos
   end
+  # 取引台帳追加は、取引先と機番だけの入力でも登録でき、空欄は同じ機番の直近の注文から埋める。
+  def only_adlist_and_engno(engno = "ABC123", adlist_id: "9001")
+    { adlist_id: adlist_id, engno: engno, country: "", ncomment: Order::DEFAULT_NCOMMENT,
+      "rdate(1i)" => "2026", "rdate(2i)" => "11", "rdate(3i)" => "20" }
+  end
+
+  def make_latest_for_engno
+    Order.create!(mno: 202_609_005, adlist_id: 9002, engno: "ABC123", shipname: "前の丸", etype: "6L28HX", country: "韓国",
+                  tc: "TC-1", ono: "PO-77", irate: 0.8, irate2: 0.9, nebiki: 100, ncomment: "御社御下命後７日",
+                  ndate: "2026/09/01", ldate: "2026/09/02", idate: "2026/09/03", odate: "2026/09/04", mdate: "2026/09/05",
+                  tcondition: "2026/09/06", mitday: Date.new(2026, 9, 7), syuday: Date.new(2026, 9, 8), seiday: Date.new(2026, 9, 9),
+                  memo: "前の内容", orderitem: "前の件名", rdate: Date.new(2026, 9, 30))
+  end
+
+  test "create with only the adlist and engno fills the blanks from the latest order of the same engno" do
+    make_latest_for_engno
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      post orders_url, params: { order: only_adlist_and_engno }
+    end
+    order = Order.reorder(:id).last
+    assert_redirected_to order_url(order)
+    assert_equal [ "前の丸", "6L28HX", "韓国", "TC-1" ], [ order.shipname, order.etype, order.country, order.tc ]
+    assert_equal [ 0.8, 0.9 ], [ order.irate, order.irate2 ]
+    assert_equal "御社御下命後７日", order.ncomment
+    # 取引先は入力どおり。引き継がないもの: 管理番号・納入期日・件名・内容・値引き・客先注文番号・各種日付
+    assert_equal 0, order.nebiki.to_i
+    assert order.ono.blank?, "客先注文番号は引き継がない: #{order.ono.inspect}"
+    dates = %i[ndate ldate idate odate mdate tcondition mitday syuday seiday].map { |a| order[a] }
+    assert dates.all?(&:blank?), "日付は引き継がない: #{dates.inspect}"
+    assert_equal [ 9001, "ABC123", 202_610_002 ], [ order.adlist_id, order.engno, order.mno ]
+    assert_equal Date.new(2026, 11, 20), order.rdate
+    assert_equal order.mno.to_s[4, 5], order.orderitem
+    assert_nil order.memo
+    follow_redirect!
+    assert_select ".alert-success", /機番 ABC123 の直近の取引 202609005 の情報で空欄を補いました/
+  end
+
+  test "create keeps what the user typed and fills only the blank fields" do
+    make_latest_for_engno
+    post orders_url, params: { order: only_adlist_and_engno.merge(shipname: "入力した丸", country: "日本", ncomment: "入力した納入コメント") }
+    order = Order.reorder(:id).last
+    assert_equal [ "入力した丸", "日本", "入力した納入コメント" ], [ order.shipname, order.country, order.ncomment ]
+    # 入力しなかった項目は参照元から
+    assert_equal [ "6L28HX", "TC-1" ], [ order.etype, order.tc ]
+  end
+
+  test "create takes the newest order of the engno and ignores deleted ones" do
+    make_latest_for_engno
+    Order.create!(mno: 202_609_006, adlist_id: 9002, engno: "ABC123", shipname: "さらに新しい丸")
+    Order.create!(mno: 202_609_007, adlist_id: 9002, engno: "ABC123", shipname: "削除済みの丸", deleted_at: Time.current)
+    post orders_url, params: { order: only_adlist_and_engno }
+    assert_equal "さらに新しい丸", Order.reorder(:id).last.shipname
+  end
+
+  test "create with an engno that has no earlier order registers with the defaults" do
+    post orders_url, params: { order: only_adlist_and_engno("NOPE999") }
+    order = Order.reorder(:id).last
+    assert_equal [ 9001, "NOPE999" ], [ order.adlist_id, order.engno ]
+    assert_nil order.shipname
+    # 船籍は先頭の国、納入コメントは既定の文言、掛け率は既定値
+    assert_equal [ "日本", Order::DEFAULT_NCOMMENT, 1.0, 0.0 ], [ order.country, order.ncomment, order.irate, order.irate2 ]
+    follow_redirect!
+    assert_select ".alert-success", text: /取引台帳を登録しました。/
+    assert_select ".alert-success", text: /空欄を補いました/, count: 0
+  end
+
+  test "create with a blank engno does not fill anything from other orders" do
+    Order.create!(mno: 202_609_005, adlist_id: 9002, engno: "", shipname: "機番なしの丸")
+    post orders_url, params: { order: only_adlist_and_engno("") }
+    assert_nil Order.reorder(:id).last.shipname
+  end
+
+  test "the engno match ignores surrounding spaces" do
+    make_latest_for_engno
+    post orders_url, params: { order: only_adlist_and_engno(" ABC123 ") }
+    assert_equal "前の丸", Order.reorder(:id).last.shipname
+  end
+
+  test "new offers an automatic blank country choice but edit does not" do
+    get new_order_url
+    assert_select "select[name='order[country]'] option[value='']", text: "（自動）"
+    get edit_order_url(@order)
+    assert_select "select[name='order[country]'] option[value='']", false
+  end
 end

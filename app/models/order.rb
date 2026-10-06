@@ -25,6 +25,36 @@ class Order < ActiveRecord::Base
   # tvalid は有効(1)。
   NEW_ORDER_DEFAULTS = { irate: 1.0, irate2: 0.0, tvalid: 1 }.freeze
 
+  # 納入コメントの既定の文言（新規登録画面で未設定のときに入る。ASPと同じ）
+  DEFAULT_NCOMMENT = "御社御下命後４日"
+
+  # 新規登録で、同じ機番の直近の注文から空欄に引き継ぐ列。船・機関まわりの情報だけで、
+  # 注文ごとに変わる値は引き継がない: 取引先・納入期日・管理番号・件名(orderitem)・内容(memo)・
+  # 機番そのもの・値引き(nebiki)・客先注文番号(ono)・各種日付(見積/受注/納品/出荷/請求など)。
+  # 船籍(country)と納入コメント(ncomment)は既定値が入る画面項目なので fill_blanks_from_latest_by_engno で別扱いにする。
+  INHERITED_BY_ENGNO = %i[
+    st nplase etype shipname inspection hno tname irate irate2 tc tcno zp zpno glc glcno mg mgno
+  ].freeze
+
+  # 同じ機番の直近(新しい順の先頭)の有効な注文。機番が空なら nil。取引先は問わない。
+  def latest_by_engno
+    key = engno.to_s.strip
+    return nil if key.empty?
+
+    self.class.where("TRIM(engno) = ?", key).where.not(id: id).first
+  end
+
+  # 空欄の項目だけを、同じ機番の直近の注文の値で埋める（入力済みの項目は変えない）。
+  # 引き継いだ元の注文を返す（無ければ nil で、何も変えない）。
+  def fill_blanks_from_latest_by_engno
+    source = latest_by_engno or return nil
+
+    INHERITED_BY_ENGNO.each { |attr| self[attr] = source[attr] if self[attr].blank? && source[attr].present? }
+    self.country = source.country if country.blank? && source.country.present?
+    self.ncomment = source.ncomment if (ncomment.blank? || ncomment == DEFAULT_NCOMMENT) && source.ncomment.present?
+    source
+  end
+
   # 管理番号の連番(下3桁)の最大
   MNO_SEQ_MAX = 999
 

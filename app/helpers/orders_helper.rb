@@ -32,7 +32,7 @@ module OrdersHelper
   # 船籍の選択肢（船籍マスタの並び。論理削除済みは除く）。
   # 現在値がマスタに無い（表記ゆれ・削除済み）場合も、保存し直して別の値に変わらないよう先頭に残す。
   def country_options(current)
-    countries = Registry.where(deleted_at: nil).order(Arel.sql("CAST(countryid AS INTEGER)")).pluck(:country)
+    countries = Registry.country_names
     countries.unshift(current) if current.present? && countries.exclude?(current)
     countries
   end

@@ -378,14 +378,19 @@ class OrdersController < ApplicationController
   # 管理番号は画面からは受け取らず、ここで採番する（orderin.asp 相当。採番は Order.next_mno）。
   def create
     @order = Order.new(order_params)
-    Order::NEW_ORDER_DEFAULTS.each { |attr, value| @order[attr] = value if @order[attr].nil? }
 
     problems = new_order_problems
+    if problems.empty?
+      # 取引先と機番だけの入力でも登録できるよう、空欄は同じ機番の直近の注文から埋める。
+      @source_order = @order.fill_blanks_from_latest_by_engno
+      @order.country = Registry.country_names.first if @order.country.blank?
+    end
+    Order::NEW_ORDER_DEFAULTS.each { |attr, value| @order[attr] = value if @order[attr].nil? }
     saved = problems.empty? && save_with_new_mno(problems)
 
     respond_to do |format|
       if saved
-        format.html { redirect_to @order, notice: "取引台帳を登録しました。管理番号 #{@order.mno}" }
+        format.html { redirect_to @order, notice: created_message }
         format.json { render json: @order, status: :created, location: @order }
       else
         problems.each { |message| @order.errors.add(:base, message) }
@@ -536,6 +541,13 @@ class OrdersController < ApplicationController
       @order.save!
     end
     problems.empty?
+  end
+
+  # 登録完了のメッセージ。同じ機番の直近の注文で空欄を埋めたときは、その取引Noも知らせる
+  def created_message
+    message = "取引台帳を登録しました。管理番号 #{@order.mno}"
+    message += "（機番 #{@order.engno.to_s.strip} の直近の取引 #{@source_order.mno} の情報で空欄を補いました）" if @source_order
+    message
   end
 
   def added_part_message(result)
