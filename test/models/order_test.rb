@@ -48,9 +48,21 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal 202_610_001, Order.next_mno(OCT)
   end
 
-  test "a deleted order still uses up its number" do
-    make(202_610_009, deleted_at: Time.current)
-    assert_equal 202_610_010, Order.next_mno(OCT)
+  test "the number of a deleted newest order is used again" do
+    make(202_610_023)
+    make(202_610_024, deleted_at: Time.current)
+    assert_equal 202_610_024, Order.next_mno(OCT)
+  end
+
+  test "a deleted order in the middle leaves a gap and the next number is still max plus 1" do
+    make(202_610_020, deleted_at: Time.current)
+    make(202_610_021)
+    assert_equal 202_610_022, Order.next_mno(OCT)
+  end
+
+  test "when every order of the month is deleted the month starts again from 1" do
+    make(202_610_001, deleted_at: Time.current)
+    assert_equal 202_610_001, Order.next_mno(OCT)
   end
 
   test "the last number of a month is 999 and there is no next one" do

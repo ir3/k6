@@ -457,6 +457,17 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "after deleting the newest order the new order screen offers the same number again" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      Order.create!(mno: 202_610_012, adlist_id: 1)
+      newest = Order.create!(mno: 202_610_013, adlist_id: 1)
+      delete order_url(newest)
+      get new_order_url
+    end
+    assert_select "input[name='expected_mno'][value='202610013']"
+    assert_select "td", text: "202610013"
+  end
+
   test "create keeps the order item the user typed" do
     travel_to Time.zone.local(2026, 10, 5, 12) do
       post orders_url, params: { order: new_order_params(orderitem: "ボルト 10本") }
@@ -634,11 +645,11 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, Stock.where(mno: 202610001).count
   end
 
-  test "a deleted order is gone from the list and its number is not reused" do
+  test "a deleted order is gone from the list and a new order registers with its number again" do
     delete order_url(@order)
     get orders_url
     assert_select "table.list-table tbody tr", false
-    assert_equal 202_610_002, Order.next_mno(Date.new(2026, 10, 5))
+    assert_equal 202_610_001, Order.next_mno(Date.new(2026, 10, 5))
   end
 
   test "destroy of an already deleted order is not found" do

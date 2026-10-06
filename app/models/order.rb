@@ -32,10 +32,12 @@ class Order < ActiveRecord::Base
   # 旧ASP(orderin.asp)は「全体の最大+1、今月の先頭より小さければ今月の先頭+1」だったが、
   # 全体の最大を使うと、年月が2倍になった異常な番号(405024078)がひとつあるだけで以降の番号が壊れる。
   # そのため今月の範囲(YYYYMM001〜999)だけで最大+1にする。月が替わると 1 から始まるのは同じ。
-  # 削除済みの注文も数えて、削除した番号を再発行しない。連番が999を超えたら nil。
+  # 削除済みの注文は数えない（ASPが削除を除いたビュー v取引台帳 から最大値を取っていたのと同じ）。
+  # そのため月の最大番号の注文を削除すると、その番号が次の新規登録で再び使われる。
+  # 削除時に部品明細は消えるので、再利用しても前の注文の明細は引き継がない。連番が999を超えたら nil。
   def self.next_mno(date = Date.current)
     base = date.year * 100_000 + date.month * 1000
-    last = unscoped.where(mno: (base + 1)..(base + MNO_SEQ_MAX)).maximum(:mno)
+    last = where(mno: (base + 1)..(base + MNO_SEQ_MAX)).reorder(nil).maximum(:mno)
     seq = (last || base) - base + 1
     seq <= MNO_SEQ_MAX ? base + seq : nil
   end
