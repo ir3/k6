@@ -55,6 +55,21 @@ sudo systemctl restart k6
 
 `sudo systemctl restart k6` は毎回必須（本番は `config.cache_classes = true` でコード変更を自動リロードしないため、`git pull` だけでは反映されない）。
 
+### 在庫メンテナンスの初回デプロイ時だけ必要なデータ取り込み（2026-10-06）
+
+在庫メンテナンス画面（`/stock_maintenance`）は、部品ごとの設定を `stock_settings` テーブルに持つ（標準在庫数・予測量・旧部品コード・補足情報・非表示）。
+初回デプロイでは、`db:migrate` でテーブルを作ったあとに、旧Accessの `標準在庫` `必要在庫` `在庫部品備考` `在庫非表示` から取り込む。
+取り込まないと、これらの欄は空のまま表示される（画面は動く）。
+
+```bash
+RAILS_ENV=production bin/rails db:migrate
+# db/access/fsdb.mdb と mdbtools（mdb-export）が必要
+RAILS_ENV=production bin/rails runner db/import/import_stock_settings.rb
+```
+
+- 何度実行してもよいが、Access にある項目は画面で更新した値を**上書きする**ので、運用開始後は再実行しない。
+- 本番サーバーに fsdb.mdb / mdbtools が無い場合は、手元で取り込んだ `stock_settings`（約470行）を本番DBに持ち込む。
+
 ### なぜ `assets:precompile` だけで完結するのか（`yarn build`を別途叩く必要がない理由）
 
 Propshaftの`assets:precompile`タスクの中身は実はこれだけ（[propshaft](https://github.com/rails/propshaft) `lib/propshaft/railties/assets.rake`、2026-08-04時点でインストールされているv1.3.2で確認）。

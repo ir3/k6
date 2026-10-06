@@ -50,6 +50,14 @@ Rails.application.routes.draw do
       patch :soft_delete
     end
   end
+  # 在庫メンテナンス（旧 zaikomente.asp）。部品番号は ?partno= で渡す
+  get  'stock_maintenance'          => 'stock_maintenance#show',     as: :stock_maintenance
+  post 'stock_maintenance/price'    => 'stock_maintenance#price',    as: :stock_maintenance_price
+  post 'stock_maintenance/hide'     => 'stock_maintenance#hide',     as: :stock_maintenance_hide
+  post 'stock_maintenance/reveal'   => 'stock_maintenance#reveal',   as: :stock_maintenance_reveal
+  post 'stock_maintenance/adjust'   => 'stock_maintenance#adjust',   as: :stock_maintenance_adjust
+  post 'stock_maintenance/standard' => 'stock_maintenance#standard', as: :stock_maintenance_standard
+  post 'stock_maintenance/forecast' => 'stock_maintenance#forecast', as: :stock_maintenance_forecast
   resources :stocks
   resources :stockbs
 

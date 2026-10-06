@@ -116,5 +116,7 @@
       = f.submit "バラ売り数量入力", name: nil, class: btn_cls
 
 %hr{style: "margin: 16px 0;"}
-%div{style: "margin-left: 30px;"}
+.flex.items-center.gap-3{style: "margin-left: 30px;"}
   = button_to "この部品を削除する", orderpart_path(@orderpart), method: :delete, form: {data: {turbo_confirm: "部品 #{@orderpart.partno}#{@orderpart.kzaiko} を削除します。元に戻せません。よろしいですか？"}}, class: btn_cls
+  -# 在庫台帳での入出庫の状況(旧 zaikomente.asp の在庫メンテナンス)へ
+  = link_to "この部品の在庫状況", stock_maintenance_path(partno: @orderpart.partno), class: btn_cls

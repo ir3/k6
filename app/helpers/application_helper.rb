@@ -8,6 +8,7 @@ module ApplicationHelper
     return "取引台帳追加" if controller_name == "orders" && %w[new create].include?(action_name)
     return "取引台帳修正" if controller_name == "orders" && %w[edit update].include?(action_name)
     return "取引台帳" if controller_name == "orders"
+    return "在庫メンテナンス" if controller_name == "stock_maintenance"
     return "注文部品詳細編集" if controller_name == "orderparts" && %w[edit update].include?(action_name)
 
     content_for(:page_title)

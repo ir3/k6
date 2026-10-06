@@ -12,6 +12,8 @@ K6 is a Rails 8 application combining user management/authentication with busine
 
 adlists（顧客住所録）, keparts（KE部品）, orderparts（注文明細）, orders（注文台帳）, parts（部品台帳）, registries（国別為替）, stocks（在庫台帳）, stockbs（在庫台帳B）, tasks
 
+k6 で追加: stock_settings（部品ごとの在庫設定。旧Accessの 標準在庫・必要在庫・在庫部品備考・在庫非表示 を統合。在庫メンテナンス画面で使用。`db/import/import_stock_settings.rb` で取り込み）
+
 ## Commands
 
 ### Development

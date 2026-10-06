@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_072150) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_101000) do
   create_table "adlists", force: :cascade do |t|
     t.string "address1"
     t.string "address2"
@@ -200,6 +200,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_072150) do
     t.string "user_agent"
     t.integer "user_id", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "stock_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "memo"
+    t.integer "nonview"
+    t.string "opartno"
+    t.string "partno", null: false
+    t.integer "snum"
+    t.datetime "updated_at", null: false
+    t.integer "znum"
+    t.index ["partno"], name: "index_stock_settings_on_partno", unique: true
   end
 
   create_table "stockbs", force: :cascade do |t|
