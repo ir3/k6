@@ -262,6 +262,138 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".alert-error", /入力してください/
   end
 
+  # --- 複製（copy / keycopy / ocopy）の採番 ---
+
+  # 複製元は「最後に開いた注文部品詳細」(session[:order_id])
+  def open_as_copy_source
+    get order_url(@order)
+  end
+
+  test "copy duplicates the order and its parts under the next management number" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      @order.update!(etype: "6L28HX", engno: "123", ono: "A-1", irate: 1.2, orderitem: "元の件名", memo: "元の内容")
+      Orderpart.create!(mno: @order.mno, sno: 10, partno: "P1", qty: 2, unitpd: 500, irate: 1.2, totala: 1000)
+      open_as_copy_source
+
+      assert_difference -> { Order.reorder(nil).count }, 1 do
+        post orders_copy_url
+      end
+      copy = Order.reorder(:id).last
+      assert_redirected_to order_url(copy)
+      assert_equal 202_610_002, copy.mno   # setup の注文が 202610001
+      assert_equal "10002", copy.orderitem
+      assert_equal [ 9001, "第一丸", "6L28HX", "123", "A-1", 1.2 ], [ copy.adlist_id, copy.shipname, copy.etype, copy.engno, copy.ono, copy.irate ]
+      assert_nil copy.memo
+      assert_nil copy.rdate
+      assert_equal [ [ "P1", 2, 500 ] ], Orderpart.where(mno: copy.mno).pluck(:partno, :qty, :unitpd)
+    end
+  end
+
+  test "keycopy duplicates only the company, ship and engine under the next management number" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      @order.update!(etype: "6L28HX", engno: "123", ono: "A-1", memo: "元の内容")
+      open_as_copy_source
+
+      post orders_keycopy_url
+      copy = Order.reorder(:id).last
+      assert_redirected_to order_url(copy)
+      assert_equal [ 202_610_002, "10002" ], [ copy.mno, copy.orderitem ]
+      assert_equal [ 9001, "第一丸", "6L28HX", "123", "A-1" ], [ copy.adlist_id, copy.shipname, copy.etype, copy.engno, copy.ono ]
+      assert_nil copy.memo
+      assert_empty Orderpart.where(mno: copy.mno)
+    end
+  end
+
+  test "ocopy creates an empty order for the adlist under the next management number and opens its edit screen" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      post orders_ocopy_url, params: { adlist_id: "9002" }
+      order = Order.reorder(:id).last
+      assert_redirected_to edit_order_url(order)
+      assert_equal [ 202_610_002, 9002 ], [ order.mno, order.adlist_id ]
+    end
+  end
+
+  test "the order item of a copy always matches its management number even if numbers are taken while copying" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      open_as_copy_source
+      # 採番のたびに、ほかの人が先に登録したことにして番号を進める（採番を2回呼ぶ実装だと件名とずれる）
+      original = Order.method(:next_mno)
+      Order.define_singleton_method(:next_mno) do |*args|
+        number = original.call(*args)
+        Order.create!(mno: number, adlist_id: 1) if number
+        number
+      end
+      begin
+        post orders_copy_url
+        post orders_keycopy_url
+      ensure
+        Order.singleton_class.send(:remove_method, :next_mno)
+        Order.define_singleton_method(:next_mno, original)
+      end
+
+      copies = Order.reorder(:id).select { |o| o.shipname == "第一丸" && o.mno != @order.mno }
+      assert_equal 2, copies.size
+      copies.each { |c| assert_equal c.mno.to_s[4, 5], c.orderitem, "mno=#{c.mno}" }
+    end
+  end
+
+  test "copying twice in a row gives two different numbers" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      open_as_copy_source
+      post orders_keycopy_url
+      post orders_keycopy_url
+      assert_equal [ 202_610_002, 202_610_003 ], Order.reorder(:mno).last(2).map(&:mno)
+    end
+  end
+
+  test "copy, keycopy and ocopy are not fooled by an abnormal huge number in the data" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      Order.create!(mno: 405_024_078, adlist_id: 1)
+      open_as_copy_source
+
+      post orders_copy_url
+      post orders_keycopy_url
+      post orders_ocopy_url, params: { adlist_id: "9002" }
+      assert_equal [ 202_610_002, 202_610_003, 202_610_004 ], Order.reorder(:id).last(3).map(&:mno)
+    end
+  end
+
+  test "a copy continues from this month's numbers and starts again from 1 in a new month" do
+    travel_to Time.zone.local(2026, 11, 2, 12) do
+      open_as_copy_source
+      post orders_keycopy_url
+      assert_equal 202_611_001, Order.reorder(:id).last.mno
+    end
+  end
+
+  test "copy, keycopy and ocopy refuse when the month has used up all 999 numbers, and add nothing" do
+    travel_to Time.zone.local(2026, 10, 5, 12) do
+      Order.create!(mno: 202_610_999, adlist_id: 1)
+      open_as_copy_source
+      Orderpart.create!(mno: @order.mno, sno: 10, partno: "P1", qty: 1)
+
+      assert_no_difference [ -> { Order.reorder(nil).count }, -> { Orderpart.reorder(nil).count } ] do
+        post orders_copy_url
+        assert_redirected_to order_url(@order)
+        post orders_keycopy_url
+        assert_redirected_to order_url(@order)
+        post orders_ocopy_url, params: { adlist_id: "9002" }
+        assert_redirected_to orders_url
+      end
+      follow_redirect!
+      assert_select ".alert-error", /上限\(999\)/
+    end
+  end
+
+  test "copy and keycopy and ocopy need a login" do
+    delete session_url
+    assert_no_difference -> { Order.reorder(nil).count } do
+      post orders_copy_url
+      post orders_keycopy_url
+      post orders_ocopy_url, params: { adlist_id: "9002" }
+    end
+  end
+
   # --- 取引台帳追加（新規取引登録） ---
 
   def new_order_params(overrides = {})

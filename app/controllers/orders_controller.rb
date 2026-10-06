@@ -158,9 +158,11 @@ class OrdersController < ApplicationController
 
   # POST /orders/copy
   def copy
-    @order = Order.new
     @ori   = Order.find(session[:order_id])
-    @order.mno        = newmno
+    mno = next_mno_for_copy(order_path(@ori)) or return
+
+    @order = Order.new
+    @order.mno        = mno
     @order.st         = @ori.st
     @order.adlist_id  = @ori.adlist_id
     @order.rdate      = nil
@@ -176,7 +178,7 @@ class OrdersController < ApplicationController
     @order.pnum       = @ori.pnum
     @order.inspection = @ori.inspection
     @order.hno        = @ori.hno
-    @order.orderitem  = newmno.to_s[4, 5]
+    @order.orderitem  = mno.to_s[4, 5]
     @order.memo       = nil
     @order.tname      = @ori.tname
     @order.idate      = @ori.idate
@@ -228,9 +230,11 @@ class OrdersController < ApplicationController
 
   # POST /orders/keycopy
   def keycopy
-    @order = Order.new
     @ori   = Order.find(session[:order_id])
-    @order.mno        = newmno
+    mno = next_mno_for_copy(order_path(@ori)) or return
+
+    @order = Order.new
+    @order.mno        = mno
     @order.st         = @ori.st
     @order.adlist_id  = @ori.adlist_id
     @order.rdate      = nil
@@ -246,7 +250,7 @@ class OrdersController < ApplicationController
     @order.pnum       = nil
     @order.inspection = @ori.inspection
     @order.hno        = @ori.hno
-    @order.orderitem  = newmno.to_s[4, 5]
+    @order.orderitem  = mno.to_s[4, 5]
     @order.memo       = nil
     @order.tname      = @ori.tname
     @order.idate      = @ori.idate
@@ -276,8 +280,10 @@ class OrdersController < ApplicationController
   # POST /orders/ocopy
   def ocopy
     adlist_id = params[:adlist_id]
+    mno = next_mno_for_copy(orders_path) or return
+
     @order = Order.new
-    @order.mno        = newmno
+    @order.mno        = mno
     @order.adlist_id  = adlist_id
 
     @order.save
@@ -460,23 +466,16 @@ class OrdersController < ApplicationController
     end
   end
 
-  # 新規に取引管理No.作成
-  def newmno
-    # MNo最新＝最大をselect
-    maxmno = Order.maximum(:mno).to_i
+  # 複製(copy / keycopy / ocopy)で使う新しい取引管理No.を採番して返す。
+  # 全体の最大+1 だった古い newmno は、異常な番号(405024078)があると 405024079 を発番してしまうため、
+  # 取引台帳追加と同じ Order.next_mno（今月の範囲だけで最大+1）に揃えた。
+  # 今月の連番が上限に達して採番できない時は、複製せずに戻して nil を返す。
+  def next_mno_for_copy(back_to)
+    mno = Order.next_mno
+    return mno if mno
 
-    # 現在の年・月
-    nyear  = Time.now.to_s[0..4].to_i
-    nmonth = Time.now.to_s[5..6].to_i
-    nyearmonth = nyear * 100_000 + nmonth * 1000
-
-    # 月代わり判定し取引管理No.(MNo)決定
-    mno = if maxmno < nyearmonth
-            nyearmonth + 1
-          else
-            maxmno + 1
-          end
-    mno
+    redirect_to back_to, alert: "今月の管理番号が上限(#{Order::MNO_SEQ_MAX})に達したため、複製できません。"
+    nil
   end
 
   def order_params
