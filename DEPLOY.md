@@ -63,31 +63,25 @@ ConoHa で `db/import/*.rb` を個別に流したり、テーブルだけ流し�
 `bin/rails runner db/import/import_stock_settings.rb` を実行して取り込み、コピーに含める。
 コピーする DB はマイグレーション済み（`schema_migrations` が最新）なので、コピー後に ConoHa で `db:migrate` は要らない。
 
-**WAL に注意。** Mac の開発 DB は WAL モードで、直近の変更は `development.sqlite3-wal` に入っている。
-`development.sqlite3` だけを `scp` すると、その変更が抜ける。開発サーバーが動いたままでも安全に取れる
-`.backup` でスナップショットを作ってから送る。
+コピーはいつもの `scp` 1本。ただし **送る直前に WAL を本体に書き戻す**（下の1行目）。
 
 ```bash
-# Mac 側: 整合したスナップショットを作る（開発サーバーは止めなくてよい）
+# Mac 側
 cd ~/k6
-sqlite3 storage/development.sqlite3 ".backup /tmp/k6_production.sqlite3"
-sqlite3 /tmp/k6_production.sqlite3 "PRAGMA journal_mode=delete;"   # コピー用ファイルを単一ファイルにする
-rm -f /tmp/k6_production.sqlite3-shm /tmp/k6_production.sqlite3-wal
-scp /tmp/k6_production.sqlite3 conoha:/tmp/
+sqlite3 storage/development.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
+scp storage/development.sqlite3 kobeengine@163.44.127.60:/var/www/k6/storage/production.sqlite3
 ```
 
 ```bash
-# ConoHa 側: アプリを止めてから差し替える
-sudo systemctl stop k6
-cd /var/www/k6/storage
-cp production.sqlite3 production.sqlite3.bak   # 念のため（不要になったら消す）
-# 本番側にも WAL が残っている。古い WAL を新しいDBに適用してしまわないよう、必ず一緒に消す
-rm -f production.sqlite3-wal production.sqlite3-shm
-mv /tmp/k6_production.sqlite3 production.sqlite3
-# 所有者・権限は k6.service の User に合わせる（元の production.sqlite3 と同じにする）
-sudo systemctl start k6
+# ConoHa 側: コピー後に反映する（「通常のデプロイ手順」と同じ）
+sudo systemctl restart k6
 ```
 
+- **`wal_checkpoint` を忘れない。** Mac の開発 DB は WAL モードで、直近の変更は `development.sqlite3-wal` に入っている。
+  `scp` は本体ファイルだけを送るので、WAL に残った変更は ConoHa に行かない（開発サーバーを止めると本体に書き戻される）。
+  `wal_checkpoint` の結果の先頭が `0` なら書き戻し完了。`1` なら開発サーバーが使用中なので、止めてからやり直す。
+- 念のため: ConoHa の `storage/` に `production.sqlite3-wal` / `production.sqlite3-shm` が残っていると、古い WAL が
+  新しい DB に適用されて壊れる恐れがある。コピーの前後で `k6` を止められるなら、止めてから WAL/SHM を消して差し替えると確実。
 - **開発 DB の中身がそのまま本番に入る。** 動作確認用のアカウント（`preview-check@kobeengine.com`）も含まれる。
 - ConoHa 側で増えたデータ（注文・在庫の更新・ユーザー）はコピーで上書きされる。コピー前に、Mac 側が最新であることを確認する。
 
