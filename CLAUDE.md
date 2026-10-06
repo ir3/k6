@@ -143,6 +143,22 @@ bin/rails runner db/import/import_adlists.rb
 - CP932 特殊文字（㈱, 﨑 など）の文字化けは `MOJIBAKE_MAP` で gsub 置換
 - 詳細は `~/ob/Claude/access_to_sqlite3.md` 参照
 
+#### 在庫メンテナンス用の `stock_settings`（2026-10-06 追加）
+
+在庫メンテナンス画面（`/stock_maintenance`）の標準在庫数・予測量・旧部品コード・補足情報・非表示は、
+`fsdb.mdb` の `標準在庫` `必要在庫` `在庫部品備考` `在庫非表示` を `stock_settings` テーブルに統合して持つ。
+**Access → SQLite3 変換のとき、他のインポートと一緒にこれも実行すること**（本番へは Mac の DB を丸ごとコピーするので、
+ここで取り込んでおかないと、本番の在庫メンテナンスの標準在庫・予測量・補足情報が空になる）。
+
+```bash
+bin/rails db:migrate                                        # 先に。stock_settings テーブルが無いと失敗する
+bin/rails runner db/import/import_stock_settings.rb         # fsdb.mdb が必要。何度実行してもよい
+```
+
+- 部品番号ごとに1行にまとめて取り込む（同じ部品が複数あれば更新日が最新の行）。474件前後（2026-10-06時点）
+- Access にある項目は、画面で更新した値を**上書きする**。運用開始後に再実行すると、k6 側で更新した標準在庫数などが戻る
+- 本番への反映（DB の丸ごとコピー）は [DEPLOY.md](DEPLOY.md) の「データは Mac で作った DB を丸ごとコピーする」
+
 ### .tab ファイルからのインポート（旧来方式）
 
 `db/seeds/` に各テーブル用スクリプトあり。`bin/rails runner db/seeds/xxx.rb` で実行。
