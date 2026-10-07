@@ -37,6 +37,7 @@ module XlsxReports
     # フォント。この帳票は明朝系にしている(他の帳票はBaseReportの既定のMS PGothic)。
     # MS PMinchoはWindowsのOfficeにもMac版Excelにも入っている。
     FONT_NAME = "MS PMincho"
+    GOTHIC_FONT_NAME = "MS PGothic" # 部分的にゴシックにするとき(Grid#textのfont_name:)
 
     # Item No.の初期値(「1」「0」)は意味を持たないので表示しない
     DEFAULT_ITEMNOS = %w[1 0].freeze
@@ -233,8 +234,9 @@ module XlsxReports
 
       # 11行目の下線と、確認枠(F13:K13)の上辺は別の線にするため、間に空白行(12行目)を入れる
       grid.height(cover_row(13), 28)
-      grid.text(cover_row(13), 6, 11, "対象機番の確認チェック印をお願いします", halign: :left, valign: :center)
-      grid.box(cover_row(13), 6, cover_row(13), 11, :thin)
+      # G列から枠(G:L)の中に、ゴシックの太字で書く(E:Fは空)
+      grid.text(cover_row(13), 7, 11, "対象機番の確認チェック印をお願いします", bold: true, font_name: GOTHIC_FONT_NAME, halign: :left, valign: :center)
+      grid.box(cover_row(13), 7, cover_row(13), 11, :thin)
       grid.text(cover_row(13), 14, 17, "見積有効期限", size: 12, fixed_size: true, halign: :left) # 12ptに固定(他の文字のように+2しない)
       write_date_blank(grid, cover_row(13))
       grid.line(cover_row(13), 14, 20, :bottom)
@@ -486,7 +488,7 @@ module XlsxReports
 
       def emit(sheet, report)
         @cells.each_with_index do |cells, idx|
-          styles = cells.map { |cell| cell[:attrs].empty? ? nil : report.send(:style, sheet, font_name: FONT_NAME, **cell[:attrs]) }
+          styles = cells.map { |cell| cell[:attrs].empty? ? nil : report.send(:style, sheet, **{ font_name: FONT_NAME }.merge(cell[:attrs])) }
           sheet.add_row(cells.map { |cell| cell[:value] }, style: styles)
           report.send(:set_last_row_height, sheet, @heights[idx + 1] || 16)
         end
