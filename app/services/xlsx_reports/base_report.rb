@@ -27,20 +27,21 @@ module XlsxReports
     # border: に指定した種類が四辺の初期値になり、top:/bottom:/left:/right: で個別に上書きできる。
     # (例: border: :thin, bottom: :double で「全辺thin・下だけdouble」)
     # 同じ組み合わせは1つのstyleにキャッシュして再利用する。
+    # font_name を指定したときだけフォントを変える(省略時はcaxlsxの既定フォントのまま)。
     def style(sheet, border: nil, top: nil, bottom: nil, left: nil, right: nil,
               bold: false, size: 11, halign: nil, valign: nil,
-              fill: nil, number_format: nil, font_name: "MS PGothic", wrap: false, rotation: nil)
+              fill: nil, number_format: nil, font_name: nil, wrap: false, rotation: nil, indent: nil)
       edges = { top: top || border, bottom: bottom || border, left: left || border, right: right || border }
       border_opts = edges.filter_map { |edge, edge_style| { style: edge_style, color: "FF000000", edges: [ edge ] } if edge_style }
 
-      key = [ edges, bold, size, halign, valign, fill, number_format, font_name, wrap, rotation ]
+      key = [ edges, bold, size, halign, valign, fill, number_format, font_name, wrap, rotation, indent ]
       cache = (@style_cache[sheet.object_id] ||= {})
       cache[key] ||= sheet.styles.add_style(
         {
-          fn: font_name,
+          font_name: font_name,
           b: bold,
           sz: size,
-          alignment: { horizontal: halign, vertical: valign, wrap_text: (true if wrap), text_rotation: rotation }.compact,
+          alignment: { horizontal: halign, vertical: valign, wrap_text: (true if wrap), text_rotation: rotation, indent: indent }.compact,
           format_code: number_format,
           border: border_opts.presence,
           bg_color: fill

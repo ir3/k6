@@ -14,7 +14,32 @@ module XlsxReports
 
     # 列幅(px)。用紙(print21_.xls)の縦線位置に合わせて決めた20列で、表の各欄は次の列を結合して作る。
     #   No.=1 / 品名=2 / 部品コード・ItemNo・仕様=3-9 / 数量=10 / 単価=11-16 / 納期=17-18 / 重量=19-20
-    COLUMN_PX = [ 55, 310, 40, 50, 65, 45, 185, 50, 55, 114, 19, 50, 22, 58, 50, 21, 87, 79, 38, 117 ].freeze
+    COLUMN_PX = [ 55, 310, 40, 50, 70, 45, 185, 50, 55, 60, 19, 50, 22, 58, 22, 21, 60, 42, 38, 80 ].freeze
+
+    # 数量(J列=20列の10番目)の右に、単位(袋など)の列を1つ追加している。build_cover等の列番号は
+    # 追加前の20列のままで書き、Gridが実際の列へ直す(UNIT_COLが追加した列。11列目以降は1つ右へ)。
+    # 数量と単位をまたぐ結合は 10 〜 UNIT_COL と書く。
+    UNIT_COL = 10.5
+    UNIT_COLUMN_PX = 50
+    GRID_COLUMN_PX = COLUMN_PX.dup.insert(10, UNIT_COLUMN_PX).freeze
+
+    # 1枚目の行間の隙間(空白行)。build_coverの行番号は「隙間を入れる前」の番号で書いてあり、
+    # COVER_BLANK_AFTER の各行の直後に空白行を1行ずつ挿入して実際の行へ直す(cover_row)。
+    # 8行目・12行目は元から空白行として確保してある。
+    COVER_BLANK_AFTER = [ 4, 5, 6, 9, 10 ].freeze
+    BLANK_ROW_HEIGHT = 6
+    COVER_LINE_HEIGHT = 24 # 表紙の国籍・宛先・形式の各行の高さ(pt)
+
+    # 文字は、各所に書いたサイズより2pt大きく出す(Grid#text)。DEFAULT_TEXT_SIZEはサイズ省略時のBaseReport#styleの既定値
+    DEFAULT_TEXT_SIZE = 11
+    TEXT_SIZE_UP = 2
+
+    # フォント。この帳票は明朝系にしている(他の帳票はBaseReportの既定のMS PGothic)。
+    # MS PMinchoはWindowsのOfficeにもMac版Excelにも入っている。
+    FONT_NAME = "MS PMincho"
+
+    # Item No.の初期値(「1」「0」)は意味を持たないので表示しない
+    DEFAULT_ITEMNOS = %w[1 0].freeze
 
     def initialize(order)
       @order = order
@@ -27,10 +52,79 @@ module XlsxReports
       "mitsumori_irai_#{@order.mno}.xlsx"
     end
 
+    # 「対象機番の確認チェック印」の枠から1行上の□へ向かう折れ線矢印は、caxlsxに図形のAPIが
+    # 無いため、生成済みのxlsxの1枚目へ図形をXMLで後から挿入する(SeikyuReportと同じ手法)。
+    def generate
+      ShapePatchedPackage.new(super, method(:inject_arrow))
+    end
+
     private
 
+    # 矢印の位置(1枚目)。確認枠の右辺の中央から、L列の中央まで右へ伸ばし、そこから上へ(□の下まで)。
+    # 0始まりの列・行で、枠の右辺=L列の左端、矢印の先端=□の下の空白行(旧12行目)の上端。
+    # L列の幅はCOLUMN_PX、確認枠の行は高さ22pt。
+    ARROW_COL = 12 # 追加した単位の列の分、旧L列(index 11)より1つ右
+    ARROW_ROW = 12 + COVER_BLANK_AFTER.count { |n| n < 12 } - 1 # 空白行(旧12行目)の上端
+    ARROW_ROW_HEIGHT_EMU = 22 * 12_700
+    ARROW_COL_WIDTH_EMU = GRID_COLUMN_PX[ARROW_COL] * 9_525
+
+    def inject_arrow(path)
+      Zip::File.open(path) do |zip|
+        zip.get_output_stream("xl/drawings/drawing1.xml") { |f| f.write(arrow_drawing_xml) }
+
+        rels_path = "xl/worksheets/_rels/sheet1.xml.rels"
+        rels_xml = if zip.find_entry(rels_path)
+          zip.read(rels_path)
+        else
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' \
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>'
+        end
+        rel_id = "rIdArrowDrawing"
+        rels_xml = rels_xml.sub(
+          "</Relationships>",
+          %(<Relationship Id="#{rel_id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>)
+        )
+        zip.get_output_stream(rels_path) { |f| f.write(rels_xml) }
+
+        sheet_xml = zip.read("xl/worksheets/sheet1.xml").sub("</worksheet>", %(<drawing r:id="#{rel_id}"/></worksheet>))
+        zip.get_output_stream("xl/worksheets/sheet1.xml") { |f| f.write(sheet_xml) }
+
+        ct_xml = zip.read("[Content_Types].xml")
+        unless ct_xml.include?("/xl/drawings/drawing1.xml")
+          ct_xml = ct_xml.sub(
+            "</Types>",
+            %(<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>)
+          )
+          zip.get_output_stream("[Content_Types].xml") { |f| f.write(ct_xml) }
+        end
+      end
+    end
+
+    # 左下から右へ伸び、折れて上へ向かう矢印。bentConnector2(左上→右→下)を flipV で上下反転して使い、
+    # 矢じりは終点(上端)側に付ける。
+    def arrow_drawing_xml
+      <<~XML
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+        <xdr:twoCellAnchor>
+        <xdr:from><xdr:col>#{ARROW_COL}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>#{ARROW_ROW}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+        <xdr:to><xdr:col>#{ARROW_COL}</xdr:col><xdr:colOff>#{ARROW_COL_WIDTH_EMU / 2}</xdr:colOff><xdr:row>#{ARROW_ROW + 1}</xdr:row><xdr:rowOff>#{ARROW_ROW_HEIGHT_EMU / 2}</xdr:rowOff></xdr:to>
+        <xdr:cxnSp macro="">
+        <xdr:nvCxnSpPr><xdr:cNvPr id="1" name="ConfirmArrow"/><xdr:cNvCxnSpPr/></xdr:nvCxnSpPr>
+        <xdr:spPr>
+        <a:xfrm flipV="1"><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm>
+        <a:prstGeom prst="bentConnector2"><a:avLst/></a:prstGeom>
+        <a:ln w="9525"><a:solidFill><a:srgbClr val="000000"/></a:solidFill><a:tailEnd type="triangle" w="med" len="med"/></a:ln>
+        </xdr:spPr>
+        </xdr:cxnSp>
+        <xdr:clientData/>
+        </xdr:twoCellAnchor>
+        </xdr:wsDr>
+      XML
+    end
+
     def columns
-      COLUMN_PX.map { |px| Column.new(key: :grid, width: ((px - 5) / 7.0).round(1)) }
+      GRID_COLUMN_PX.map { |px| Column.new(key: :grid, width: ((px - 5) / 7.0).round(1)) }
     end
 
     def build(workbook)
@@ -43,9 +137,9 @@ module XlsxReports
           sheet.page_setup.paper_size = 9
           sheet.page_setup.fit_to_width = 1
           sheet.page_setup.fit_to_height = 1
-          sheet.page_margins.set(top: 0.3, bottom: 0.3, left: 0.4, right: 0.3, header: 0, footer: 0)
+          sheet.page_margins.set(top: 0.5, bottom: 0.1, left: 0.4, right: 0.3, header: 0, footer: 0)
 
-          grid = Grid.new(page_no == 1 ? 24 : 23, COLUMN_PX.size)
+          grid = Grid.new(page_no == 1 ? 26 + COVER_BLANK_AFTER.size : 23, GRID_COLUMN_PX.size)
           if page_no == 1
             build_cover(grid, page_items, page_no, pages.size)
           else
@@ -59,48 +153,55 @@ module XlsxReports
 
     # --- 1枚目(表紙) -------------------------------------------------------
 
+    # 隙間を入れる前の行番号を、実際の行番号に直す
+    def cover_row(n)
+      n + COVER_BLANK_AFTER.count { |k| k < n }
+    end
+
     def build_cover(grid, page_items, page_no, total_pages)
       today = Date.current
-      grid.height(1, 14)
-      grid.text(1, 1, 4, "IHI原動機株式会社", size: 9, halign: :left)
+      grid.height(1, 20)
+      grid.text(1, 1, 4, "IHI原動機株式会社", size: 11, halign: :left)
 
-      grid.height(2, 24)
-      grid.text(2, 2, 9, "部品見積依頼票 [現装同一、追設・改造]", size: 16, bold: true, halign: :left)
+      grid.height(2, 32)
+      grid.text(2, 2, 9, "部品見積依頼票 [現装同一、追設・改造]", size: 16, halign: :center)
       grid.text(2, 15, 18, "#{today.year}年 #{today.month}月 #{today.day}日", halign: :right)
       grid.text(2, 19, 20, "P #{page_no}／#{total_pages}", halign: :left)
 
-      grid.height(3, 16)
-      grid.text(3, 1, 1, "[宛先]", bold: true, halign: :left)
-      grid.text(3, 13, 15, "[発行部門]", bold: true, halign: :left)
+      grid.height(3, 30)
+      grid.text(3, 1, 1, "[宛先]", halign: :left)
+      grid.text(3, 13, 15, "[発行部門]", halign: :left)
+      grid.text(3, 18, 20, @order.mno, size: 11, halign: :center)
 
-      grid.height(4, 19)
-      grid.text(4, 1, 2, "原価管理チーム", bold: true, halign: :left)
-      grid.text(4, 3, 3, "殿", bold: true, halign: :right)
+      grid.height(4, 33)
+      grid.text(4, 1, 2, "原価管理チーム", halign: :left)
+      grid.text(4, 3, 3, "殿", halign: :right)
       grid.line(4, 1, 3, :bottom)
-      grid.text(4, 5, 6, "船名/客先", bold: true, halign: :left)
-      grid.text(4, 7, 12, " #{@order.shipname}/#{@adlist&.company}", halign: :left)
+      grid.text(4, 5, 6, "船名/客先", halign: :left)
+      grid.text(4, 7, 12, " #{@order.shipname}/#{@adlist&.company}", size: 14, halign: :left)
       grid.line(4, 5, 12, :bottom)
-      grid.text(4, 13, 15, "代 理 店", bold: true, halign: :left)
+      grid.text(4, 13, 15, "代 理 店", halign: :left)
       grid.text(4, 16, 20, COMPANY_NAME, halign: :left)
       grid.line(4, 13, 20, :bottom)
 
-      grid.height(5, 18)
-      grid.text(5, 5, 6, "国籍", bold: true, halign: :left)
-      grid.text(5, 7, 7, @order.country, halign: :left)
-      grid.text(5, 8, 8, "検査", bold: true, halign: :left)
-      grid.line(5, 5, 11, :bottom)
-      grid.text(5, 13, 15, "営業担当", bold: true, halign: :left)
-      grid.text(5, 16, 20, Ksystem.sales_person, halign: :left)
-      grid.line(5, 13, 20, :bottom)
+      grid.height(cover_row(5), COVER_LINE_HEIGHT)
+      grid.text(cover_row(5), 5, 6, "国籍", halign: :left)
+      grid.text(cover_row(5), 7, 7, @order.country, halign: :left)
+      grid.text(cover_row(5), 8, 8, "検査", halign: :left)
+      grid.line(cover_row(5), 5, 11, :bottom)
+      grid.text(cover_row(5), 13, 15, "営業担当", halign: :left)
+      grid.text(cover_row(5), 16, 20, Ksystem.sales_person, halign: :left)
+      grid.line(cover_row(5), 13, 20, :bottom)
 
       # 機種欄(5行)。左は宛先、右は回答希望日・見積No.・見積有効期限が同じ行に並ぶ
-      grid.height(6, 18)
-      grid.text(6, 1, 2, "ニコ精密器(株)・生管", bold: true, halign: :left)
-      grid.text(6, 3, 3, "殿", bold: true, halign: :right)
-      grid.line(6, 1, 3, :bottom)
-      grid.height(7, 18)
-      grid.text(7, 1, 2, "日立ニコ大宮・生管", bold: true, halign: :left)
-      grid.text(7, 3, 3, "殿", bold: true, halign: :right)
+      grid.height(cover_row(6), COVER_LINE_HEIGHT)
+      grid.text(cover_row(6), 2, 2, "ニコ精密器(株)・生管", halign: :left)
+      grid.text(cover_row(6), 3, 3, "殿", halign: :right)
+      grid.line(cover_row(6), 2, 3, :bottom)
+      grid.height(cover_row(7), COVER_LINE_HEIGHT)
+      grid.text(cover_row(7), 2, 2, "日立ニコ大宮・生管", halign: :left)
+      grid.text(cover_row(7), 3, 3, "殿", halign: :right)
+      grid.line(cover_row(7), 2, 3, :bottom)
 
       engine_rows = [
         [ "ＤＥ形式", @order.etype, @order.engno ],
@@ -110,46 +211,62 @@ module XlsxReports
         [ "ＭＧ／ＣＬ形式", @order.mg, @order.mgno ]
       ]
       engine_rows.each_with_index do |(label, type, no), i|
-        r = 6 + i
-        grid.height(r, 18)
-        grid.text(r, 5, 6, label, size: 9, halign: :left)
-        grid.text(r, 7, 7, type, halign: :left)
-        grid.text(r, 8, 8, "No.", bold: true, halign: :left)
-        grid.text(r, 9, 11, no, halign: :left)
-        grid.text(r, 12, 12, "□", halign: :center)
+        # 7行目と8行目の間に空白行(8行目)が入るので、3つ目以降は1行下
+        r = cover_row(i < 2 ? 6 + i : 7 + i)
+        grid.height(r, COVER_LINE_HEIGHT)
+        # E:F(115px)に「ＭＧ／ＣＬ形式」が収まる上限の12ptに固定(他の文字のように+2しない)
+        grid.text(r, 5, 6, label, size: 12, fixed_size: true, halign: :left)
+        grid.text(r, 7, 7, type, size: 15, halign: :left)
+        grid.text(r, 8, 8, "No.", size: 13, halign: :left)
+        grid.text(r, 9, 11, no, size: 15, halign: :left)
+        grid.text(r, 12, 12, "□", size: 18, halign: :center)
         grid.line(r, 5, 11, :bottom)
       end
 
-      grid.text(7, 15, 17, "回答希望日", bold: true, halign: :left)
-      grid.text(7, 18, 20, "年　　月　　日", halign: :right)
-      grid.line(7, 15, 20, :bottom)
+      grid.text(cover_row(7), 14, 17, "回答希望日", halign: :left)
+      write_date_blank(grid, cover_row(7))
+      grid.line(cover_row(7), 14, 20, :bottom)
 
-      grid.text(8, 13, 14, "見積No.", bold: true, halign: :right, valign: :center, rows: 2)
-      grid.text(8, 15, 20, @order.mno, size: 16, bold: true, halign: :center, valign: :center, rows: 2)
-      grid.box(8, 15, 9, 20, :medium)
+      # 回答希望日の下線(O7:T7)と、見積No.の枠の上辺は別の線にするため、間に空白行(8行目)を入れる
+      grid.text(cover_row(9), 13, 14, "見積No.", halign: :right, valign: :center, rows: cover_row(10) - cover_row(9) + 1)
+      grid.box(cover_row(9), 15, cover_row(10), 20, :medium)
 
-      grid.height(11, 22)
-      grid.text(11, 5, 11, "対象機番の確認チェック印をお願いします", bold: true, halign: :left, valign: :center)
-      grid.box(11, 5, 11, 11, :thin)
-      grid.text(11, 12, 12, "↑", halign: :center)
-      grid.text(11, 15, 17, "見積有効期限", bold: true, halign: :left)
-      grid.text(11, 18, 20, "年　　月　　日", halign: :right)
-      grid.line(11, 15, 20, :bottom)
+      # 11行目の下線と、確認枠(F13:K13)の上辺は別の線にするため、間に空白行(12行目)を入れる
+      grid.height(cover_row(13), 28)
+      grid.text(cover_row(13), 6, 11, "対象機番の確認チェック印をお願いします", halign: :left, valign: :center)
+      grid.box(cover_row(13), 6, cover_row(13), 11, :thin)
+      grid.text(cover_row(13), 14, 17, "見積有効期限", size: 12, fixed_size: true, halign: :left) # 12ptに固定(他の文字のように+2しない)
+      write_date_blank(grid, cover_row(13))
+      grid.line(cover_row(13), 14, 20, :bottom)
 
-      grid.height(12, 10)
-      build_table(grid, 13, page_items, FIRST_PAGE_ITEMS, first_page: true)
-      build_cover_footer(grid, 13 + 1 + FIRST_PAGE_ITEMS)
+      # 行間の隙間にする空白行(高さ6pt)。追加した行(各行の直後)と、既にある8行目・12行目
+      COVER_BLANK_AFTER.each { |n| grid.height(cover_row(n) + 1, BLANK_ROW_HEIGHT) }
+      [ 8, 12 ].each { |n| grid.height(cover_row(n), BLANK_ROW_HEIGHT) }
+
+      grid.height(cover_row(14), 10)
+      build_table(grid, cover_row(15), page_items, FIRST_PAGE_ITEMS, first_page: true)
+      build_cover_footer(grid, cover_row(15) + 1 + FIRST_PAGE_ITEMS)
+    end
+
+    # 手書き用の「年 月 日」。年は左のセルで左端から右へ(インデント3)。月と日は右の広いセルに
+    # 全角空白をはさんで右寄せで書き、日を右端に置く。月の位置は空白の数(MONTH_DAY_GAP)で決まり、
+    # 増やすと月が左へ、減らすと右へ動く(年と日のほぼ真ん中に来るように合わせてある)。
+    MONTH_DAY_GAP = 3
+
+    def write_date_blank(grid, row)
+      grid.text(row, 18, 18, "年", halign: :left, indent: 3)
+      grid.text(row, 20, 20, "月#{'　' * MONTH_DAY_GAP}日", halign: :right)
     end
 
     def build_cover_footer(grid, start_row)
-      grid.height(start_row, 13)
+      grid.height(start_row, 20)
       grid.text(start_row, 11, 18, "※価格には消費税が含まれておりません", size: 9, halign: :right)
 
       top = start_row + 1
-      grid.height(top, 18)
-      grid.height(top + 1, 18)
-      grid.height(top + 2, 39)
-      grid.height(top + 3, 39)
+      grid.height(top, 28.5)
+      grid.height(top + 1, 28.5)
+      grid.height(top + 2, 38)
+      grid.height(top + 3, 38)
       grid.text(top, 1, 1, vertical_text("代理店・営業見積理由"), size: 8, halign: :center, valign: :center, rows: 4, wrap: true)
       grid.box(top, 1, top + 3, 1, :thin)
       grid.box(top, 2, top + 3, 5, :thin)
@@ -157,12 +274,12 @@ module XlsxReports
       grid.box(top, 6, top + 3, 6, :thin)
       grid.box(top, 7, top + 3, 13, :thin)
 
-      grid.text(top, 14, 17, "営 業 部 門", bold: true, halign: :center, valign: :center)
+      grid.text(top, 14, 17, "営 業 部 門", halign: :center, valign: :center)
       grid.box(top, 14, top, 17, :thin)
-      grid.text(top, 18, 20, "原価管理チーム", bold: true, halign: :center, valign: :center)
+      grid.text(top, 18, 20, "原価管理チーム", halign: :center, valign: :center)
       grid.box(top, 18, top, 20, :thin)
       [ [ 14, 15, "承 認" ], [ 16, 17, "担 当" ], [ 18, 19, "承 認" ], [ 20, 20, "担 当" ] ].each do |c1, c2, label|
-        grid.text(top + 1, c1, c2, label, bold: true, halign: :center, valign: :center)
+        grid.text(top + 1, c1, c2, label, halign: :center, valign: :center)
         grid.box(top + 1, c1, top + 1, c2, :thin)
         grid.box(top + 2, c1, top + 3, c2, :thin)
       end
@@ -174,17 +291,16 @@ module XlsxReports
     # --- 2枚目以降(次紙) -----------------------------------------------------
 
     def build_continuation(grid, page_items, page_no, total_pages)
-      grid.height(1, 14)
-      grid.text(1, 1, 4, "IHI原動機株式会社", size: 9, halign: :left)
+      grid.height(1, 20)
+      grid.text(1, 1, 4, "IHI原動機株式会社", size: 11, halign: :left)
 
       grid.height(2, 26)
-      grid.text(2, 1, 6, "部品見積依頼票 [現装同一、追設・改造]", size: 16, bold: true, halign: :left)
-      grid.text(2, 7, 8, "ＤＥ形式　#{@order.etype}", bold: true, halign: :left)
-      grid.line(2, 7, 8, :bottom)
-      grid.text(2, 9, 12, "製造番号　#{@order.engno}", bold: true, halign: :left)
+      grid.text(2, 1, 6, "部品見積依頼票 [現装同一、追設・改造]", size: 16, halign: :left)
+      grid.text(2, 7, 8, "ＤＥ形式　#{@order.etype}", halign: :left)
+      grid.line(2, 7, 7, :bottom)
+      grid.text(2, 9, 12, "製造番号　#{@order.engno}", halign: :left)
       grid.line(2, 9, 12, :bottom)
-      grid.text(2, 14, 15, "見積No.", bold: true, halign: :right)
-      grid.text(2, 16, 18, @order.mno, halign: :center)
+      grid.text(2, 14, 15, "見積No.", halign: :right)
       grid.line(2, 16, 18, :bottom)
       grid.text(2, 19, 20, "P #{page_no}／#{total_pages}", halign: :left)
 
@@ -194,9 +310,10 @@ module XlsxReports
       note_row = 4 + 1 + CONTINUATION_PAGE_ITEMS
       grid.height(note_row, 13)
       grid.text(note_row, 11, 18, "※価格には消費税が含まれておりません", size: 9, halign: :right)
-      grid.height(note_row + 1, 40)
-      grid.height(note_row + 2, 40)
-      grid.text(note_row + 1, 1, 1, vertical_text("原価管理連絡事項"), size: 8, halign: :center, valign: :center, rows: 2, wrap: true)
+      grid.height(note_row + 1, 37.5)
+      grid.height(note_row + 2, 37.5)
+      # 2枚目以降の「原価管理連絡事項」は大きくしない(指定どおり)。枠の高さが低いので縦書き2列にする
+      grid.text(note_row + 1, 1, 1, vertical_text_columns("原価管理連絡事項", 2), size: 8, fixed_size: true, halign: :center, valign: :center, rows: 2, wrap: true)
       grid.box(note_row + 1, 1, note_row + 2, 1, :thin)
       grid.box(note_row + 1, 2, note_row + 2, 20, :thin)
       grid.height(note_row + 3, 14)
@@ -206,22 +323,22 @@ module XlsxReports
     # --- 明細表 ------------------------------------------------------------
 
     def build_table(grid, header_row, page_items, capacity, first_page:)
-      grid.height(header_row, first_page ? 31 : 34)
+      grid.height(header_row, 38)
       [
         [ 1, 1, "No." ], [ 2, 2, "品　　　名" ], [ 3, 9, "部品コード／Item No.／仕様" ],
-        [ 10, 10, "数　量" ], [ 11, 16, "単　価" ], [ 17, 18, "納　期\n(要・否)" ], [ 19, 20, "重　量\n(要・否)" ]
+        [ 10, UNIT_COL, "数　量" ], [ 11, 16, "単　価" ], [ 17, 18, "納　期\n(要・否)" ], [ 19, 20, "重　量\n(要・否)" ]
       ].each do |c1, c2, label|
-        grid.text(header_row, c1, c2, label, bold: true, halign: :center, valign: :center, wrap: true)
+        grid.text(header_row, c1, c2, label, halign: :center, valign: :center, wrap: true)
         grid.box(header_row, c1, header_row, c2, :thin)
       end
 
-      row_height = first_page ? 24 : 26
+      row_height = 35
       capacity.times do |i|
         r = header_row + 1 + i
         grid.height(r, row_height)
         item = page_items[i]
         fill_item(grid, r, item, first_page: first_page) if item
-        [ [ 1, 1 ], [ 2, 2 ], [ 3, 9 ], [ 10, 10 ], [ 11, 16 ], [ 17, 18 ], [ 19, 20 ] ].each do |c1, c2|
+        [ [ 1, 1 ], [ 2, 2 ], [ 3, 9 ], [ 10, UNIT_COL ], [ 11, 16 ], [ 17, 18 ], [ 19, 20 ] ].each do |c1, c2|
           grid.box(r, c1, r, c2, :thin)
         end
       end
@@ -237,19 +354,20 @@ module XlsxReports
       else
         grid.text(row, 2, 2, item[:name_info], size: 10, halign: :left, valign: :center, wrap: true)
       end
-      grid.text(row, 3, 5, item[:code], halign: :left, valign: :center)
+      grid.text(row, 3, 5, item[:code], size: 13, halign: :left, valign: :center, indent: 1)
       grid.text(row, 6, 7, item[:itemno], halign: :left, valign: :center)
 
-      grid.text(row, 10, 10, item[:qty_unit], halign: :right, valign: :center)
+      grid.text(row, 10, 10, item[:qty], size: 14, halign: :right, valign: :center)
+      grid.text(row, UNIT_COL, UNIT_COL, item[:unit_label], size: 14, halign: :left, valign: :center)
 
       if item[:old_price]
-        grid.text(row, 11, 13, item[:old_price], size: 12, halign: :right, valign: :center, number_format: "#,##0")
-        grid.text(row, 14, 16, item[:new_price], size: 12, halign: :right, valign: :center, number_format: "#,##0")
+        grid.text(row, 11, 13, item[:old_price], size: 14, halign: :right, valign: :center, number_format: "#,##0")
+        grid.text(row, 14, 16, item[:new_price], size: 14, halign: :right, valign: :center, number_format: "#,##0")
       elsif item[:price]
-        grid.text(row, 11, 13, item[:price], size: 12, halign: :right, valign: :center, number_format: "#,##0")
+        grid.text(row, 11, 13, item[:price], size: 14, halign: :right, valign: :center, number_format: "#,##0")
       end
 
-      grid.text(row, 19, 20, item[:weight], halign: :right, valign: :center) if item[:weight]
+      grid.text(row, 19, 20, item[:weight], halign: :center, valign: :center, number_format: "0.000") if item[:weight]
     end
 
     # --- 明細データ ----------------------------------------------------------
@@ -262,9 +380,10 @@ module XlsxReports
           name_info: [ item.name, item.info ].compact_blank.join("　"),
           info: item.info,
           code: item.code,
-          itemno: item.itemno,
-          qty_unit: [ format_number(item.qty), item.unit ].compact_blank.join(" "),
-          weight: (item.totalweight.round(2) if item.totalweight.to_f.positive? && item.totalweight.to_f != 999),
+          itemno: (item.itemno unless DEFAULT_ITEMNOS.include?(item.itemno.to_s.strip)),
+          qty: format_number(item.qty),
+          unit_label: unit_label(item.unit),
+          weight: (item.totalweight.round(3) if item.totalweight.to_f.positive? && item.totalweight.to_f != 999),
           **prices
         }
       end
@@ -285,6 +404,15 @@ module XlsxReports
       end
     end
 
+    # 販売単位の表記。部品台帳の販売単位が数字(例: 10 = 10個で1袋)のときは「袋」、
+    # SET・ｸﾐ・PCSなどの文字のときはそのまま出す。
+    def unit_label(unit)
+      unit = unit.to_s.strip
+      return nil if unit.empty?
+
+      unit.match?(/\A\d+(\.\d+)?\z/) ? "袋" : unit
+    end
+
     def format_number(value)
       return nil if value.nil?
 
@@ -294,6 +422,14 @@ module XlsxReports
     # 縦書きの代わりに1文字ずつ改行して縦に並べる
     def vertical_text(text)
       text.chars.join("\n")
+    end
+
+    # 縦書きをcolumns列にする(1文字ずつ改行して縦に並べるのと同じ方法)。縦書きなので、先頭の文字から
+    # 順に右の列へ、あふれた分が左の列へ並ぶ。1行に各列の同じ段の文字を左の列から並べて書く。
+    # 例: 「原価管理連絡事項」2列 → 右の列「原価管理」・左の列「連絡事項」→ 「連原」「絡価」「事管」「項理」の4行
+    def vertical_text_columns(text, columns)
+      lines = text.chars.each_slice((text.chars.size / columns.to_f).ceil).to_a
+      lines.first.each_index.map { |i| lines.reverse.map { |col| col[i] || "　" }.join }.join("\n")
     end
 
     # --- セルの方眼 --------------------------------------------------------------
@@ -313,7 +449,12 @@ module XlsxReports
       end
 
       # row行のcol1〜col2列(rows指定で複数行)に値を置いて結合する
-      def text(row, col1, col2, value, rows: 1, **attrs)
+      # 文字サイズは指定(省略時11)より TEXT_SIZE_UP 大きくする。fixed_size: true のときだけ指定どおり。
+      def text(row, col1, col2, value, rows: 1, fixed_size: false, **attrs)
+        base_size = attrs[:size] || DEFAULT_TEXT_SIZE
+        attrs[:size] = fixed_size ? base_size : base_size + TEXT_SIZE_UP
+        col1 = physical(col1)
+        col2 = physical(col2)
         row2 = row + rows - 1
         @cells[row - 1][col1 - 1][:value] = value
         (row..row2).each do |r|
@@ -324,6 +465,8 @@ module XlsxReports
 
       # 範囲の外周に罫線を引く
       def box(row1, col1, row2, col2, kind)
+        col1 = physical(col1)
+        col2 = physical(col2)
         (col1..col2).each do |c|
           edge(row1, c, :top, kind)
           edge(row2, c, :bottom, kind)
@@ -336,12 +479,14 @@ module XlsxReports
 
       # 範囲の片側だけに線を引く(下線など)
       def line(row, col1, col2, side)
+        col1 = physical(col1)
+        col2 = physical(col2)
         (col1..col2).each { |c| edge(row, c, side, :thin) }
       end
 
       def emit(sheet, report)
         @cells.each_with_index do |cells, idx|
-          styles = cells.map { |cell| cell[:attrs].empty? ? nil : report.send(:style, sheet, **cell[:attrs]) }
+          styles = cells.map { |cell| cell[:attrs].empty? ? nil : report.send(:style, sheet, font_name: FONT_NAME, **cell[:attrs]) }
           sheet.add_row(cells.map { |cell| cell[:value] }, style: styles)
           report.send(:set_last_row_height, sheet, @heights[idx + 1] || 16)
         end
@@ -352,12 +497,45 @@ module XlsxReports
 
       private
 
+      # 追加前の20列の番号(UNIT_COLを含む)を、実際の列番号へ直す。11列目以降は追加した1列の分だけ右へ
+      def physical(col)
+        return col if col <= 10
+
+        col == UNIT_COL ? 11 : col + 1
+      end
+
       def edge(row, col, side, kind)
         @cells[row - 1][col - 1][:attrs][side] = kind
       end
 
       def letter(col)
         ("A".ord + col - 1).chr
+      end
+    end
+  end
+
+  # Axlsx::Packageをラップし、serialize/to_streamの出力(=完成したxlsxのzip)に図形を挿入する。
+  # SeikyuReportのBracketShapePatchedPackageと同じ手法。
+  class ShapePatchedPackage < SimpleDelegator
+    def initialize(package, patcher)
+      super(package)
+      @patcher = patcher
+    end
+
+    def serialize(path, *args, **kwargs)
+      result = __getobj__.serialize(path, *args, **kwargs)
+      @patcher.call(path)
+      result
+    end
+
+    def to_stream(*args, **kwargs)
+      Tempfile.create([ "xlsx_shape_patch", ".xlsx" ]) do |tmp|
+        tmp.binmode
+        tmp.write(__getobj__.to_stream(*args, **kwargs).read)
+        tmp.flush
+        @patcher.call(tmp.path)
+        tmp.rewind
+        StringIO.new(File.binread(tmp.path))
       end
     end
   end
