@@ -159,6 +159,21 @@ bin/rails runner db/import/import_stock_settings.rb         # fsdb.mdb が必要
 - Access にある項目は、画面で更新した値を**上書きする**。運用開始後に再実行すると、k6 側で更新した標準在庫数などが戻る
 - 本番への反映（DB の丸ごとコピー）は [DEPLOY.md](DEPLOY.md) の「データは Mac で作った DB を丸ごとコピーする」
 
+#### 帳票出力履歴の `order_logs`（2026-10-07 追加）
+
+旧Accessの `取引管理`（MNo, datelog, kubun）を `order_logs` に持つ。**追記専用の出力履歴**で、帳票を出力するたびに1行増える
+（`OrdersController#report` が `XlsxReports::Registry` の `kubun` を見て `OrderLog.record` で書く）。
+請求書・納品書・受領書は `kubun=4`（出荷案内）の日付を出荷日として読むので、履歴が無いと出荷日が出ない。
+**Access → SQLite3 変換のとき、他のインポートと一緒にこれも実行すること**（本番へは DB を丸ごとコピーするため）。
+
+```bash
+bin/rails db:migrate                                   # 先に。order_logs テーブルが無いと失敗する
+bin/rails runner db/import/import_order_logs.rb        # fsdb.mdb が必要。13.5万件前後。何度実行してもよい(IDで上書き)
+```
+
+- kubun: 1=部品見積依頼, 2=見積書, 3=受注メモ, 4=出荷案内書, 5=請求書A/B・同控・納品書B, 7=納品書A（旧ASPの値のまま）
+- 運用開始後に再実行しても、Access に無い（k6 で追加した）行は消えない。Access と同じ ID の行だけ上書きされる
+
 ### .tab ファイルからのインポート（旧来方式）
 
 `db/seeds/` に各テーブル用スクリプトあり。`bin/rails runner db/seeds/xxx.rb` で実行。

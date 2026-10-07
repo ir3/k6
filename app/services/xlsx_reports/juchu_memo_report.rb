@@ -229,7 +229,7 @@ module XlsxReports
         # 適用した単価(定価×掛け率)に数量を掛けて求める。部品番号無(NOrderpart)は元々
         # totala(labor/宿泊費等の確定金額)を持っているのでそのまま使う。
         amount = if item.source == :orderpart
-          (smarume(item.unitpd.to_f * item.rate.to_f) * item.qty.to_f).round
+          (PriceRounding.smarume(item.unitpd.to_f * item.rate.to_f) * item.qty.to_f).round
         else
           item.amount
         end
@@ -246,24 +246,6 @@ module XlsxReports
           amount: amount
         }
       end
-    end
-
-    # 旧ASP(asp/include/fsysfunc.asp)のsmarume関数そのまま。四捨五入で丸めるが、
-    # 桁数に応じて丸め幅が変わる(1万未満:10の位、10万未満:100の位、
-    # 100万未満:1000の位、100万以上:1万の位。100万以上は値がいくら大きくなっても
-    # 1万の位で頭打ち)。
-    def smarume(number)
-      granularity =
-        if number < 10_000
-          10
-        elsif number < 100_000
-          100
-        elsif number < 1_000_000
-          1_000
-        else
-          10_000
-        end
-      (number / granularity.to_f).round * granularity
     end
 
     # 明細行(2行1組)と同じ見た目に揃えるため、小計・累計も上段(罫線のみ)+

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_234007) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_010000) do
   create_table "adlists", force: :cascade do |t|
     t.string "no"
     t.string "kbn"
@@ -102,6 +102,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_234007) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["mno"], name: "index_order_annotations_on_mno"
+  end
+
+  create_table "order_logs", force: :cascade do |t|
+    t.integer "tvalid"
+    t.integer "mno"
+    t.date "datelog"
+    t.integer "kubun"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mno", "kubun"], name: "index_order_logs_on_mno_and_kubun"
   end
 
   create_table "orderparts", force: :cascade do |t|

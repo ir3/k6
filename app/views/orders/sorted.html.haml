@@ -25,7 +25,9 @@
 .flex.flex-wrap.items-center.gap-2{style: "margin: 16px 0 16px 30px;"}
   %h4 帳票出力
   - XlsxReports::Registry.each do |kind, entry|
+    -# Turbo経由だとファイル応答を取得したあとにもう一度リクエストされ、出力履歴が二重に記録されるため外す
     = link_to entry[:label], report_order_path(@order, kind: kind),
+      data: { turbo: false },
       class: "btn wtext #{entry[:klass] ? 'btn-info' : 'btn-outline'}"
 
 %table.center-table.radius-table.row-compact.zebra-table.list-table{width: "99%", align:"center"}

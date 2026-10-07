@@ -351,6 +351,8 @@ class OrdersController < ApplicationController
 
     report = klass.new(@order)
     package = report.generate
+    # 旧ASPが印刷時に取引管理へ書いていた出力履歴。生成に成功したときだけ記録する。
+    OrderLog.record(mno: @order.mno, kubun: entry[:kubun]) if entry[:kubun]
     send_data package.to_stream.read, filename: report.filename, type: Mime[:xlsx], disposition: "attachment"
   end
 

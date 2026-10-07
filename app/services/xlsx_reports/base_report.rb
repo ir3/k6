@@ -29,18 +29,18 @@ module XlsxReports
     # 同じ組み合わせは1つのstyleにキャッシュして再利用する。
     def style(sheet, border: nil, top: nil, bottom: nil, left: nil, right: nil,
               bold: false, size: 11, halign: nil, valign: nil,
-              fill: nil, number_format: nil, font_name: "MS PGothic")
+              fill: nil, number_format: nil, font_name: "MS PGothic", wrap: false, rotation: nil)
       edges = { top: top || border, bottom: bottom || border, left: left || border, right: right || border }
       border_opts = edges.filter_map { |edge, edge_style| { style: edge_style, color: "FF000000", edges: [ edge ] } if edge_style }
 
-      key = [ edges, bold, size, halign, valign, fill, number_format, font_name ]
+      key = [ edges, bold, size, halign, valign, fill, number_format, font_name, wrap, rotation ]
       cache = (@style_cache[sheet.object_id] ||= {})
       cache[key] ||= sheet.styles.add_style(
         {
           fn: font_name,
           b: bold,
           sz: size,
-          alignment: { horizontal: halign, vertical: valign },
+          alignment: { horizontal: halign, vertical: valign, wrap_text: (true if wrap), text_rotation: rotation }.compact,
           format_code: number_format,
           border: border_opts.presence,
           bg_color: fill
