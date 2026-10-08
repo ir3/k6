@@ -332,12 +332,12 @@ module XlsxReports
         row2_default = style(sheet, bottom: :thin, left: :thin, right: :thin)
 
         sheet.add_row(
-          [ item[:no], item[:itemno], item[:info], nil, nil, nil, nil ],
-          style: Array.new(7) { row1_default }
+          [ item[:no], item[:itemno], item[:info], nil, item[:sel_unit], nil, nil ],
+          style: Array.new(7) { |col| col == 4 ? style(sheet, top: :thin, left: :thin, right: :thin, halign: :center) : row1_default }
         )
         set_last_row_height(sheet, 13)
         sheet.add_row(
-          [ nil, item[:partno], item[:name], item[:qty], item[:unit], item[:price], item[:amount] ],
+          [ nil, item[:partno], item[:name], item[:qty], item[:unit_name], item[:price], item[:amount] ],
           style: [
             row2_default,
             row2_default,
@@ -354,16 +354,19 @@ module XlsxReports
 
     def build_items
       @items.map do |item|
+        # 数量・単価・金額は見積書と同じ求め方(掛け率の丸め、バラ売り)。バラ売りの明細は販売単位を出さない
+        pricing = ItemPricing.for(item)
         {
           no: item.sno,
           itemno: item.itemno,
           info: item.info,
           partno: item.code,
           name: item.name,
-          qty: item.qty,
-          unit: item.unit,
-          price: item.unitpd,
-          amount: item.amount
+          qty: pricing.qty,
+          sel_unit: (SalesUnit.sel_unit(item.unit) unless pricing.bulk),
+          unit_name: (SalesUnit.name(item.unit) unless pricing.bulk),
+          price: pricing.price,
+          amount: pricing.amount
         }
       end
     end

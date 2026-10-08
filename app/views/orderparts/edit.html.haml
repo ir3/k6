@@ -2,7 +2,9 @@
 - input_cls = "input input-bordered input-sm border-2 border-neutral bg-base-100"
 - btn_cls = "btn btn-sm wtext btn-info"
 - number = ->(value) { value.to_i.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ",") }
-- rate = @orderpart.irate.to_f
+-# 掛け率は注文部品詳細と同じ(A部品は注文のA部品掛け率、B部品は個別掛け率か注文のB部品共通掛け率)
+- part_source = @part.is_a?(Kepart) ? :kepart : (@part ? :part : nil)
+- rate = ItemPricing.effective_rate(@order, part_source, @orderpart.irate)
 - price = @orderpart.unitpd.to_i
 - calculated = rate * price
 - sel_unit = @orderpart.unit.presence || @part&.sel_unit
@@ -55,7 +57,7 @@
     %th.bg-primary.text-primary-content{width: "80px"} 価格
     %td{style: "text-align: right;"}= number.call(price)
     %th.bg-primary.text-primary-content{width: "80px"} 掛け率
-    %td{style: "text-align: right;"}= @orderpart.irate
+    %td{style: "text-align: right;"}= rate
     %th.bg-primary.text-primary-content{width: "140px"} 単純計算単価
     %td{style: "text-align: right;"}= number.call(calculated)
     %th.bg-primary.text-primary-content{width: "140px"} 計算後単価(上)

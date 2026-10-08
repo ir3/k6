@@ -10,7 +10,7 @@
 class OrderSortedItems
   Item = Struct.new(
     :sno, :source, :record, :part, :part_source,
-    :code, :itemno, :name, :info, :rate, :qty, :unit, :totalweight, :unitpd, :amount, :kzaiko,
+    :code, :itemno, :name, :info, :rate, :qty, :unit, :totalweight, :unitpd, :amount, :kzaiko, :price,
     keyword_init: true
   )
 
@@ -45,23 +45,28 @@ class OrderSortedItems
       part_source = :kepart
     end
 
+    # 掛け率は旧partsin.aspと同じく、A部品は注文のA部品掛け率、B部品は個別掛け率か注文のB部品共通掛け率
+    rate = ItemPricing.effective_rate(@order, part_source, orderpart.irate)
+    sel = orderpart.unit.presence || part&.sel_unit
     Item.new(
       sno: orderpart.sno, source: :orderpart, record: orderpart, part: part, part_source: (part ? part_source : nil),
       code: orderpart.partno, itemno: orderpart.itemno, name: part&.jname, info: orderpart.info,
-      rate: orderpart.irate, qty: orderpart.qty, unit: orderpart.unit.presence || part&.sel_unit,
+      rate: rate, qty: orderpart.qty, unit: sel,
       totalweight: orderpart.totalweight, unitpd: orderpart.unitpd,
-      amount: (orderpart.irate.to_f * orderpart.qty.to_f * orderpart.unitpd.to_f).round,
+      amount: ItemPricing.for_orderpart(orderpart, sel: sel, rate: rate).amount,
       kzaiko: orderpart.kzaiko
     )
   end
 
   def build_n_orderpart_item(n_orderpart)
+    # 単価・金額は旧partsin.aspの部品番号無と同じ求め方(掛け率を掛けて切り上げまるめ)
+    pricing = ItemPricing.for_n_orderpart(n_orderpart, fallback_rate: @order.irate2)
     Item.new(
       sno: n_orderpart.sno, source: :n_orderpart, record: n_orderpart, part: nil, part_source: nil,
       code: nil, itemno: n_orderpart.itemno, name: n_orderpart.partsname, info: n_orderpart.info,
       rate: n_orderpart.rate, qty: n_orderpart.qty, unit: nil,
       totalweight: n_orderpart.weight, unitpd: n_orderpart.unitpd,
-      amount: n_orderpart.totala.to_i,
+      amount: pricing.amount, price: pricing.price,
       kzaiko: nil
     )
   end

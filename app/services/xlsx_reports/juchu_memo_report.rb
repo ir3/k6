@@ -225,9 +225,9 @@ module XlsxReports
 
     def build_items
       @items.map do |item|
-        # 部品番号あり(Orderpart)の金額は、旧ASP(asp/print211_.asp)のsmarume相当の丸めを
-        # 適用した単価(定価×掛け率)に数量を掛けて求める。部品番号無(NOrderpart)は元々
-        # totala(labor/宿泊費等の確定金額)を持っているのでそのまま使う。
+        # 部品番号あり(Orderpart)の金額は、smarume(四捨五入)で丸めた単価(定価×掛け率)に数量を掛けて求める
+        # (受注メモを切り上げに合わせるかは未定)。部品番号無(NOrderpart)は、掛け率を掛けて切り上げまるめした
+        # 金額(ItemPricing.for_n_orderpart)がitem.amountに入っている。
         amount = if item.source == :orderpart
           (PriceRounding.smarume(item.unitpd.to_f * item.rate.to_f) * item.qty.to_f).round
         else

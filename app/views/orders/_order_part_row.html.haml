@@ -10,11 +10,15 @@
   %td= orderpart.itemno
   %td= part&.jname
   %td= orderpart.info
-  %td{style:'text-align:right'}= orderpart.irate
+  -# 掛け率は旧partsin.aspと同じく、A部品は注文のA部品掛け率、B部品は個別掛け率か注文のB部品共通掛け率
+  - rate = ItemPricing.effective_rate(@order, part_source, orderpart.irate)
+  %td{style:'text-align:right'}= rate
   %td{style:'text-align:right'}= orderpart.qty
   %td= orderpart.unit.presence || part&.sel_unit
   %td{style:'text-align:right'}= orderpart.bqty
   %td{style:'text-align:right'}= orderpart.totalweight&.round(2)
-  %td{style:'text-align:right'}= orderpart.unitpd.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
-  %td{style:'text-align:right'}= (orderpart.irate.to_f * orderpart.qty.to_f * orderpart.unitpd.to_f).round.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+  -# 単価・金額は旧partsin.aspと同じ求め方(掛け率を掛けて切り上げまるめ。バラ売りはバラ単価)
+  - pricing = ItemPricing.for_orderpart(orderpart, sel: orderpart.unit.presence || part&.sel_unit, rate: rate)
+  %td{style:'text-align:right'}= pricing.price.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
+  %td{style:'text-align:right'}= pricing.amount.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
   %td.updated-at-col{style: 'font-size: 9px; line-height: 1.1;'}= orderpart.updated_at.strftime('%Y/%m/%d %H:%M')

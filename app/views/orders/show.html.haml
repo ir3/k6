@@ -159,13 +159,14 @@
       - b_group << entry
     - else
       - c_group << entry
-  - amount_of = ->(orderpart) { (orderpart.irate.to_f * orderpart.qty.to_f * orderpart.unitpd.to_f).round }
-  - a_subtotal = a_group.sum { |e| amount_of.call(e[:orderpart]) }
-  - b_subtotal = b_group.sum { |e| amount_of.call(e[:orderpart]) }
-  - c_subtotal = c_group.sum { |e| amount_of.call(e[:orderpart]) }
+  -# 金額は明細の表示と同じ求め方(ItemPricing: 掛け率を掛けて切り上げまるめ。バラ売りはバラ単価)
+  - amount_of = ->(e) { ItemPricing.for_orderpart(e[:orderpart], sel: e[:orderpart].unit.presence || e[:part]&.sel_unit, rate: ItemPricing.effective_rate(@order, e[:part_source], e[:orderpart].irate)).amount }
+  - a_subtotal = a_group.sum { |e| amount_of.call(e) }
+  - b_subtotal = b_group.sum { |e| amount_of.call(e) }
+  - c_subtotal = c_group.sum { |e| amount_of.call(e) }
   -# 部品番号なしの明細も、Orderpartと同じく「順(SNo)」順(同じ順は作成順＝古いものが上)で表示する
   - n_group = NOrderpart.where(mno: @order.mno).order(Arel.sql("COALESCE(sno, 0)"), :id)
-  - n_subtotal = n_group.select { |np| np.tvalid.to_i == 1 }.sum { |np| np.totala.to_i }
+  - n_subtotal = n_group.select { |np| np.tvalid.to_i == 1 }.sum { |np| ItemPricing.for_n_orderpart(np, fallback_rate: @order.irate2).amount }
   - total = a_subtotal + b_subtotal + c_subtotal + n_subtotal
   - after_discount = total - @order.nebiki.to_i
   - tax_rate = @order.effective_tax_rate
@@ -182,7 +183,7 @@
     = render "order_part_summary_row", label: "B部品小計", value: b_subtotal
   - if n_group.any?
     - n_group.each do |n_orderpart|
-      = render "n_orderpart_row", n_orderpart: n_orderpart
+      = render "n_orderpart_row", n_orderpart: n_orderpart, fallback_rate: @order.irate2
     - if n_subtotal != 0
       = render "order_part_summary_row", label: "その他小計", value: n_subtotal
   - if c_group.any?

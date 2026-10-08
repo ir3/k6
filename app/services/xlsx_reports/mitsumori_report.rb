@@ -256,39 +256,22 @@ module XlsxReports
     end
 
     def build_item(item, no)
-      bqty = item.source == :orderpart ? item.record.bqty.to_i : 0
+      pricing = ItemPricing.for(item)
       sel = item.unit.to_s.strip
-      price, amount = price_and_amount(item, bqty, sel)
 
       {
         no: no,
         head: head_text(item),
         name: item.name,
-        qty: bqty.positive? ? bqty : format_number(item.qty),
-        # バラ売り(bqty>0)のときは販売単位を出さない。数字の販売単位(例: 10)は10個で1袋なので「袋」を添える
-        sel_unit: (sel.presence unless bqty.positive?),
-        unit_name: (sel.match?(/\A\d+(\.\d+)?\z/) ? "袋" : nil unless bqty.positive?),
-        price: (price.positive? ? price : "後報"),
-        amount: amount,
-        amount_text: (amount.positive? ? amount : "後報"),
+        qty: pricing.qty,
+        # バラ売りのときは販売単位を出さない。数字の販売単位(例: 10)は10個で1袋なので「袋」を添える
+        sel_unit: (SalesUnit.sel_unit(sel) unless pricing.bulk),
+        unit_name: (SalesUnit.name(sel) unless pricing.bulk),
+        price: (pricing.price.positive? ? pricing.price : "後報"),
+        amount: pricing.amount,
+        amount_text: (pricing.amount.positive? ? pricing.amount : "後報"),
         weight: weight_text(item)
       }
-    end
-
-    # 単価と金額。部品番号あり(Orderpart)は定価×掛け率を丸めた単価、部品番号無(NOrderpart)は
-    # 登録済みの単価・金額をそのまま使う。バラ売りは旧ASPどおり定価÷販売単位をバラ単価にする。
-    def price_and_amount(item, bqty, sel)
-      return [ item.unitpd.to_i, item.amount.to_i ] unless item.source == :orderpart
-
-      rate = item.rate.to_f.zero? ? 1.0 : item.rate.to_f
-      if bqty.positive? && sel.match?(/\A\d+(\.\d+)?\z/) && sel.to_f.positive?
-        each_price = (item.unitpd.to_f / sel.to_f).round
-        total = item.record.totala.to_i.positive? ? item.record.totala.to_i : (each_price * rate * bqty).round
-        [ each_price, total ]
-      else
-        price = PriceRounding.smarume(item.unitpd.to_f * rate)
-        [ price, (price * item.qty.to_f).round ]
-      end
     end
 
     # 上段の「部品番号 備考 ItemNo」。備考とItemNoが同じならItemNoは出さない。部品番号なし見積では部品番号を出さない。
@@ -303,10 +286,6 @@ module XlsxReports
       return nil unless weight.positive? && weight != UNKNOWN_WEIGHT
 
       weight.round(3).to_s.sub(/\.0\z/, "")
-    end
-
-    def format_number(value)
-      value.to_f == value.to_i ? value.to_i : value
     end
 
     def paginate(items)

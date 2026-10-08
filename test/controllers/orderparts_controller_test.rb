@@ -4,7 +4,7 @@ require "test_helper"
 class OrderpartsControllerTest < ActionDispatch::IntegrationTest
   setup do
     sign_in_as users(:one)
-    @order = Order.create!(mno: 202610001, adlist_id: 1, shipname: "第一丸", country: "日本")
+    @order = Order.create!(mno: 202610001, adlist_id: 1, shipname: "第一丸", country: "日本", irate: 0.8)
     # 1個あたりの重量は 2.0kg ÷ 計測単位2 = 1.0kg
     @part = Part.create!(pcode: "A001", jname: "和文の名称", ename: "English name", newprice: 1228,
                          weightkg: 2.0, munit: 2, sel_unit: "個")
@@ -36,7 +36,7 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     assert_select "td", text: "元の備考"
     assert_select "td", text: "個"
     assert_select "span", text: /取引No\. 202610001/
-    # 数量2 × 単価1,228 = 2,456。掛け率0.8 → 単純計算 982、上 990、捨 980
+    # 数量2 × 単価1,228 = 2,456。掛け率は注文のA部品掛け率0.8 → 単純計算 982、上 990、捨 980
     assert_select "td", text: "1,228", count: 2
     assert_select "td", text: "2,456"
     assert_select "td", text: "0.8"
