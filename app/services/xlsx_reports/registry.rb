@@ -7,7 +7,7 @@ module XlsxReports
   Registry = {
     "mitsumori_irai" => { label: "部品見積依頼出力", kubun: OrderLog::KUBUN_MITSUMORI_IRAI, klass: "XlsxReports::MitsumoriIraiReport" },
     "mitsumori_with_no" => { label: "部品番号あり見積出力", kubun: OrderLog::KUBUN_MITSUMORI, klass: "XlsxReports::MitsumoriReport" },
-    "mitsumori_without_no" => { label: "部品番号なし見積出力", kubun: OrderLog::KUBUN_MITSUMORI },
+    "mitsumori_without_no" => { label: "部品番号なし見積出力", kubun: OrderLog::KUBUN_MITSUMORI, klass: "XlsxReports::MitsumoriNoPartReport" },
     "juchu_memo" => { label: "受注メモ出力", kubun: OrderLog::KUBUN_JUCHU_MEMO, klass: "XlsxReports::JuchuMemoReport" },
     "seikyu_a" => { label: "請求書A", kubun: OrderLog::KUBUN_SEIKYU, klass: "XlsxReports::SeikyuReport" },
     "seikyu_a_hikae" => { label: "請求書A控", kubun: OrderLog::KUBUN_SEIKYU },
