@@ -333,7 +333,8 @@ module XlsxReports
 
         sheet.add_row(
           [ item[:no], item[:itemno], item[:info], nil, item[:sel_unit], nil, nil ],
-          style: Array.new(7) { |col| col == 4 ? style(sheet, top: :thin, left: :thin, right: :thin, halign: :center) : row1_default }
+          # 単位欄: 上段の数字(10など)は左寄せ、文字(SETなど)と下段の「袋」は右寄せ
+          style: Array.new(7) { |col| col == 4 ? style(sheet, top: :thin, left: :thin, right: :thin, halign: (SalesUnit.numeric?(item[:sel_unit]) ? :left : :right)) : row1_default }
         )
         set_last_row_height(sheet, 13)
         sheet.add_row(
@@ -343,7 +344,7 @@ module XlsxReports
             row2_default,
             row2_default,
             style(sheet, bottom: :thin, left: :thin, right: :thin, halign: :right),
-            style(sheet, bottom: :thin, left: :thin, right: :thin, halign: :center),
+            style(sheet, bottom: :thin, left: :thin, right: :thin, halign: :right),
             style(sheet, bottom: :thin, left: :thin, right: :thin, halign: :right, number_format: "#,##0"),
             style(sheet, bottom: :thin, left: :thin, right: :thin, halign: :right, number_format: "#,##0")
           ]

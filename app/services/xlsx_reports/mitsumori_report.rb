@@ -237,8 +237,9 @@ module XlsxReports
       grid.text(top, 2, 2, item[:head], halign: :left)
       grid.text(bottom, 2, 2, item[:name], halign: :left)
       grid.text(bottom, 3, 3, item[:qty], halign: :center)
-      grid.text(top, 4, 4, item[:sel_unit], halign: :right)
-      grid.text(bottom, 4, 4, item[:unit_name], halign: :left)
+      # 単位欄: 上段の数字(10など)は左寄せ、文字(SETなど)と下段の「袋」は右寄せ
+      grid.text(top, 4, 4, item[:sel_unit], halign: (SalesUnit.numeric?(item[:sel_unit]) ? :left : :right))
+      grid.text(bottom, 4, 4, item[:unit_name], halign: :right)
       grid.text(bottom, 5, 5, item[:price], halign: :right, number_format: "#,##0")
       grid.text(bottom, 6, 6, item[:amount_text], halign: :right, number_format: "#,##0")
       grid.text(bottom, 7, 7, item[:weight], halign: :center)
