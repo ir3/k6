@@ -13,6 +13,11 @@ module XlsxReports
       "shukka_annai_#{@order.mno}.xlsx"
     end
 
+    # 請求書系ではないので、Excelの「白黒印刷」を指定する(物品受領書も同じ)
+    def generate
+      BlackAndWhitePatchedPackage.new(super)
+    end
+
     def cover_title
       "出　荷　案　内　書"
     end

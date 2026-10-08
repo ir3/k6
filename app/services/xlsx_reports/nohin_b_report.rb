@@ -11,6 +11,11 @@ module XlsxReports
       "nohin_b_#{@order.mno}.xlsx"
     end
 
+    # 納品書は、Excelの「白黒印刷」を指定する(請求書は指定しない)
+    def generate
+      BlackAndWhitePatchedPackage.new(super)
+    end
+
     def cover_title
       "納　品　書"
     end

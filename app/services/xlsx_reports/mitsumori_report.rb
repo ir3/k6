@@ -37,7 +37,7 @@ module XlsxReports
 
     # 1ページ目の「承認」の2つの枠は、caxlsxに図形のAPIが無いため、生成済みのxlsxへXMLで後から挿入する。
     def generate
-      ShapePatchedPackage.new(super, method(:inject_stamp_boxes))
+      BlackAndWhitePatchedPackage.new(ShapePatchedPackage.new(super, method(:inject_stamp_boxes)))
     end
 
     private

@@ -56,7 +56,7 @@ module XlsxReports
     # 「対象機番の確認チェック印」の枠から1行上の□へ向かう折れ線矢印は、caxlsxに図形のAPIが
     # 無いため、生成済みのxlsxの1枚目へ図形をXMLで後から挿入する(SeikyuReportと同じ手法)。
     def generate
-      ShapePatchedPackage.new(super, method(:inject_arrow))
+      BlackAndWhitePatchedPackage.new(ShapePatchedPackage.new(super, method(:inject_arrow)))
     end
 
     private
