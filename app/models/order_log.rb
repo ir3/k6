@@ -6,11 +6,16 @@ class OrderLog < ActiveRecord::Base
   KUBUN_MITSUMORI_IRAI = 1 # 部品見積依頼(print211_)
   KUBUN_MITSUMORI      = 2 # 見積書(print111r / print311r)
   KUBUN_JUCHU_MEMO     = 3 # 受注メモ(jutyu111)
-  KUBUN_SYUKKA_ANNAI   = 4 # 出荷案内書(A4pshuka)。請求書・納品書・受領書は、これの最古の日付を出荷日に使う
+  KUBUN_SYUKKA_ANNAI   = 4 # 出荷案内書(A4pshuka)。請求書・納品書・受領書は、これの最後(最新)の出力日を出荷日に使う
   KUBUN_SEIKYU         = 5 # 請求書A/B・同控・納品書B
   KUBUN_NOHIN_A        = 7 # 納品書A(A4pnouhin)
 
   scope :of_order, ->(mno) { where(mno: mno) }
+
+  # その注文でkubunの帳票を最後に出力した日(無ければnil)。旧ASPは出荷案内書(kubun=4)の出力日を出荷日に使う
+  def self.latest_date(mno, kubun)
+    where(mno: mno, kubun: kubun).maximum(:datelog)
+  end
 
   # 帳票出力を1件記録する。日付は出力した日(旧ASPと同じく時刻なし)。
   def self.record(mno:, kubun:, date: Date.current)

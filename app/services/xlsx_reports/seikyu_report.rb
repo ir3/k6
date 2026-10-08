@@ -316,8 +316,10 @@ module XlsxReports
       set_last_row_height(sheet, 6)
     end
 
+    # 出荷日。出荷案内書を出力した履歴(取引管理 kubun=4)があれば、その最後の出力日。
+    # 無ければ、注文の指定出荷日、それも無ければ受注日、それも無ければ今日。
     def shipping_date_label
-      date = @order.syuday || @order.rdate
+      date = OrderLog.latest_date(@order.mno, OrderLog::KUBUN_SYUKKA_ANNAI) || @order.syuday || @order.rdate
       date ? date.strftime("%Y年%-m月%-d日") : Date.current.strftime("%Y年%-m月%-d日")
     end
 
