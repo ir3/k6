@@ -31,7 +31,7 @@ module XlsxReports
       @adlist = Adlist.find_by(no: order.adlist_id.to_s)
       # 部品番号あり(Orderpart)・無(NOrderpart)を「順(SNo)」で一本化した明細一覧。
       # orders#sorted画面・JuchuMemoReportと共有するOrderSortedItems参照。
-      @items = OrderSortedItems.for(order)
+      @items = OrderSortedItems.printable(order) # 数量0の明細は印刷せず、上に詰める
       @tax_rate = tax_rate
       @bracket_anchor_rows = nil
       @dept_label = nil

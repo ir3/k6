@@ -46,7 +46,8 @@ module XlsxReports
       @order = order
       @adlist = Adlist.find_by(no: order.adlist_id.to_s)
       # 部品メーカーへの依頼なので、部品番号を持つ明細(Orderpart)だけを対象にする
-      @items = OrderSortedItems.for(order).select { |item| item.source == :orderpart }
+      # (数量0の明細は印刷せず、上に詰める)
+      @items = OrderSortedItems.printable(order).select { |item| item.source == :orderpart }
     end
 
     def filename

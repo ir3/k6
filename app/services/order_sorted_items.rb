@@ -18,6 +18,12 @@ class OrderSortedItems
     new(order).items
   end
 
+  # 印刷する明細。表示する数量(バラ売りはバラ数量)が0のものを除いて、上に詰める(受注メモ・請求書・納品書・
+  # 出荷案内書・物品受領書)。並び替え後表示の一覧や見積書は、数量0も含む forを使う。
+  def self.printable(order)
+    self.for(order).reject { |item| ItemPricing.for(item).qty.to_f.zero? }
+  end
+
   def initialize(order)
     @order = order
   end

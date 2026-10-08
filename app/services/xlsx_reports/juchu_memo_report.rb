@@ -15,7 +15,7 @@ module XlsxReports
       @adlist = Adlist.find_by(no: order.adlist_id.to_s)
       # 部品番号あり(Orderpart)・無(NOrderpart)を「順(SNo)」で一本化した明細一覧。
       # orders#sorted画面と共有するOrderSortedItems参照。
-      @items = OrderSortedItems.for(order)
+      @items = OrderSortedItems.printable(order) # 数量0の明細は印刷せず、上に詰める
       # 注文注釈(旧Access「注文注釈」)。旧ASPは同一MNoの最後の1件を1ページ目の合計行の下に出す
       @annotation = OrderAnnotation.where(mno: order.mno).order(:id).last&.comment.presence
     end

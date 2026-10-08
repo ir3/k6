@@ -23,7 +23,7 @@ module XlsxReports
       @order = order
       @adlist = Adlist.find_by(no: order.adlist_id.to_s)
       # 部品番号あり(Orderpart)・無(NOrderpart)を「順(SNo)」で一本化した明細一覧(受注メモと同じ)
-      @items = OrderSortedItems.for(order)
+      @items = OrderSortedItems.printable(order) # 数量0の明細は印刷せず、上に詰める
     end
 
     def filename
@@ -228,10 +228,8 @@ module XlsxReports
       grid.line(header_row + capacity * 2, 1, COLUMN_COUNT, :bottom) if close_table
     end
 
-    # 1件分(top=上段の行、top+1=下段の行)を書く。数量0の明細は旧ASPどおり空欄のまま(番号も出さない)
+    # 1件分(top=上段の行、top+1=下段の行)を書く
     def fill_item(grid, top, item)
-      return if item[:skip]
-
       bottom = top + 1
       grid.text(top, 1, 1, item[:no], halign: :center, valign: :center)
       grid.text(top, 2, 2, item[:head], halign: :left)
@@ -247,13 +245,9 @@ module XlsxReports
 
     # --- 明細データ ------------------------------------------------------------
 
-    # 旧ASPは数量0の明細を飛ばしつつ、番号(j)と行の位置は進める。ここでも枠(スロット)は残して中身だけ空にする。
+    # 数量0の明細は、@itemsの時点で除いてある(上に詰めて、番号も続けて振る)。
     def build_items
-      @items.each_with_index.map do |item, idx|
-        next({ skip: true, amount: 0 }) unless item.qty.to_f.positive?
-
-        build_item(item, idx + 1)
-      end
+      @items.each_with_index.map { |item, idx| build_item(item, idx + 1) }
     end
 
     def build_item(item, no)
