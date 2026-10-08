@@ -180,7 +180,7 @@ module XlsxReports
       sheet.add_row([ nil, "品名コード", "品名", "数量", "単位", nil, "単価", nil, "金額" ], style: Array.new(9) { header_style })
       sheet.merge_cells("G#{sheet.rows.size}:H#{sheet.rows.size}")
       set_last_row_height(sheet, 14)
-      sheet.add_row([ nil, "部品コード", nil, nil, nil, nil, "定価", "海外", nil ], style: Array.new(9) { header_style })
+      sheet.add_row([ nil, "部品コード", nil, nil, nil, nil, "定価", "海外他", nil ], style: Array.new(9) { header_style })
       set_last_row_height(sheet, 14)
 
       items.each do |item|
@@ -190,7 +190,7 @@ module XlsxReports
         b_row1 = style(sheet, top: :thin, left: :thin, right: :thin, bottom: :dashed)
         b_row2 = style(sheet, top: :dashed, bottom: :thin, left: :thin, right: :thin)
 
-        # H列は本来「海外」単価用の枠だが、国内向けでも掛け率が付くことがあり、
+        # H列は本来「海外他」単価用の枠だが、国内向けでも掛け率が付くことがあり、
         # その場合はこの枠に掛け率が入るため、2行のうち上段(備考行)に掛け率を表示する。
         # 0・1(掛け率なし/等倍)は通常値なので表示せず、それ以外の時だけ出す。
         rate_display = item[:rate] unless item[:rate].nil? || [ 0, 1 ].include?(item[:rate].to_f)
@@ -218,27 +218,23 @@ module XlsxReports
       end
     end
 
+    # 単価・金額は旧ASPの見積テーブルと同じ求め方(ItemPricing: 掛け率を掛けて切り上げまるめ。バラ売りはバラ単価)。
+    # 定価(単価の列)と、掛け率を掛けて切り上げた単価(もう1つの列)が違うときだけ、後者を出す。
     def build_items
       @items.map do |item|
-        # 部品番号あり(Orderpart)の金額は、smarume(四捨五入)で丸めた単価(定価×掛け率)に数量を掛けて求める
-        # (受注メモを切り上げに合わせるかは未定)。部品番号無(NOrderpart)は、掛け率を掛けて切り上げまるめした
-        # 金額(ItemPricing.for_n_orderpart)がitem.amountに入っている。
-        amount = if item.source == :orderpart
-          (PriceRounding.smarume(item.unitpd.to_f * item.rate.to_f) * item.qty.to_f).round
-        else
-          item.amount
-        end
+        pricing = ItemPricing.for(item)
+        list_price = pricing.bulk ? pricing.price : item.unitpd.to_i
 
         {
           code: item.code,
           info: item.info,
           name: item.name,
-          qty: item.qty,
-          unit: item.unit,
-          price: item.unitpd,
-          oprice: nil,
+          qty: pricing.qty,
+          unit: (item.unit unless pricing.bulk),
+          price: list_price,
+          oprice: (pricing.price if pricing.price != list_price),
           rate: item.rate,
-          amount: amount
+          amount: pricing.amount
         }
       end
     end
