@@ -50,7 +50,7 @@ unless status.success?
 end
 
 imported = 0
-skipped  = 0
+
 i        = 0
 
 CSV.parse(csv_data, headers: true) do |row|
@@ -66,15 +66,8 @@ CSV.parse(csv_data, headers: true) do |row|
   attrs["updated_at"] = parse_datetime(attrs["updated_at"]) || Time.current
   attrs["created_at"] = attrs["updated_at"]
 
-  record = OrderAnnotation.find_or_initialize_by(id: attrs["id"])
-  record.assign_attributes(attrs)
-
-  if record.save
-    imported += 1
-  else
-    puts "SKIP row=#{i} id=#{attrs['id']}: #{record.errors.full_messages.join(', ')}"
-    skipped += 1
-  end
+  OrderAnnotation.upsert(attrs)
+  imported += 1
 end
 
-puts "完了: #{imported}件インポート, #{skipped}件スキップ"
+puts "完了: #{imported}件インポート"

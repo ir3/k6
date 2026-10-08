@@ -58,7 +58,7 @@ unless status.success?
 end
 
 imported = 0
-skipped  = 0
+
 i        = 0
 
 CSV.parse(csv_data, headers: true) do |row|
@@ -88,15 +88,8 @@ CSV.parse(csv_data, headers: true) do |row|
   attrs["created_at"] = attrs["updated_at"]
 
   # Access の ID をそのまま使い、id で既存レコードを特定（重複インポート時は上書き）
-  part = Part.find_or_initialize_by(id: attrs["id"])
-  part.assign_attributes(attrs)
-
-  if part.save
-    imported += 1
-  else
-    puts "SKIP row=#{i} pcode=#{attrs['pcode']}: #{part.errors.full_messages.join(', ')}"
-    skipped += 1
-  end
+  Part.upsert(attrs)
+  imported += 1
 end
 
-puts "完了: #{imported}件インポート, #{skipped}件スキップ"
+puts "完了: #{imported}件インポート"
