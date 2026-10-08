@@ -12,8 +12,8 @@ module XlsxReports
     "seikyu_a" => { label: "請求書A", kubun: OrderLog::KUBUN_SEIKYU, klass: "XlsxReports::SeikyuReport" },
     "seikyu_a_hikae" => { label: "請求書A控", kubun: OrderLog::KUBUN_SEIKYU, klass: "XlsxReports::SeikyuHikaeReport" },
     "nohin_a" => { label: "納品書A", kubun: OrderLog::KUBUN_NOHIN_A, klass: "XlsxReports::NohinReport" },
-    "seikyu_b" => { label: "請求書B", kubun: OrderLog::KUBUN_SEIKYU },
-    "seikyu_b_hikae" => { label: "請求書B控", kubun: OrderLog::KUBUN_SEIKYU },
+    "seikyu_b" => { label: "請求書B", kubun: OrderLog::KUBUN_SEIKYU, klass: "XlsxReports::SeikyuBReport" },
+    "seikyu_b_hikae" => { label: "請求書B控", kubun: OrderLog::KUBUN_SEIKYU, klass: "XlsxReports::SeikyuBHikaeReport" },
     "nohin_b" => { label: "納品書B", kubun: OrderLog::KUBUN_SEIKYU },
     "syukka_annai" => { label: "出荷案内書", kubun: OrderLog::KUBUN_SYUKKA_ANNAI },
     "juryo" => { label: "物品受領書", kubun: nil }
