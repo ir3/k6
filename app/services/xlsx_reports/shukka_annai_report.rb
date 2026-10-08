@@ -23,6 +23,17 @@ module XlsxReports
 
     private
 
+    # 1ページ目の見出しか、2ページ目以降の見出しか(表の組み立てで使う)
+    def build_cover_header(sheet)
+      @cover_page = true
+      super
+    end
+
+    def build_continuation_header(sheet, page_no)
+      @cover_page = false
+      super
+    end
+
     # 列幅は旧様式(syukka.xls)の列幅。摘要はF:Gの2列分
     def columns
       [
@@ -39,33 +50,61 @@ module XlsxReports
     # 1明細=2行(1行目:ItemNo/備考/販売単位、2行目:品番/品名/数量/単位名)。摘要(F:G)は空欄。
     def build_two_row_items(sheet, items)
       header_style = style(sheet, border: :thin, bold: true, halign: :center, valign: :center, fill: "FFC0C0C0")
+      @cover_table_header_row = sheet.rows.size + 1 if @cover_page
       sheet.add_row([ "No.", "品番", "品名・仕様", "数量", "単位", "摘　要", nil ], style: Array.new(7) { header_style })
       set_last_row_height(sheet, 14)
       merge_remark(sheet)
 
-      items.each do |item|
+      rows = table_items(items)
+      rows.each_with_index do |item, idx|
+        item ||= {}
+        last = idx == rows.size - 1
         row1_default = style(sheet, top: :thin, left: :thin, right: :thin)
         row2_default = style(sheet, bottom: :thin, left: :thin, right: :thin)
         unit_halign = SalesUnit.numeric?(item[:sel_unit]) ? :left : :right
+        remark1, remark2 = remark_styles(sheet, :top, last)
+        remark_label = remark_text(idx)
 
         sheet.add_row(
-          [ item[:no], item[:itemno], item[:info], nil, item[:sel_unit], nil, nil ],
-          style: Array.new(7) { |col| col == 4 ? style(sheet, top: :thin, left: :thin, right: :thin, halign: unit_halign) : row1_default }
+          [ item[:no], item[:itemno], item[:info], nil, item[:sel_unit], remark_label, nil ],
+          style: [ row1_default, row1_default, row1_default, row1_default,
+                   style(sheet, top: :thin, left: :thin, right: :thin, halign: unit_halign),
+                   style(sheet, **remark1, halign: :center), style(sheet, **remark2) ]
         )
         set_last_row_height(sheet, 14)
         merge_remark(sheet)
+        remark1, remark2 = remark_styles(sheet, :bottom, last)
         sheet.add_row(
           [ nil, item[:partno], item[:name], item[:qty], item[:unit_name], nil, nil ],
           style: [
             row2_default, row2_default, row2_default,
             style(sheet, bottom: :thin, left: :thin, right: :thin, halign: :right),
             style(sheet, bottom: :thin, left: :thin, right: :thin, halign: :right),
-            row2_default, row2_default
+            style(sheet, **remark1), style(sheet, **remark2)
           ]
         )
         set_last_row_height(sheet, 14)
         merge_remark(sheet)
       end
+    end
+
+    # 表に出す明細。出荷案内書は明細の件数分だけ(物品受領書が、受領印の枠のために空き行を足す)
+    def table_items(items)
+      items
+    end
+
+    # 摘要(F:G)の外枠。F(左)・G(右)のセルごとの罫線(style引数のHash)を返す。出荷案内書は明細の2行ごとに囲む
+    def remark_styles(_sheet, position, _last)
+      if position == :top
+        [ { top: :thin, left: :thin }, { top: :thin, right: :thin } ]
+      else
+        [ { bottom: :thin, left: :thin }, { bottom: :thin, right: :thin } ]
+      end
+    end
+
+    # 摘要欄に書く文字(出荷案内書は空欄)。idxは何件目か(0始まり)
+    def remark_text(_idx)
+      nil
     end
 
     # 直前の行の摘要(F:G)を1つのセルにする
