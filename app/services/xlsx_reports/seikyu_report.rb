@@ -52,6 +52,19 @@ module XlsxReports
       BracketShapePatchedPackage.new(package, method(:inject_extra_shapes))
     end
 
+    # 1ページ目の表題、2ページ目以降の見出し、取引銀行・登録番号の表示は、請求書控(SeikyuHikaeReport)が差し替える。
+    def cover_title
+      "請　求　書"
+    end
+
+    def continuation_title
+      "請求書"
+    end
+
+    def show_bank_footer?
+      true
+    end
+
     private
 
     def inject_extra_shapes(path)
@@ -226,7 +239,7 @@ module XlsxReports
                      style: [ nil, nil, nil, nil, style(sheet, halign: :right), style(sheet, halign: :center), style(sheet, halign: :right) ])
       set_last_row_height(sheet, 14)
       title_style = style(sheet, size: 16, bold: true, halign: :center, bottom: :thin)
-      sheet.add_row([ nil, nil, "請　求　書", nil, Date.current.strftime("%Y年%-m月%-d日") ],
+      sheet.add_row([ nil, nil, cover_title, nil, Date.current.strftime("%Y年%-m月%-d日") ],
                      style: [ nil, nil, title_style, title_style, style(sheet, halign: :right) ])
       set_last_row_height(sheet, 20)
       date_row = sheet.rows.size
@@ -295,7 +308,7 @@ module XlsxReports
     end
 
     def build_continuation_header(sheet, page_no)
-      sheet.add_row([ "請求書", nil, nil, nil, "No.", @order.mno, page_no.to_s ],
+      sheet.add_row([ continuation_title, nil, nil, nil, "No.", @order.mno, page_no.to_s ],
                      style: [ style(sheet, size: 12, bold: true), nil, nil, nil,
                              style(sheet, halign: :right), style(sheet, halign: :center), style(sheet, halign: :right) ])
       set_last_row_height(sheet, 16)
@@ -402,7 +415,7 @@ module XlsxReports
       add_summary_row(sheet, "消費税(#{@tax_rate}%)", tax)
       add_summary_row(sheet, "総合計", base + tax)
 
-      build_bank_footer(sheet)
+      build_bank_footer(sheet) if show_bank_footer?
     end
 
     # B列に「取引銀行」「登録番号」ラベル(右寄せ)、1行目はC:D/E:Gに2行分の銀行情報、
