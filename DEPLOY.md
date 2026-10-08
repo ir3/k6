@@ -14,6 +14,11 @@ Docker・Kamalは使わず、systemd + nginx の直接実行。
 cd /var/www/k6
 git pull
 
+# 入れるバージョンは `git pull` で更新された .ruby-version / .node-version の中身（cat で確認）。
+# サーバー上でこの2ファイルを手で書き換えない（`rbenv local` / `nodenv local` も同じく書き換える）。
+# 先に書き換えると、次の `git pull` が「local changes would be overwritten」で止まる
+# （下の「`git pull` が `.node-version` のローカル変更で止まったとき」参照）。
+
 # .ruby-versionが変わっていたら、rbenvで新バージョンを入れる
 RBENV_ROOT=/opt/anyenv/envs/rbenv /opt/anyenv/envs/rbenv/bin/rbenv install <新バージョン>
 
@@ -139,6 +144,41 @@ RAILS_ENV=production bin/rails assets:clobber
 `RAILS_ENV` を指定しないと Rails はデフォルトの `development` として起動しようとする。`Gemfile` の `debug` gem は `group :development, :test` に入っており（[Gemfile](Gemfile)）、本番の `bundle install` ではこのグループを除外してインストールしているため、`development` として起動しようとした瞬間に `debug/prelude` が読み込めずに `Bundler::GemRequireError` で落ちる（2026-07-10に実際発生）。
 
 「通常のデプロイ手順」内の `for kv in $(sudo systemctl show k6 --property=Environment ...)` を先にそのシェルで実行していれば `RAILS_ENV=production` も含めて読み込まれるはずだが、**新しくSSHし直した直後など、そのステップを飛ばしたシェルでは効いていない**。事故を避けるため、単発でRailsコマンドを叩くときは `for kv in ...` を実行済みかどうかによらず、常に `RAILS_ENV=production` を明示するのが安全。
+
+## `git pull` が `.node-version` のローカル変更で止まったとき
+
+```
+error: Your local changes to the following files would be overwritten by merge:
+	.node-version
+Please commit your changes or stash them before you merge.
+```
+
+**原因:** サーバー上で `.node-version` を先に手で書き換えた（または `/var/www/k6` 内で `nodenv local <ver>` を実行した）ため、
+リポジトリ側の更新と衝突している（2026-10-08に実際発生。書き換えた値は今回の更新と同じ `26.11.0` だった）。
+`.node-version` / `.ruby-version` はリポジトリの内容が正なので、サーバー側の変更は捨てて構わない。
+
+```bash
+cd /var/www/k6
+git status --short           # まず何が変更されているか確認する
+git diff .node-version       # 中身も確認（古い値 or 更新後と同じ値のはず）
+
+git restore .node-version    # 対象ファイルだけを名前で指定して戻す（古いgitなら git checkout -- .node-version）
+git pull
+cat .node-version            # 新しいバージョンになっていればOK
+```
+
+**`git restore .` / `git checkout .` / `git reset --hard` / `git clean` / `git stash -u` は使わない。**
+サーバー側には、リポジトリに無い手元の変更が他にも残っていることがあり、一括で捨てると消えてしまう。2026-10-08時点で
+`git status --short` に出ていたのは次の3つで、`.node-version` 以外は触らずに `git pull` できた。
+
+| ファイル | 状態 | 扱い |
+|---------|------|------|
+| `.node-version` | 変更あり | 上の手順で戻す |
+| `config/nginx/k6.conf` | 変更あり（サーバー側だけの設定） | **捨てない**。リポジトリ側は最初のコミット以降変更が無く、`git pull` では触られない |
+| `public/stylesheets` | 未追跡 | そのまま。リポジトリに追跡ファイルが無く、`git pull` に無関係 |
+
+`.node-version` 以外の追跡ファイルが `git pull` を止めるようになった場合は、一括で捨てず、`git diff <ファイル>` で
+中身を見てから、そのファイルだけを個別に判断する。
 
 ## secret_key_base について
 
