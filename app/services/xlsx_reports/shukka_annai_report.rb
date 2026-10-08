@@ -50,7 +50,7 @@ module XlsxReports
     # 1明細=2行(1行目:ItemNo/備考/販売単位、2行目:品番/品名/数量/単位名)。摘要(F:G)は空欄。
     def build_two_row_items(sheet, items)
       header_style = style(sheet, border: :thin, bold: true, halign: :center, valign: :center, fill: "FFC0C0C0")
-      @cover_table_header_row = sheet.rows.size + 1 if @cover_page
+      (@table_header_rows ||= []) << (sheet.rows.size + 1)
       sheet.add_row([ "No.", "品番", "品名・仕様", "数量", "単位", "摘　要", nil ], style: Array.new(7) { header_style })
       set_last_row_height(sheet, 14)
       merge_remark(sheet)

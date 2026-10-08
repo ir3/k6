@@ -32,12 +32,13 @@ module XlsxReports
       end
     end
 
-    # path(xlsx)の1枚目のシートに、drawing_xml(xdr:wsDr)の図形を挿入する。
-    def self.inject_drawing(path, drawing_xml, rel_id: "rIdShapeDrawing")
+    # path(xlsx)のsheet枚目(1始まり)のシートに、drawing_xml(xdr:wsDr)の図形を挿入する。
+    # 図形の部品ファイルは drawing(番号).xml。シートごとに別の番号にすること(既定は1枚目・1番)。
+    def self.inject_drawing(path, drawing_xml, rel_id: "rIdShapeDrawing", sheet: 1, drawing: 1)
       Zip::File.open(path) do |zip|
-        zip.get_output_stream("xl/drawings/drawing1.xml") { |f| f.write(drawing_xml) }
+        zip.get_output_stream("xl/drawings/drawing#{drawing}.xml") { |f| f.write(drawing_xml) }
 
-        rels_path = "xl/worksheets/_rels/sheet1.xml.rels"
+        rels_path = "xl/worksheets/_rels/sheet#{sheet}.xml.rels"
         rels_xml = if zip.find_entry(rels_path)
           zip.read(rels_path)
         else
@@ -46,18 +47,18 @@ module XlsxReports
         end
         rels_xml = rels_xml.sub(
           "</Relationships>",
-          %(<Relationship Id="#{rel_id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>)
+          %(<Relationship Id="#{rel_id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing#{drawing}.xml"/></Relationships>)
         )
         zip.get_output_stream(rels_path) { |f| f.write(rels_xml) }
 
-        sheet_xml = zip.read("xl/worksheets/sheet1.xml").sub("</worksheet>", %(<drawing r:id="#{rel_id}"/></worksheet>))
-        zip.get_output_stream("xl/worksheets/sheet1.xml") { |f| f.write(sheet_xml) }
+        sheet_xml = zip.read("xl/worksheets/sheet#{sheet}.xml").sub("</worksheet>", %(<drawing r:id="#{rel_id}"/></worksheet>))
+        zip.get_output_stream("xl/worksheets/sheet#{sheet}.xml") { |f| f.write(sheet_xml) }
 
         ct_xml = zip.read("[Content_Types].xml")
-        unless ct_xml.include?("/xl/drawings/drawing1.xml")
+        unless ct_xml.include?("/xl/drawings/drawing#{drawing}.xml")
           ct_xml = ct_xml.sub(
             "</Types>",
-            %(<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>)
+            %(<Override PartName="/xl/drawings/drawing#{drawing}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>)
           )
           zip.get_output_stream("[Content_Types].xml") { |f| f.write(ct_xml) }
         end
