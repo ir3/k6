@@ -245,10 +245,11 @@ sudo journalctl -u k6 -f       # ログをtail
 
   ```bash
   lsb_release -d; uname -r
-  # k6 が実際に使っている Ruby は、k6.service の ExecStart で決まる（.ruby-version ではない）
-  RB=$(sudo systemctl cat k6 | sed -n 's/^ExecStart=\(.*\)\/bundle .*/\1/p'); echo "k6.service の Ruby: $RB"
-  echo ".ruby-version: $(cat /var/www/k6/.ruby-version)"   # ExecStart の版と同じか。違えば先にそろえる（下の注意）
-  $RB/ruby -v
+  # k6.service は rbenv のシム経由（ExecStart=/opt/anyenv/envs/rbenv/shims/bundle）で動く。
+  # Ruby の版は、WorkingDirectory(/var/www/k6)の .ruby-version で決まる
+  cd /var/www/k6 && cat .ruby-version
+  /opt/anyenv/envs/rbenv/shims/ruby -v                  # サービスと同じ解決。.ruby-version と同じ版になること
+  sudo systemctl cat k6 | grep -E 'ExecStart|RBENV'     # ExecStart がシム経由か。RBENV_VERSION が固定されていないか
   nginx -v; openssl version; sqlite3 --version
   sudo systemctl status k6 --no-pager | head -5
   sudo certbot certificates
@@ -280,8 +281,9 @@ sudo do-release-upgrade
 - [ ] **Ruby と gem(推測)**: rbenv でビルドした Ruby とネイティブ拡張の gem（sqlite3・puma など）が、OpenSSL（3.5.6 に更新）などのシステムライブラリを使っているため、動かなくなる可能性がある
 
   ```bash
-  # k6.service が実際に使っている Ruby（ExecStart の bundle があるディレクトリ）
-  RB=$(sudo systemctl cat k6 | sed -n 's/^ExecStart=\(.*\)\/bundle .*/\1/p')
+  # k6.service が使う Ruby（rbenv のシムが .ruby-version から決める版）の実体
+  RB=/opt/anyenv/envs/rbenv/versions/$(cat /var/www/k6/.ruby-version)/bin
+  /opt/anyenv/envs/rbenv/shims/ruby -v    # 「version is not installed」と出たら、下の入れ直しへ
   $RB/ruby -v
   $RB/ruby -ropenssl -e 'puts OpenSSL::OPENSSL_LIBRARY_VERSION'
   cd /var/www/k6 && RAILS_ENV=production $RB/bundle exec rails -v   # RAILS_ENV を忘れない（上の注意）
@@ -289,13 +291,12 @@ sudo do-release-upgrade
   動かなければ、ビルドに必要なパッケージを入れて Ruby を入れ直し、gem を作り直す:
   ```bash
   sudo apt install -y build-essential libssl-dev libyaml-dev libffi-dev zlib1g-dev libreadline-dev libsqlite3-dev
-  VER=$(echo "$RB" | sed 's#.*/versions/\(.*\)/bin$#\1#')   # ExecStart と同じ版を入れ直す
-  RBENV_ROOT=/opt/anyenv/envs/rbenv /opt/anyenv/envs/rbenv/bin/rbenv install -f $VER
+  RBENV_ROOT=/opt/anyenv/envs/rbenv /opt/anyenv/envs/rbenv/bin/rbenv install -f $(cat /var/www/k6/.ruby-version)
   cd /var/www/k6 && $RB/bundle pristine
   ```
-  - 入れ直す版は、サービスが使っている版（`ExecStart`）にそろえる。`.ruby-version` を見ると、2つがずれているときに見落とす。
-  - `ExecStart` の版と `.ruby-version` が違っていたら、アップグレードとは別に、先にそろえておく
-    （`.ruby-version` の版を入れて、`sudo systemctl edit --full k6` で `ExecStart` のパスを直し、`sudo systemctl daemon-reload && sudo systemctl restart k6`）。
+  - `k6.service` の `ExecStart` は `/opt/anyenv/envs/rbenv/shims/bundle`（シム）なので、Ruby の版は `.ruby-version` に従う。
+    unit の書き換えは要らない（版を固定したパスを書いた古いメモもあるので注意。2026-11-10 に実機で確認）。
+  - 版が固定されていないか: `sudo systemctl cat k6` に `RBENV_VERSION` や `versions/x.y.z` が出ていたら、`.ruby-version` に従わないので直す。
 - [ ] Node/yarn(推測): `node -v`、`yarn -v`（PATH は「通常のデプロイ手順」と同じ）。Node は単体のバイナリなので、通常は問題ない
 - [ ] k6: `sudo systemctl status k6`、`sudo journalctl -u k6 -n 50`
 - [ ] nginx: `sudo nginx -t`、`sudo systemctl status nginx`
