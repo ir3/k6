@@ -208,3 +208,116 @@ sudo systemctl cat k6          # unit定義の確認（環境変数など）
 sudo systemctl restart k6
 sudo journalctl -u k6 -f       # ログをtail
 ```
+
+## Ubuntu のアップグレード（24.04 LTS → 26.04 LTS）
+
+> 2026-11-10 時点の調査をもとにしたチェックリスト（**未実施**）。実施したら、実績（所要時間・詰まった点）をここに追記する。
+> 「(推測)」は公式情報ではなく、この構成からの見立て。「(未確認)」は画面や実機で確かめていない項目。
+
+### 判断の前提
+
+- **急がない。** 24.04 LTS の標準サポートは 2029 年 4 月まで。
+- 24.04 → 26.04.1 のアップグレード経路は 2026-09-30 に解禁済み（`-d` オプション不要）。
+  `/etc/update-manager/release-upgrades` が `Prompt=lts` なら、`sudo do-release-upgrade` で上がる。
+- k6 は**止まる**（30〜60 分見込み）。深夜か休日に、利用者へ周知してから行う。
+- 作業中は**本番データを更新しない**。Mac からの DB コピーもしない（ロールバックで失うデータを増やさないため）。
+- 代案: 26.04 の新しいサーバーを立てて組み直し、確認してから切り替える方法もある。やり直しは利くが、nginx・HTTPS・systemd・rbenv などをすべて作り直す手間がかかる。
+
+### 事前チェックリスト
+
+- [ ] **ConoHa でスナップショット（イメージ保存）を取る**（コントロールパネルのメニュー名は未確認）
+- [ ] 設定とデータを Mac に退避する
+
+  ```bash
+  # ConoHa 側: root 所有のファイルをまとめる
+  sudo tar czf /tmp/k6-etc-backup.tgz /etc/letsencrypt /etc/nginx /etc/systemd/system/k6.service /etc/ufw
+  cp /var/www/k6/storage/production.sqlite3 /tmp/production.sqlite3.backup
+
+  # Mac 側
+  mkdir -p ~/backup/conoha-20261110 && cd ~/backup/conoha-20261110
+  scp conoha:/tmp/k6-etc-backup.tgz conoha:/tmp/production.sqlite3.backup .
+  ```
+  （`k6.service` には `SECRET_KEY_BASE` が入っている。退避したファイルの置き場に注意）
+- [ ] 24.04 を最新にして再起動する: `sudo apt update && sudo apt full-upgrade && sudo reboot`
+- [ ] 追加リポジトリ（PPA など）が無いか確認し、あれば外す（アップグレード失敗の典型的な原因）: `ls /etc/apt/sources.list.d/`
+- [ ] ディスクの空き（数 GB 以上）: `df -h / /boot`
+- [ ] 今のバージョンを控える（上がったあとの比較用）
+
+  ```bash
+  lsb_release -d; uname -r
+  # k6 が実際に使っている Ruby は、k6.service の ExecStart で決まる（.ruby-version ではない）
+  RB=$(sudo systemctl cat k6 | sed -n 's/^ExecStart=\(.*\)\/bundle .*/\1/p'); echo "k6.service の Ruby: $RB"
+  echo ".ruby-version: $(cat /var/www/k6/.ruby-version)"   # ExecStart の版と同じか。違えば先にそろえる（下の注意）
+  $RB/ruby -v
+  nginx -v; openssl version; sqlite3 --version
+  sudo systemctl status k6 --no-pager | head -5
+  sudo certbot certificates
+  sudo ufw status
+  ```
+- [ ] **予行演習（推奨）**: スナップショットから複製サーバーを作り、そちらで先に上げて k6 が動くか確認する（ConoHa での複製手順は未確認）
+- [ ] 同じサーバーに他のアプリ（k5 など。`/var/www/k5`、`k5.service`）が残っていれば、それも確認対象にする
+- [ ] 経路の確認: `sudo do-release-upgrade -c` で 26.04.1 が出ること
+- [ ] **ファイアウォールは 2 層**（ConoHa のセキュリティグループ **と** サーバー内の ufw。片方だけでは通らない）。
+      SSH が切れたときの予備として、`do-release-upgrade` が使う **1022/tcp を両方で一時的に開ける**
+- [ ] ConoHa のコンソール（VNC）から入れることを確認する（SSH が切れたときの最後の手段）
+
+### 当日の手順
+
+```bash
+sudo do-release-upgrade
+```
+
+- SSH 経由だと、自動で `screen` の中で動き、予備の sshd がポート 1022 で起動する。
+- 設定ファイルの扱いを聞かれたら、`/etc/nginx/nginx.conf`・`/etc/ssh/sshd_config` などは**「今のものを残す」**を選び、あとで差分を見る。
+  （k6 の `/etc/nginx/conf.d/k6.conf` はパッケージの管理外なので、上書きされない）
+- 「サービスを再起動してよいか」は Yes。「不要なパッケージを削除するか」は、動作確認が済むまで No。
+- 終わったら再起動する。**別のターミナルから新しく SSH で入れること**を、すぐ確認する。
+
+### アップグレード後のチェックリスト
+
+- [ ] OS が上がっている: `lsb_release -d`（26.04 LTS）
+- [ ] 一時的に開けた **1022/tcp を、ConoHa のセキュリティグループと ufw の両方で閉じる**。ufw に 22・80・443 が残っている: `sudo ufw status`
+- [ ] **Ruby と gem(推測)**: rbenv でビルドした Ruby とネイティブ拡張の gem（sqlite3・puma など）が、OpenSSL（3.5.6 に更新）などのシステムライブラリを使っているため、動かなくなる可能性がある
+
+  ```bash
+  # k6.service が実際に使っている Ruby（ExecStart の bundle があるディレクトリ）
+  RB=$(sudo systemctl cat k6 | sed -n 's/^ExecStart=\(.*\)\/bundle .*/\1/p')
+  $RB/ruby -v
+  $RB/ruby -ropenssl -e 'puts OpenSSL::OPENSSL_LIBRARY_VERSION'
+  cd /var/www/k6 && RAILS_ENV=production $RB/bundle exec rails -v   # RAILS_ENV を忘れない（上の注意）
+  ```
+  動かなければ、ビルドに必要なパッケージを入れて Ruby を入れ直し、gem を作り直す:
+  ```bash
+  sudo apt install -y build-essential libssl-dev libyaml-dev libffi-dev zlib1g-dev libreadline-dev libsqlite3-dev
+  VER=$(echo "$RB" | sed 's#.*/versions/\(.*\)/bin$#\1#')   # ExecStart と同じ版を入れ直す
+  RBENV_ROOT=/opt/anyenv/envs/rbenv /opt/anyenv/envs/rbenv/bin/rbenv install -f $VER
+  cd /var/www/k6 && $RB/bundle pristine
+  ```
+  - 入れ直す版は、サービスが使っている版（`ExecStart`）にそろえる。`.ruby-version` を見ると、2つがずれているときに見落とす。
+  - `ExecStart` の版と `.ruby-version` が違っていたら、アップグレードとは別に、先にそろえておく
+    （`.ruby-version` の版を入れて、`sudo systemctl edit --full k6` で `ExecStart` のパスを直し、`sudo systemctl daemon-reload && sudo systemctl restart k6`）。
+- [ ] Node/yarn(推測): `node -v`、`yarn -v`（PATH は「通常のデプロイ手順」と同じ）。Node は単体のバイナリなので、通常は問題ない
+- [ ] k6: `sudo systemctl status k6`、`sudo journalctl -u k6 -n 50`
+- [ ] nginx: `sudo nginx -t`、`sudo systemctl status nginx`
+- [ ] **HTTPS**: `sudo certbot certificates`、`sudo certbot renew --dry-run`、`sudo systemctl status certbot.timer`
+- [ ] **sudo が `sudo-rs` に変わった**: `sudo -V`、`sudo -l`。`/etc/sudoers` と `/etc/sudoers.d/` に独自設定があれば、`sudo-rs` が対応しているか確認する。
+      旧来の sudo は `sudo.ws` という名前で残る
+- [ ] **coreutils の一部が Rust 版になった**（`cp` `mv` `rm` は GNU のまま）。「通常のデプロイ手順」を一通りリハーサルして、スクリプトの挙動に差がないか確認する
+  （`git pull` → `for kv in $(sudo systemctl show k6 ...)` → `assets:precompile` → `restart`）
+- [ ] **SSH の鍵**: OpenSSH 10.2 で DSA 鍵が使えなくなった。`ssh conoha` で入れること（ed25519・RSA なら問題ない）
+- [ ] アプリの動作: ログイン、取引台帳、注文部品詳細、在庫メンテナンス、帳票（Excel）の出力
+- [ ] 時刻: `timedatectl`（既存の環境は `systemd-timesyncd` のまま。`chrony` への切り替えは新規インストールだけ）
+- [ ] スナップショットと退避ファイルは、1〜2 週間は残してから消す
+- [ ] この節に実績を追記する
+
+### ロールバック
+
+問題が出て直せないときは、**ConoHa のスナップショットから復元**する。スナップショット以降の本番データ（作業中に更新したもの）は戻らないので、
+作業中は本番データを更新しない（上の「判断の前提」）。復元後は、サービスと HTTPS の状態を確認する。
+
+### 参考（公式）
+
+- [Upgrades from Ubuntu 24.04 LTS to Ubuntu 26.04.1 LTS now enabled](https://discourse.ubuntu.com/t/upgrades-from-ubuntu-24-04-lts-to-ubuntu-26-04-1-lts-now-enabled/88502)
+- [Ubuntu 26.04 LTS summary - Ubuntu release notes](https://documentation.ubuntu.com/release-notes/26.04/summary-for-lts-users/)
+- [What's new in security for Ubuntu 26.04 LTS?](https://ubuntu.com/blog/ubuntu-26-04-lts-security-updates)
+- [Rust-coreutils 0.10 now available for Ubuntu 26.04 LTS](https://discourse.ubuntu.com/t/rust-coreutils-0-10-now-available-for-ubuntu-26-04-lts/88120)
