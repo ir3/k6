@@ -1,0 +1,18 @@
+- content_for :title, "システム管理"
+- content_for :page_title, "システム管理"
+.center-container
+  %table.center-table.radius-table
+    %thead.bg-primary.text-primary-content
+      %tr
+        %th 項目
+        %th バージョン
+        %th 取得元
+    %tbody
+      - @items.each do |item|
+        %tr
+          %td= item.name
+          %td= item.version || "不明"
+          %td= item.source
+%p.TB12.text-center.mt-3
+  Ruby と Rails は動いているプロセスの値です。
+  Node.js はデプロイで入れる版（.node-version）、Tailwind CSS と daisyUI は node_modules に入っている版を表示しています。

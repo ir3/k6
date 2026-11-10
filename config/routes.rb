@@ -13,6 +13,9 @@ Rails.application.routes.draw do
   patch "menu/tax_rate" => "menus#update_tax_rate", as: "menu_tax_rate"
   patch "menu/sales_person" => "menus#update_sales_person", as: "menu_sales_person"
 
+  # システム管理（管理者のみ。Ruby / Rails / Node / Tailwind CSS / daisyUI のバージョン表示）
+  get "system_admin" => "system_admin#show", as: :system_admin
+
   # kobeengine
   # 取引台帳修正の取引先選択モーダル用（resources :adlists より前に置かないと :id に取られる）
   get  'adlists/picker'   => 'adlists#picker',   as: 'adlists_picker'

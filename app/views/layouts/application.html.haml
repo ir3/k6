@@ -36,6 +36,8 @@
               %ul.dropdown-content.menu.bg-base-100.rounded-box.z-20.w-40.p-2.shadow.text-black{tabindex: "0"}
                 %li= link_to "ユーザ一覧", users_path
                 %li= link_to "ユーザprofile一覧", user_profiles_path
+                -if user.user_profile.admin?
+                  %li= link_to "システム管理", system_admin_path
         = button_to "利用終了", session_path, method: :delete, class: "btn btn-error btn-sm text-white"
       -else
         %a.btn.btn-ghost.normal-case.text-xl
