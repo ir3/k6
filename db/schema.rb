@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_11_090000) do
   create_table "adlists", force: :cascade do |t|
     t.string "no"
     t.string "kbn"
@@ -231,6 +231,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_010000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["partno"], name: "index_stock_settings_on_partno", unique: true
+  end
+
+  create_table "stockb_settings", force: :cascade do |t|
+    t.string "partno", null: false
+    t.integer "nonview"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partno"], name: "index_stockb_settings_on_partno", unique: true
   end
 
   create_table "stockbs", force: :cascade do |t|

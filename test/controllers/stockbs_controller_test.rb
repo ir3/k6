@@ -67,11 +67,18 @@ class StockbsControllerTest < ActionDispatch::IntegrationTest
     assert row_for("E002")
   end
 
-  test "a row opens the detail of the part and the part code is a link to it" do
+  test "a row opens the stock maintenance of the part and the part code is a link to it" do
     get stockbs_url
     row = row_for("E001")
-    assert_equal kepart_path(@k1.id), row["data-row-link-url-value"]
-    assert_select "tbody td a[href=?]", kepart_path(@k1.id), text: "E001"
+    assert_equal stockb_maintenance_path(partno: "E001"), row["data-row-link-url-value"]
+    assert_select "tbody td a[href=?]", stockb_maintenance_path(partno: "E001"), text: "E001"
+  end
+
+  test "a hidden part is not listed" do
+    StockbSetting.for_part("E001").update!(nonview: 1)
+    get stockbs_url
+    assert_select "tbody tr", count: 1
+    assert_nil row_for("E001")
   end
 
   test "the button for a new stock goes to the form for a new B part stock" do

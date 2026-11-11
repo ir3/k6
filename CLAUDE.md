@@ -12,7 +12,7 @@ K6 is a Rails 8 application combining user management/authentication with busine
 
 adlists（顧客住所録）, keparts（KE部品）, orderparts（注文明細）, orders（注文台帳）, parts（部品台帳）, registries（国別為替）, stocks（在庫台帳）, stockbs（在庫台帳B）, tasks
 
-k6 で追加: stock_settings（部品ごとの在庫設定。旧Accessの 標準在庫・必要在庫・在庫部品備考・在庫非表示 を統合。在庫メンテナンス画面で使用。`db/import/import_stock_settings.rb` で取り込み）
+k6 で追加: stock_settings（部品ごとの在庫設定。旧Accessの 標準在庫・必要在庫・在庫部品備考・在庫非表示 を統合。在庫メンテナンス画面で使用。`db/import/import_stock_settings.rb` で取り込み）、stockb_settings（Ｂ部品の非表示。旧Accessの 在庫非表示B。Ａ部品とＢ部品で同じ部品コードがあるので stock_settings とは別の表。`db/import/import_stockb_settings.rb` で取り込み）
 
 ## Commands
 
@@ -158,6 +158,20 @@ bin/rails runner db/import/import_stock_settings.rb         # fsdb.mdb が必要
 - 部品番号ごとに1行にまとめて取り込む（同じ部品が複数あれば更新日が最新の行）。474件前後（2026-10-06時点）
 - Access にある項目は、画面で更新した値を**上書きする**。運用開始後に再実行すると、k6 側で更新した標準在庫数などが戻る
 - 本番への反映（DB の丸ごとコピー）は [DEPLOY.md](DEPLOY.md) の「データは Mac で作った DB を丸ごとコピーする」
+
+#### Ｂ部品の非表示の `stockb_settings`（2026-11-11 追加）
+
+Ｂ部品在庫表示（`/stockbs`）とＢ部品在庫メンテナンス（`/stockb_maintenance`）の非表示/表示の設定は、
+Access の `在庫非表示B` を `stockb_settings` テーブルに持つ（旧ASPは、行があれば非表示、「表示設定」で行を消す）。
+**Access → SQLite3 変換のとき、他のインポートと一緒にこれも実行すること**（本番へは DB を丸ごとコピーするため）。
+
+```bash
+bin/rails db:migrate                                          # 先に。stockb_settings テーブルが無いと失敗する
+bin/rails runner db/import/import_stockb_settings.rb          # fsdb.mdb が必要。何度実行してもよい（2026-11-11時点で1件）
+```
+
+- Access に行がある部品は、nonview の値によらず非表示(nonview=1)として取り込む
+- 運用開始後に再実行しても、Access に無い（k6 で非表示にした）部品は変わらない
 
 #### 帳票出力履歴の `order_logs`（2026-10-07 追加）
 

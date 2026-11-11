@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# 在庫メンテナンス画面の「この部品の入出荷状況」。部品の在庫台帳の行を、更新の新しい順に並べる。
+# 在庫メンテナンス画面の「この部品の入出荷状況」（Ａ部品。Ｂ部品は StockbHistory）。部品の在庫台帳の行を、更新の新しい順に並べる。
 # 出荷先・船名は、取引No がある行は取引台帳の注文から、無い行(や削除済みの注文)は台帳の行のメモから出す。
 class StockHistory
   # 当初表示する件数（旧 zaikomente.asp は「当初表示件数は21件に。全件要求で全件に」）
@@ -37,7 +37,15 @@ class StockHistory
 
   # 取引No順ではなく、旧ASPと同じく更新の新しい順（同時刻は台帳の番号の大きい順）
   def scope
-    Stock.of_part(@partno).where(deleted_at: nil).reorder(updated_at: :desc, id: :desc)
+    ledger.of_part(@partno).where(deleted_at: nil).reorder(updated_at: :desc, id: :desc)
+  end
+
+  # 台帳（Ａ部品は在庫台帳 stocks）。Ｂ部品は StockbHistory が在庫台帳B に入れ替える
+  def ledger = Stock
+
+  # 履歴に出す日付。入庫日付、出庫日付、更新日の順に使う（Ｂ部品は常に更新日）
+  def row_date(stock)
+    stock.indate || stock.outdate || stock.updated_at.to_date
   end
 
   def orders_by_mno(stocks)
@@ -54,7 +62,7 @@ class StockHistory
     price = stock.irprice.to_i
     adlist = order && companies[order.adlist_id.to_s]
     Row.new(
-      date: stock.indate || stock.outdate || stock.updated_at.to_date,
+      date: row_date(stock),
       company: order ? (adlist&.company.presence || adlist&.name) : stock.cname,
       shipname: order ? order.shipname : stock.sname,
       price: price, ordered: stock.onum,

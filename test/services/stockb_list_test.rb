@@ -19,8 +19,8 @@ class StockbListTest < ActiveSupport::TestCase
 
   test "each kepart with ledger lines is one row with the stock summed up" do
     row = StockbList.new.rows.find { |r| r.pcode == "E001" }
-    assert_equal [ @k1.id, "E001", "6L28HX", "和名1", "NAME 1", 1200, "10", 0.5, 2, 7 ],
-                 [ row.id, row.pcode, row.second, row.jname, row.ename, row.price, row.sel_unit, row.weightkg, row.munit, row.on_hand ]
+    assert_equal [ "E001", "6L28HX", "和名1", "NAME 1", 1200, "10", 0.5, 2, 7 ],
+                 [ row.pcode, row.second, row.jname, row.ename, row.price, row.sel_unit, row.weightkg, row.munit, row.on_hand ]
   end
 
   test "parts are in the order of the part code without regard to case" do
@@ -97,5 +97,22 @@ class StockbListTest < ActiveSupport::TestCase
     Stockb.create!(partno: "E002", num: -9)
     assert_equal(-5, StockbList.new.rows.find { |r| r.pcode == "E002" }.on_hand)
     assert_not_includes codes(in_stock: true), "E002"
+  end
+
+  test "a part set to hidden is not listed, in all stock nor in stock" do
+    StockbSetting.for_part("e001").update!(nonview: 1)
+    assert_equal %w[E002], codes
+    assert_equal %w[E002], codes(in_stock: true)
+  end
+
+  test "a part set back to shown is listed again" do
+    StockbSetting.for_part("E001").update!(nonview: 1)
+    StockbSetting.for_part("E001").update!(nonview: nil)
+    assert_equal %w[E001 E002], codes
+  end
+
+  test "a hidden part with a tilde is not listed in the tilde search" do
+    StockbSetting.for_part("E500~").update!(nonview: 1)
+    assert_empty codes(partno: "~")
   end
 end

@@ -1,0 +1,130 @@
+-# Ｂ部品在庫メンテナンス（旧 hzaikomente.asp）。Ｂ部品在庫表示の行から開く。
+- content_for :page_title, "Ｂ部品在庫メンテナンス"
+- partno = @maintainer.partno
+- input_cls = "input input-bordered input-xs border-2 border-neutral bg-base-100"
+- btn_cls = "btn btn-xs wtext btn-info"
+- number = ->(value) { value.to_i.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ",") }
+- head_cls = "bg-primary text-primary-content"
+- right = "text-align: right;"
+- centered = "text-align: center;"
+-# 表のセルに散らばる入力欄は、空のフォームを表の外に置き form 属性で関連付ける（Ａ部品の在庫メンテナンスと同じ）
+- forms = { hide: stockb_maintenance_hide_path, reveal: stockb_maintenance_reveal_path, adjust: stockb_maintenance_adjust_path }
+- forms.each do |name, path|
+  = form_with url: path, method: :post, id: "stockb_form_#{name}" do
+    = hidden_field_tag :partno, partno, id: nil
+
+.mb-3.flex.items-center.gap-3
+  = link_to "戻る", :back, class: "btn btn-sm btn-info"
+  %span 部品コード #{partno}
+
+%table.center-table.radius-table.row-compact{width: "99%", align: "center"}
+  %tr{class: head_cls}
+    %th 部品コード
+    %th 計算在庫数
+    %th 実在庫数
+    %th 在庫数を調整（現物に一致化）
+    %th 非表示設定
+    %th 表示設定
+  %tr
+    %td{style: "#{centered} font-weight: bold;"}
+      = @part&.pcode || partno
+      -# 旧ASPの「部品定義参照」(hiteijomente.asp)は無いので、KE部品の詳細を開く
+      - if @part
+        = link_to "部品定義参照", kepart_path(@part.id), class: btn_cls
+    %td{style: "#{centered} font-weight: bold; font-size: 1.2em;"}= @on_hand
+    %td{style: centered}= text_field_tag :zaikonum, @on_hand, form: "stockb_form_adjust", size: 5, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 5rem; text-align: right;"
+    %td{style: centered}= submit_tag "実在庫に一致化", form: "stockb_form_adjust", name: nil, class: btn_cls
+    %td{style: centered}= submit_tag "非表示設定", form: "stockb_form_hide", name: nil, disabled: @setting.hidden?, class: btn_cls
+    %td{style: centered}= submit_tag "表示設定", form: "stockb_form_reveal", name: nil, disabled: !@setting.hidden?, class: btn_cls
+- if @part.nil?
+  %p.TB12{style: "margin: 4px 0 0 30px;"} この部品はKE部品台帳に登録がないので、部品の情報は表示できません（在庫台帳Bの履歴だけ表示します）。
+%p{style: "margin: 4px 0 0 30px;"} 現在は在庫を#{@setting.hidden? ? "非表示" : "表示"}に設定しています。
+
+%table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+  %tr{class: head_cls}
+    %th{width: "12%"} 旧部品コード
+    %th{width: "8%"} 形式
+    %th 寸法
+    %th 和文名称
+  %tr
+    %td{style: centered}= @notes.opartno
+    %td{style: centered}= @part&.form
+    %td{style: centered}= @part&.size
+    %td{style: "font-weight: bold;"}= @part&.jname
+
+%table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+  %tr{class: head_cls}
+    %th 英文名称
+    %th ItemNo
+    %th 販売単位
+    %th 重量(kg)
+    %th 計測単位
+    %th 販売単価
+  %tr
+    %td= @part&.ename
+    %td{style: centered}= @part&.itemno
+    %td{style: centered}= @part&.sel_unit
+    %td{style: centered}= @part&.weightkg
+    %td{style: centered}= @part&.munit
+    %td{style: "#{right} font-weight: bold;"}= (number.call(@part.newprice) if @part)
+
+%table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+  %tr{class: head_cls}
+    %th 部品に関する補足情報（仕様など）
+  %tr
+    %td{style: centered}= @notes.memo
+
+-# 入庫・出庫の登録と過去全表示のボタン（旧 hzaikomente.asp と同じく、補足情報の下に説明つきで横に並べる）
+%table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+  %tr
+    %td{style: centered}
+      %span.TB12 入荷を登録するには、右のボタンをクリックします。→
+      = link_to "入庫登録", stockb_in_path(partno: partno), class: "btn btn-sm btn-info"
+    %td{style: centered}
+      %span.TB12 出荷を登録するには、右のボタンをクリックします。→
+      = link_to "出庫登録", stockb_out_path(partno: partno), class: "btn btn-sm btn-info"
+    - if @history.truncated?
+      %td{style: centered}
+        %span.TB12 入出荷の過去の履歴全表示→
+        = link_to "過去全表示", stockb_maintenance_path(partno: partno, all: 1), class: "btn btn-sm btn-info"
+
+%p{style: "margin: 14px 0 4px 30px;"}
+  この部品の入出荷状況
+  %span.TB12 （入庫は＋、出庫は−の数量で在庫台帳Bに記録されています。出荷先・船名・取引No.から注文部品詳細に移れます）
+- if @history.truncated?
+  %p{style: "margin: 0 0 4px 30px;"}
+    %span.TB12 直近 #{@history.rows.size} 件を表示しています（全 #{@history.total} 件）。
+
+%table.center-table.radius-table.row-compact.zebra-table.list-table{width: "99%", align: "center"}
+  %thead
+    %tr{class: head_cls}
+      %th 日付
+      %th 出荷先
+      %th 船名
+      %th{width: "70px"} 販売単価
+      %th{width: "50px"} 発注数
+      %th{width: "50px"} 入庫数
+      %th 入荷額
+      %th{width: "50px"} 出庫数
+      %th 出荷額
+      %th 備考
+      %th{width: "80px"} 取引管理No.
+      %th{width: "125px"} 更新日
+  %tbody
+    - @history.rows.each do |row|
+      %tr
+        %td{style: centered}= row.date.strftime("%Y/%m/%d")
+        %td= (row.order ? link_to(row.company, order_path(row.order)) : row.company)
+        %td{style: centered}= (row.order ? link_to(row.shipname, order_path(row.order)) : row.shipname)
+        %td{style: right}= number.call(row.price)
+        %td{style: centered}= row.ordered.to_i.positive? ? row.ordered : nil
+        %td{style: "#{centered} font-weight: bold;"}= row.in_qty
+        %td{style: right}= (number.call(row.in_amount) if row.in_amount)
+        %td{style: "#{centered} font-weight: bold;"}= row.out_qty
+        %td{style: right}= (number.call(row.out_amount) if row.out_amount)
+        %td= row.note
+        %td{style: centered}= (row.order ? link_to(row.mno, order_path(row.order)) : row.mno)
+        %td{style: "font-size: 0.85em;"}= row.updated_at.strftime("%Y/%m/%d %H:%M")
+
+%p.TB12{style: "margin: 8px 0 0 30px;"}
+  出荷の情報（日付、出荷先、船名）は、取引台帳で注文に対して在庫を引き当てた場合には、自動的に書き込まれます。

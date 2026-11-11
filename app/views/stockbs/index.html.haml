@@ -22,8 +22,8 @@
       %th 計測単位
   %tbody{style: "cursor: pointer"}
     - @rows.each do |row|
-      %tr{data: {controller: "row-link", row_link_url_value: kepart_path(row.id), action: "click->row-link#navigate"}}
-        %td= link_to row.pcode, kepart_path(row.id), class: "font-bold"
+      %tr{data: {controller: "row-link", row_link_url_value: stockb_maintenance_path(partno: row.pcode), action: "click->row-link#navigate"}}
+        %td= link_to row.pcode, stockb_maintenance_path(partno: row.pcode), class: "font-bold"
         %td= row.second
         %td= row.jname
         %td= row.ename
@@ -35,4 +35,4 @@
 = paginate @rows, window: 4, outer_window: 5, left: 1, right: 3
 %p.TB12.mt-2
   部品コードに「~」を入れて検索すると、「~」付きの部品を寸法つきで表示します（入れないときは「~」の無い部品を型式つきで表示します）。
-  行をクリックすると、その部品の詳細（在庫の入庫・出庫）を開きます。
+  行をクリックすると、その部品の在庫メンテナンスを開きます。

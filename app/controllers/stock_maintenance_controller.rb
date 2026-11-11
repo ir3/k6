@@ -3,6 +3,7 @@
 # 在庫メンテナンス（旧 zaikomente.asp）。部品ごとに、在庫数・標準在庫数・予測量・入出荷の履歴を見て、
 # 単価・表示/非表示・実在庫との一致化・標準在庫数・予測量を更新する。
 # 注文部品詳細編集の「この部品の在庫状況」から開く。
+# Ｂ部品は StockbMaintenanceController（旧 hzaikomente.asp）が、台帳と画面だけ入れ替えて使う。
 class StockMaintenanceController < ApplicationController
   before_action :set_maintainer
 
@@ -50,7 +51,7 @@ class StockMaintenanceController < ApplicationController
   private
 
   def set_maintainer
-    @maintainer = StockMaintainer.new(params[:partno])
+    @maintainer = build_maintainer
     return unless @maintainer.partno.empty?
 
     redirect_to menu_path, alert: "部品番号が指定されていません。"
@@ -60,7 +61,14 @@ class StockMaintenanceController < ApplicationController
   def apply
     result = yield
     flash_key = result.success? ? :notice : :alert
-    redirect_to stock_maintenance_path(partno: @maintainer.partno), status: :see_other,
+    redirect_to maintenance_path_for(@maintainer.partno), status: :see_other,
                 flash_key => result.success? ? result.message : result.error
   end
+
+  # --- Ｂ部品（StockbMaintenanceController）が入れ替えるところ ---
+
+  def build_maintainer = StockMaintainer.new(params[:partno])
+
+  # 更新のあとに戻る在庫メンテナンス
+  def maintenance_path_for(partno) = stock_maintenance_path(partno: partno)
 end

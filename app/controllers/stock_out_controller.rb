@@ -2,14 +2,16 @@
 
 # 出庫入力（旧 zaikoout.asp）。部品の出庫を、出庫数・仕入時販売単価・取引管理No・出庫区分・備考・船名・会社名で登録する。
 # 在庫メンテナンスの「出庫登録」から開く。取引管理No が渡されたとき(?mno=)は、出荷先の船名・会社名を取引台帳から入れる。
+# Ｂ部品は StockbOutController（旧 zaikoout2.asp / syukoEntry2.asp）が、行き先と台帳だけ入れ替えて使う。
 class StockOutController < ApplicationController
   before_action :set_maintainer
   before_action :require_known_part, only: :create
+  helper_method :entry_path, :maintenance_path_for, :entry_title
 
   # GET /stock_out?partno=...&mno=...
   def new
     return render :select if @maintainer.partno.empty?
-    return redirect_to(stock_out_path, alert: unknown_message) unless @maintainer.known?
+    return redirect_to(entry_path, alert: @maintainer.unknown_message) unless @maintainer.known?
 
     @form = { price: @maintainer.part&.newprice, okubun: 2, mno: params[:mno].to_s.strip.presence }
     destination = StockMaintainer.destination(@form[:mno])
@@ -22,7 +24,7 @@ class StockOutController < ApplicationController
     @form = form_params
     result = @maintainer.issue(**@form.slice(:num, :price, :okubun, :mno, :memo, :ship, :company))
     if result.success?
-      redirect_to stock_maintenance_path(partno: @maintainer.partno), status: :see_other, notice: result.message
+      redirect_to maintenance_path_for(@maintainer.partno), status: :see_other, notice: result.message
     else
       flash.now[:alert] = result.error
       load_screen
@@ -32,24 +34,34 @@ class StockOutController < ApplicationController
 
   private
 
+  # --- Ｂ部品（StockbOutController）が入れ替えるところ ---
+
+  def build_maintainer = StockMaintainer.new(params[:partno])
+
+  # この画面（フォームの送り先・やり直しの行き先）
+  def entry_path = stock_out_path
+
+  # 登録のあとに戻る在庫メンテナンス
+  def maintenance_path_for(partno) = stock_maintenance_path(partno: partno)
+
+  def entry_title = "出庫入力"
+
+  # --- ここから共通 ---
+
   def set_maintainer
-    @maintainer = StockMaintainer.new(params[:partno])
+    @maintainer = build_maintainer
   end
 
   def require_known_part
-    return redirect_to(stock_out_path, alert: "部品番号が指定されていません。") if @maintainer.partno.empty?
+    return redirect_to(entry_path, alert: "部品番号が指定されていません。") if @maintainer.partno.empty?
 
-    redirect_to(stock_out_path, alert: unknown_message) unless @maintainer.known?
-  end
-
-  def unknown_message
-    "部品「#{@maintainer.partno}」は部品台帳にも在庫台帳にも見つかりません。"
+    redirect_to(entry_path, alert: @maintainer.unknown_message) unless @maintainer.known?
   end
 
   # 画面に出す、部品の情報と現在の在庫数
   def load_screen
     @part = @maintainer.part
-    @on_hand = Stock.on_hand(@maintainer.partno)
+    @on_hand = @maintainer.on_hand
   end
 
   # 入力欄の値（入力し直せるように、エラーのときは画面に戻す）

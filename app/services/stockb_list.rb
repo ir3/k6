@@ -12,13 +12,12 @@
 # - 検索の部品コードに「~」が入っているときは「~」付きの部品（寸法で表す部品）だけを、寸法の列つきで出す。
 #   入っていないときは「~」の無い部品だけを、型式の列つきで出す
 # - 部品コード順
-# - 非表示(在庫非表示B)に設定された部品は出さない。ただし、k6 には B部品の非表示設定がまだ無い
-#   （Access の 在庫非表示B は1件だけで、ke部品にも台帳にも無い部品なので、一覧には影響しない）
+# - 非表示(在庫非表示B。k6 では stockb_settings)に設定された部品は、在庫有りのときも出さない
 #
 # 数量は Stockb.counted（削除済み・無効を除く）で数える。
 class StockbList
   # second: 「型式」または「寸法」の列の値（検索に「~」があり、部品も「~」付きなら寸法）
-  Row = Data.define(:id, :pcode, :second, :jname, :ename, :price, :sel_unit, :weightkg, :munit, :on_hand)
+  Row = Data.define(:pcode, :second, :jname, :ename, :price, :sel_unit, :weightkg, :munit, :on_hand)
 
   TILDE = "~"
 
@@ -36,7 +35,8 @@ class StockbList
 
   def rows
     totals = stock_totals
-    parts.filter_map { |part| build_row(part, totals) }.sort_by { |row| row.pcode.to_s.upcase }
+    hidden = hidden_partnos
+    parts.filter_map { |part| build_row(part, totals, hidden) }.sort_by { |row| row.pcode.to_s.upcase }
   end
 
   private
@@ -49,7 +49,7 @@ class StockbList
   def parts
     scope = Kepart.all
     scope = scope.where("pcode LIKE ? ESCAPE '\\'", "%#{Kepart.sanitize_sql_like(@partno)}%") if @partno.present?
-    scope.pluck(:id, :pcode, :form, :size, :jname, :ename, :newprice, :sel_unit, :weightkg, :munit)
+    scope.pluck(:pcode, :form, :size, :jname, :ename, :newprice, :sel_unit, :weightkg, :munit)
   end
 
   # 部品コード(大文字)ごとの在庫数。
@@ -61,16 +61,22 @@ class StockbList
           .to_h
   end
 
-  def build_row(part, totals)
-    id, pcode, form, size, jname, ename, price, sel_unit, weightkg, munit = part
+  # 非表示に設定された部品コード(大文字)
+  def hidden_partnos
+    StockbSetting.where(nonview: 1).pluck(:partno).to_set { |partno| partno.to_s.strip.upcase }
+  end
+
+  def build_row(part, totals, hidden)
+    pcode, form, size, jname, ename, price, sel_unit, weightkg, munit = part
     key = pcode.to_s.strip.upcase
     return unless totals.key?(key) # 在庫台帳Bに行が無い部品は出さない（INNER JOIN）
+    return if hidden.include?(key)
     return unless tilde_search? == key.include?(TILDE) # 「~」付きの部品は「~」を含む検索のときだけ、逆も同じ
 
     on_hand = totals[key]
     return if @in_stock && !on_hand.to_i.positive?
 
-    Row.new(id: id, pcode: pcode, second: (tilde_search? ? size : form), jname: jname, ename: ename, price: price,
+    Row.new(pcode: pcode, second: (tilde_search? ? size : form), jname: jname, ename: ename, price: price,
             sel_unit: sel_unit, weightkg: weightkg, munit: munit, on_hand: on_hand)
   end
 end

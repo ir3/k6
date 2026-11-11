@@ -1,5 +1,5 @@
 -# 出庫入力（旧 zaikoout.asp）。在庫メンテナンスの「出庫登録」から開く。
-- content_for :page_title, "出庫入力"
+- content_for :page_title, entry_title
 - partno = @maintainer.partno
 - input_cls = "input input-bordered input-xs border-2 border-neutral bg-base-100"
 - head_cls = "bg-primary text-primary-content"
@@ -8,13 +8,13 @@
 - right = "text-align: right;"
 
 .mb-3.flex.items-center.gap-3
-  = link_to "戻る", stock_maintenance_path(partno: partno), class: "btn btn-sm btn-info"
+  = link_to "戻る", maintenance_path_for(partno), class: "btn btn-sm btn-info"
   %span 部品コード #{partno}
 
 %p.TB12{style: "margin: 0 0 4px 30px;"}
   出庫数と出庫先（どの取引かを示す取引台帳番号で会社・船名は自動確定）を入力してください。
 
-= form_with url: stock_out_path, method: :post do
+= form_with url: entry_path, method: :post do
   = hidden_field_tag :partno, partno, id: nil
 
   %table.center-table.radius-table.row-compact{width: "99%", align: "center"}
@@ -49,7 +49,7 @@
       %td{style: centered}= @part&.weightkg
       %td{style: centered}= @part&.munit
   - if @part.nil?
-    %p.TB12{style: "margin: 4px 0 0 30px;"} この部品は部品台帳に登録がないので、部品の情報は表示できません（在庫台帳に登録のある部品です）。
+    %p.TB12{style: "margin: 4px 0 0 30px;"} この部品は#{@maintainer.master_name}に登録がないので、部品の情報は表示できません（#{@maintainer.ledger_name}に登録のある部品です）。
 
   %table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
     %tr
