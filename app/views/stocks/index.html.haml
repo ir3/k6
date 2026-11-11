@@ -1,69 +1,50 @@
 - content_for :page_title, "Ａ部品在庫表示"
-%table
-  %tr
-    %td
-      = paginate @stocks, window: 4, outer_window: 5, left: 1, right: 3
-
-%table.center-table.radius-table.list-table{width: "100%"}
+.flex.gap-2.my-2.items-center
+  = form_with url: stocks_path, method: :get, local: true, class: "flex gap-2 items-center" do |f|
+    = f.text_field :partno, value: @partno, placeholder: "部品コードの一部", size: 12, class: "input input-bordered input-sm", style: "ime-mode:disabled;"
+    %label.flex.items-center.gap-1
+      = f.check_box :in_stock, { checked: @in_stock }, "1", nil
+      %span.text-sm 在庫有りのみ
+    = f.submit "検索", class: "btn btn-sm btn-secondary"
+  = link_to "新規在庫登録", new_stock_path, class: "btn btn-sm btn-info"
+= paginate @rows, window: 4, outer_window: 5, left: 1, right: 3
+%table.center-table.radius-table.zebra-table.list-table{width: "100%"}
   %thead.bg-primary.text-primary-content
     %tr
-      %th Id
-      %th Partno
-      %th Kind
-      %th Indate
-      %th Num
-      %th Inprice
-      %th Irprice
-      %th Invalue
-      %th Irvalue
-      %th Outdate
-      %th Onum
-      %th Mno
-      %th Orprice
-      %th Orvalue
-      %th Itemno
-      %th Cordno
-      %th Memo
-      %th Cname
-      %th Sname
-      %th Invalid
-      %th Ikubun
-      %th Okubun
-      %th Updated at
-      %th
-      %th
-      %th
-
-  %tbody
-    - @stocks.each do |stock|
-      %tr
-        %td= stock.id
-        %td= stock.partno
-        %td= stock.kind
-        %td= stock.indate
-        %td= stock.num
-        %td= stock.inprice
-        %td= stock.irprice
-        %td= stock.invalue
-        %td= stock.irvalue
-        %td= stock.outdate
-        %td= stock.onum
-        %td= stock.mno
-        %td= stock.orprice
-        %td= stock.orvalue
-        %td= stock.itemno
-        %td= stock.cordno
-        %td= stock.memo
-        %td= stock.cname
-        %td= stock.sname
-        %td= stock.novalid
-        %td= stock.ikubun
-        %td= stock.okubun
-        %td= stock.updated_at.strftime('%Y/%m/%d %H:%M')
-        %td= link_to 'Show', stock
-        %td= link_to 'Edit', edit_stock_path(stock)
-        %td= link_to 'Destroy', stock, :method => :delete, :data => { :confirm => 'Are you sure?' }
-
-%br
-
-= link_to 'New Stock', new_stock_path
+      %th 部品コード
+      %th 形式
+      %th 和文名称
+      %th 英文名称
+      %th 販売単価
+      %th 在庫数
+      %th 標準在庫
+      %th 予測量
+      %th 必要在庫
+      %th 発注中
+      %th 販売単位
+      %th 重量(kg)
+      %th 計測単位
+  %tbody{style: "cursor: pointer"}
+    - @rows.each do |row|
+      -# 在庫数が必要在庫に足りない部品は、行をうすい黄色、在庫数を赤地に白文字にする（旧ASPと同じ）。
+      -# 足りているときは style 属性ごと付けない（HAMLは style: nil だと style="" を出してしまう）
+      - row_attrs = {data: {controller: "row-link", row_link_url_value: stock_maintenance_path(partno: row.pcode), action: "click->row-link#navigate"}}
+      - row_attrs[:style] = "background-color: cornsilk;" if row.short?
+      - on_hand_attrs = row.short? ? {style: "background-color: var(--color-error); color: var(--color-error-content);"} : {}
+      %tr{row_attrs}
+        %td= link_to row.pcode, stock_maintenance_path(partno: row.pcode), class: "font-bold"
+        %td= row.form
+        %td= row.jname
+        %td= row.ename
+        %td.text-right= number_with_delimiter(row.price)
+        %td{on_hand_attrs}= row.on_hand
+        %td= row.standard
+        %td= row.forecast
+        %td.font-bold= row.required
+        %td.font-bold= row.ordered
+        %td= row.sel_unit
+        %td= row.weightkg
+        %td= row.munit
+= paginate @rows, window: 4, outer_window: 5, left: 1, right: 3
+%p.TB12.mt-2
+  在庫数が必要在庫（標準在庫＋予測量）に足りない部品は、在庫数を赤く表示します。行をクリックすると、その部品の在庫メンテナンスを開きます。

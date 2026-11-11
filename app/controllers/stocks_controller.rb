@@ -4,16 +4,14 @@ class StocksController < ApplicationController
   before_action :set_stock, only: %i[show edit update destroy]
 
   # GET /stocks
-  # GET /stocks.json
+  # Ａ部品在庫表示。部品ごとに在庫の増減を集計した一覧（旧 zaikolist.asp → zaikosel.asp）。
+  # partno: 部品コードの一部、in_stock: 在庫数が1以上の部品だけ
   def index
     @partno = params[:partno]
     @in_stock = params[:in_stock].present?
 
-    scope = Stock.all
-    scope = scope.where("partno LIKE ?", "%#{Stock.sanitize_sql_like(@partno)}%") if @partno.present?
-    scope = scope.where("num > 0") if @in_stock
-
-    @stocks = scope.page params[:page]
+    rows = StockList.new(partno: @partno, in_stock: @in_stock).rows
+    @rows = Kaminari.paginate_array(rows).page(params[:page])
   end
 
   # GET /stocks/1
