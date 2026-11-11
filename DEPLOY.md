@@ -75,7 +75,7 @@ ConoHa で `db/import/*.rb` を個別に流したり、テーブルだけ流し�
 cd ~/k6
 sqlite3 storage/development.sqlite3 "DELETE FROM sessions;"   # Mac のログイン履歴を本番へ持ち込まない（Mac では再ログインになる）
 sqlite3 storage/development.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
-scp storage/development.sqlite3 kobeengine@163.44.127.60:/var/www/k6/storage/production.sqlite3
+scp storage/development.sqlite3 kobeengine@kobeengine.com:/var/www/k6/storage/production.sqlite3
 ```
 
 ```bash
