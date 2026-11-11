@@ -65,6 +65,9 @@ Rails.application.routes.draw do
   # 入庫入力（旧 zaikoin.asp）。在庫メンテナンスの「入庫登録」から開く。部品番号は ?partno= で渡す
   get  'stock_in'                   => 'stock_in#new',              as: :stock_in
   post 'stock_in'                   => 'stock_in#create'
+  # 出庫入力（旧 zaikoout.asp）。在庫メンテナンスの「出庫登録」から開く。部品番号は ?partno=、出庫先の取引は ?mno= で渡す
+  get  'stock_out'                  => 'stock_out#new',             as: :stock_out
+  post 'stock_out'                  => 'stock_out#create'
   resources :stocks
   resources :stockbs
 

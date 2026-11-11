@@ -83,12 +83,15 @@
   %tr
     %td{style: centered}= @setting.memo
 
--# 入庫の登録と過去全表示のボタン（旧 zaikomente.asp と同じく、補足情報の下に説明つきで横に並べる）
+-# 入庫・出庫の登録と過去全表示のボタン（旧 zaikomente.asp と同じく、補足情報の下に説明つきで横に並べる）
 %table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
   %tr
     %td{style: centered}
       %span.TB12 入荷を登録するには、右のボタンをクリックします。→
       = link_to "入庫登録", stock_in_path(partno: partno), class: "btn btn-sm btn-info"
+    %td{style: centered}
+      %span.TB12 出荷を登録するには、右のボタンをクリックします。→
+      = link_to "出庫登録", stock_out_path(partno: partno), class: "btn btn-sm btn-info"
     - if @history.truncated?
       %td{style: centered}
         %span.TB12 入出荷の過去の履歴全表示→

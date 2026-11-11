@@ -10,6 +10,7 @@ class StockMaintainer
   PRICE_RANGE = 0..9_999_999
   QUANTITY_RANGE = 0..999_999
   RECEIVE_RANGE = 1..999_999
+  ISSUE_RANGE = 1..999_999
   SETTING_RANGE = 0..99_999
   ADJUST_MEMO = "調整"
   # 在庫台帳の備考・船名・会社名の長さ（旧Accessの列の長さ。Memo 255、Text(50)）
@@ -61,6 +62,48 @@ class StockMaintainer
     end
     success(receive_message(quantity, kind, reduced))
   end
+
+# 出庫の行き先（取引管理No から取引台帳の注文を探し、出荷先の会社名と船名を返す）。見つからなければ nil
+def self.destination(mno)
+  number = IntegerInput.parse(mno, 1..999_999_999)
+  order = number && Order.find_by(mno: number)
+  return unless order
+
+  adlist = Adlist.find_by(no: order.adlist_id.to_s)
+  { mno: order.mno, ship: order.shipname, company: adlist&.company.presence || adlist&.name }
+end
+
+# 出庫登録（旧 zaikoout.asp / syukoEntry.asp）。在庫台帳に出庫の行（数量は負）を1行足す。
+# 旧ASPの INSERT と同じく、部品・日付・数量（入力の符号を反転）・仕入時販売単価・取引管理No・出庫区分・
+# 船名・会社名・備考だけを書く（実データの出庫行 15,000 件あまりも、それ以外は 0 かなし）。
+# 取引管理No は空のままでもよい（出庫先の取引が無い場合）。入れたときは、取引台帳に無い番号は受け付けない。
+# 在庫数より多い出庫も旧ASPは止めなかったので、止めずに登録する（結果の在庫数は知らせる）。
+def issue(num:, price:, okubun:, mno: nil, memo: nil, ship: nil, company: nil)
+  quantity = IntegerInput.parse(num, ISSUE_RANGE)
+  return failure("出庫数は #{ISSUE_RANGE.begin} から #{ISSUE_RANGE.end} の整数で入力してください。") unless quantity
+
+  unit_price = IntegerInput.parse(price, PRICE_RANGE)
+  return failure("仕入時販売単価は #{PRICE_RANGE.begin} から #{PRICE_RANGE.end} の整数で入力してください。") unless unit_price
+
+  kind = IntegerInput.parse(okubun, 1..2)
+  return failure("出庫区分を選んでください。") unless Stock::OUTBOUND_KINDS.key?(kind)
+
+  order_no = mno.to_s.strip.presence
+  if order_no
+    order_no = IntegerInput.parse(order_no, 1..999_999_999)
+    return failure("取引管理No. は数字で入力してください。") unless order_no
+    return failure("取引管理No. #{order_no} の取引は取引台帳に見つかりません。") unless self.class.destination(order_no)
+  end
+
+  memo, ship, company = [ memo, ship, company ].map { |text| text.to_s.strip.presence }
+  return failure("備考は #{MEMO_MAX} 文字以内で入力してください。") if memo && memo.length > MEMO_MAX
+  return failure("船名は #{NAME_MAX} 文字以内で入力してください。") if ship && ship.length > NAME_MAX
+  return failure("会社名は #{NAME_MAX} 文字以内で入力してください。") if company && company.length > NAME_MAX
+  return failure("部品「#{@partno}」は部品台帳にも在庫台帳にも見つかりません。") unless known?
+
+  Stock.create!(issue_attributes(quantity, unit_price, kind, order_no, memo, ship, company))
+  success(issue_message(quantity, kind))
+end
 
   # 単価更新。部品台帳の新販売単価を変える（注文に部品を追加するときの単価と同じ）
   def change_price(raw)
@@ -140,6 +183,19 @@ class StockMaintainer
     message = "#{part&.pcode || @partno} を #{quantity} 入庫登録しました（#{Stock::INBOUND_KINDS[kind]}。現在の在庫数 #{Stock.on_hand(@partno)}）。"
     reduced.positive? ? "#{message}発注中を #{reduced} 減らしました。" : message
   end
+
+# 出庫の行。数量は負。旧ASPの INSERT にならい、入庫日付の欄に今日の日付を入れる（出庫日付は空のまま）
+def issue_attributes(quantity, unit_price, kind, order_no, memo, ship, company)
+  {
+    partno: part&.pcode || @partno, kind: 0, indate: Date.current, num: -quantity, onum: 0,
+    inprice: 0, irprice: unit_price, invalue: 0, irvalue: 0, orprice: 0, orvalue: 0,
+    mno: order_no || 0, memo: memo, cname: company, sname: ship, novalid: 0, ikubun: 0, okubun: kind
+  }
+end
+
+def issue_message(quantity, kind)
+  "#{part&.pcode || @partno} を #{quantity} 出庫登録しました（#{Stock::OUTBOUND_KINDS[kind]}。現在の在庫数 #{Stock.on_hand(@partno)}）。"
+end
 
   # 調整行の単価は部品台帳の新販売単価。台帳に無い部品は在庫台帳の直近の単価
   def adjustment_price

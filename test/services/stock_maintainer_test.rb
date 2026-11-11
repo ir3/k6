@@ -286,4 +286,127 @@ class StockMaintainerTest < ActiveSupport::TestCase
     assert_equal 0, last_stock.onum
     assert_equal 9, Stock.of_part("OTHER").sum(:onum)
   end
+
+  # --- 出庫登録（旧 zaikoout.asp / syukoEntry.asp） ---
+
+  def issue(maintainer = @maintainer, **overrides)
+    maintainer.issue(**{ num: "2", price: "2500", okubun: "2" }.merge(overrides))
+  end
+
+  def make_order(mno: 202611001, ship: "注文の船", company: "出庫先海運株式会社")
+    Adlist.create!(no: "9100", company: company, ruby: "しゅっこ")
+    Order.create!(mno: mno, adlist_id: 9100, shipname: ship)
+  end
+
+  test "issue adds one line with a negative number and the columns of the old INSERT" do
+    result = nil
+    assert_difference -> { Stock.count }, 1 do
+      result = issue(num: "2", okubun: "1", memo: "貸出です", ship: "出庫船", company: "出庫会社")
+    end
+    assert result.success?
+    row = last_stock
+    assert_equal [ "A001", -2, 2500, 1, 0, 0 ], [ row.partno, row.num, row.irprice, row.okubun, row.ikubun, row.kind ]
+    assert_equal [ "貸出です", "出庫船", "出庫会社" ], [ row.memo, row.sname, row.cname ]
+    assert_equal Date.current, row.indate
+    assert_nil row.outdate
+    assert_equal [ 0, 0, 0, 0, 0, 0, 0 ], [ row.mno, row.onum, row.inprice, row.invalue, row.irvalue, row.orprice, row.orvalue ]
+    assert_equal 0, row.novalid
+    assert_equal 5, Stock.on_hand("A001") # 10 - 3 - 2
+  end
+
+  test "issue tells the stock after it and the kind" do
+    assert_equal "A001 を 2 出庫登録しました（売掛分。現在の在庫数 5）。", issue.message
+    assert_match(/貸出分/, issue(okubun: "1").message)
+  end
+
+  test "issue links the line to the order and keeps what was typed for the ship and the company" do
+    make_order
+    issue(mno: " 202611001 ", ship: "入力の船", company: "入力の会社")
+    row = last_stock
+    assert_equal 202611001, row.mno
+    assert_equal [ "入力の船", "入力の会社" ], [ row.sname, row.cname ]
+  end
+
+  test "issue without an order number is fine and stores 0" do
+    assert issue(mno: "").success?
+    assert_equal 0, last_stock.mno
+    assert issue(mno: nil).success?
+  end
+
+  test "issue refuses an order number that is not a number or not in the order ledger" do
+    make_order
+    assert_no_difference -> { Stock.count } do
+      assert_match(/数字/, issue(mno: "abc").error)
+      assert_match(/202699999/, issue(mno: "202699999").error)
+      assert_match(/数字/, issue(mno: "-5").error)
+    end
+  end
+
+  test "destination finds the ship and the company of the order" do
+    make_order
+    assert_equal({ mno: 202611001, ship: "注文の船", company: "出庫先海運株式会社" }, StockMaintainer.destination("202611001"))
+    assert_equal 202611001, StockMaintainer.destination("２０２６１１００１")[:mno]
+    assert_nil StockMaintainer.destination("202699999")
+    assert_nil StockMaintainer.destination("")
+    assert_nil StockMaintainer.destination(nil)
+    assert_nil StockMaintainer.destination("abc")
+  end
+
+  test "issue does not change the price of the part and accepts full-width numbers" do
+    assert issue(num: "３", price: "２８００").success?
+    assert_equal 2500, @part.reload.newprice
+    assert_equal [ -3, 2800 ], [ last_stock.num, last_stock.irprice ]
+  end
+
+  test "issue does not stop at more than the stock" do
+    result = issue(num: "20")
+    assert result.success?
+    assert_equal(-13, Stock.on_hand("A001"))
+    assert_match(/現在の在庫数 -13/, result.message)
+  end
+
+  test "issue refuses wrong quantities, prices and kinds" do
+    assert_no_difference -> { Stock.count } do
+      [ "", "abc", "0", "-1", "1.5", "1000000" ].each { |raw| assert_match(/出庫数/, issue(num: raw).error, raw.inspect) }
+      [ "", "abc", "-1", "10000000" ].each { |raw| assert_match(/仕入時販売単価/, issue(price: raw).error, raw.inspect) }
+      [ "", nil, "0", "3", "x" ].each { |raw| assert_match(/出庫区分/, issue(okubun: raw).error, raw.inspect) }
+    end
+  end
+
+  test "issue limits the length of the memo, the ship and the company" do
+    assert_no_difference -> { Stock.count } do
+      assert_match(/備考/, issue(memo: "あ" * 256).error)
+      assert_match(/船名/, issue(ship: "あ" * 51).error)
+      assert_match(/会社名/, issue(company: "あ" * 51).error)
+    end
+    assert issue(memo: "あ" * 255, ship: "あ" * 50, company: "あ" * 50).success?
+  end
+
+  test "issue blank memo, ship and company are stored as nothing" do
+    issue(memo: "　 ", ship: " ", company: "")
+    row = last_stock
+    assert_nil row.memo
+    assert_nil row.sname
+    assert_nil row.cname
+  end
+
+  test "issue refuses a part that is neither in the part ledger nor in the stock ledger" do
+    assert_no_difference -> { Stock.count } do
+      assert_match(/見つかりません/, issue(StockMaintainer.new("NOWHERE")).error)
+    end
+  end
+
+  test "issue works for a part that is only in the stock ledger and keeps its spelling" do
+    Stock.create!(partno: "LedgerOnly", num: 4, irprice: 100)
+    assert issue(StockMaintainer.new("ledgeronly"), num: "1").success?
+    assert_equal "LEDGERONLY", last_stock.partno
+    assert_equal 3, Stock.on_hand("LEDGERONLY")
+  end
+
+  test "issue does not touch the number on order" do
+    Stock.create!(partno: "A001", num: 0, onum: 4)
+    issue
+    assert_equal 0, last_stock.onum
+    assert_equal 4, Stock.of_part("A001").counted.sum(:onum)
+  end
 end

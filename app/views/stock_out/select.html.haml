@@ -1,0 +1,7 @@
+-# 出庫入力（旧 zaikoout.asp）で部品番号が無いとき。部品番号を入力して部品を選ぶ。
+- content_for :page_title, "出庫入力"
+
+= form_with url: stock_out_path, method: :get, class: "flex items-center gap-2" do
+  = text_field_tag :partno, nil, size: 12, autofocus: true, autocomplete: "off", class: "input input-bordered input-sm border-2 border-neutral bg-base-100", style: "ime-mode:disabled;"
+  = hidden_field_tag :mno, params[:mno], id: nil if params[:mno].present?
+  = submit_tag "部品番号を入力して部品選択", name: nil, class: "btn btn-sm btn-info"

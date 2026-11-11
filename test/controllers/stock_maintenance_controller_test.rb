@@ -184,10 +184,15 @@ class StockMaintenanceControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2500, @part.reload.newprice
   end
 
-  test "the button to register a receipt is in a row under the extra information, with its explanation" do
+  test "the buttons to register a receipt and an issue are in a row under the extra information, each with its explanation" do
     get stock_maintenance_url(partno: "A001")
     assert_select "table tr td a[href=?]", stock_in_path(partno: "A001"), text: "入庫登録"
+    assert_select "table tr td a[href=?]", stock_out_path(partno: "A001"), text: "出庫登録"
     assert_select "table tr td span.TB12", text: /入荷を登録するには/
+    assert_select "table tr td span.TB12", text: /出荷を登録するには/
+    # 2つのボタンは同じ行に並ぶ
+    row = css_select("tr").find { |tr| tr.at_css("a[href='#{stock_in_path(partno: 'A001')}']") }
+    assert row.at_css("a[href='#{stock_out_path(partno: 'A001')}']")
   end
 
   test "the button for the past rows is in the same row as the registering buttons when there are more rows" do
