@@ -68,11 +68,13 @@ ConoHa で `db/import/*.rb` を個別に流したり、テーブルだけ流し�
 `bin/rails runner db/import/import_stock_settings.rb` を実行して取り込み、コピーに含める。
 コピーする DB はマイグレーション済み（`schema_migrations` が最新）なので、コピー後に ConoHa で `db:migrate` は要らない。
 
-コピーはいつもの `scp` 1本。ただし **送る直前に WAL を本体に書き戻す**（下の1行目）。
+コピーはいつもの `scp` 1本。ただし **送る直前に、本番のアカウントを取り込み（`bin/pull_accounts`）、WAL を本体に書き戻す**（`wal_checkpoint`）。
 
 ```bash
 # Mac 側
 cd ~/k6
+bin/pull_accounts --dry-run   # 初回や不安なときは先にこれで、何が変わるか見る
+bin/pull_accounts             # ConoHa で変わったパスワード・権限・新規登録を、Mac の DB に取り込む
 sqlite3 storage/development.sqlite3 "DELETE FROM sessions;"   # Mac のログイン履歴を本番へ持ち込まない（Mac では再ログインになる）
 sqlite3 storage/development.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
 scp storage/development.sqlite3 kobeengine@kobeengine.com:/var/www/k6/storage/production.sqlite3
@@ -94,7 +96,16 @@ sudo systemctl restart k6
 - **`sessions` を空にしてから送る。** ログインの記録（IP・ブラウザ・ユーザーの対応）を本番へ持ち込まない。
   本番とは `secret_key_base` が違うので、Mac のクッキーは本番では使えない。それでも、記録そのものを渡さないほうがよい。
   Mac では、次にアクセスしたときに再ログインになる。
-- ConoHa 側で増えたデータ（注文・在庫の更新・ユーザー）はコピーで上書きされる。コピー前に、Mac 側が最新であることを確認する。
+- **`bin/pull_accounts` を忘れない。** ConoHa でユーザーが変えたパスワード、管理者が変えた権限、新規登録は、DB の丸ごと上書きで消える。
+  そこで、送る直前に本番の DB のコピーを `ssh`/`scp` で取り、`users`・`user_profiles` だけを Mac の DB に合流させる。
+  - 合流の規則: `email_address` が鍵（id は食い違ってよい）。両方にいる人は `updated_at` が新しいほうの値にする。
+    ConoHa にだけいる人は追加し、Mac にだけいる人はそのまま。`sessions` は取り込まない。
+  - 取り込みから送信までの間に ConoHa で変わった分は消える。間を空けずに送る（気になるなら、`sudo systemctl stop k6` で止めてから取り込む）。
+  - 取り込み前の開発 DB は `/var/folders/.../T/k6_dev_before_pull_accounts_*.sqlite3` に退避される（表示される）。
+  - ConoHa に `sqlite3` コマンドが必要（`ssh` 先で `.backup` を使う）。無ければ `sudo apt install sqlite3`。
+  - `users` や `user_profiles` に列を足したときは、`bin/pull_accounts` の `USER_COLUMNS`/`PROFILE_COLUMNS` も直す（列が違うと、取り込む前に止まる）。
+  - 試験用に `--snapshot FILE`（取ってある本番のコピーから取り込む）と `--db FILE`（取り込み先を変える）がある。
+- 注文・在庫など、ConoHa で増えた業務データ（ユーザー以外）は、コピーで上書きされる。コピー前に、Mac 側が最新であることを確認する。
 
 ### なぜ `assets:precompile` だけで完結するのか（`yarn build`を別途叩く必要がない理由）
 

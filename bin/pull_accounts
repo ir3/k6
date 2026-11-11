@@ -1,0 +1,168 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# ConoHa（本番）で変わったアカウント（パスワード・権限・新規登録）を、Mac の開発 DB に取り込む。
+#
+# 開発 DB は ConoHa へ丸ごと scp して上書きするので、そのまま送ると、本番でユーザーが変えたパスワードなどが消える。
+# 送る「直前」にこのスクリプトを実行して、本番のアカウントを開発 DB に合流させてから、いつもの手順で送る。
+#
+#   bin/pull_accounts                   # ConoHa から取って、開発 DB に取り込む
+#   bin/pull_accounts --dry-run         # 開発 DB は変えず、取り込んだらどうなるかだけ表示する
+#   bin/pull_accounts --snapshot FILE   # ConoHa へ繋がず、取ってある本番 DB のコピー（FILE）から取り込む
+#   bin/pull_accounts --db FILE         # 取り込み先を変える（既定は storage/development.sqlite3。試験用）
+#
+# 合流の規則（users.email_address を鍵にする。id は Mac と ConoHa で食い違ってよい）:
+#   - 両方にいる人: updated_at が新しいほうの値にする（同時刻は Mac のまま）。users と user_profiles は別々に判定
+#   - ConoHa にだけいる人（ConoHa で新規登録）: Mac に追加する
+#   - Mac にだけいる人: そのまま
+#   - sessions は取り込まない（送る前に空にする）
+#
+# 取り込みから送信までの間に ConoHa で変わった分は、上書きで消える。続けて送ること（DEPLOY.md 参照）。
+
+require "fileutils"
+require "json"
+require "open3"
+require "optparse"
+require "tmpdir"
+
+ROOT = File.expand_path("..", __dir__)
+HOST = "kobeengine@kobeengine.com"
+REMOTE_DB = "/var/www/k6/storage/production.sqlite3"
+REMOTE_SNAPSHOT = "/tmp/k6_prod_snapshot.sqlite3"
+
+USER_COLUMNS = %w[email_address password_digest created_at updated_at].freeze
+PROFILE_COLUMNS = %w[firstname lastname state sign_in_at sign_out_at created_at updated_at].freeze
+
+options = { db: File.join(ROOT, "storage", "development.sqlite3"), dry_run: false, snapshot: nil }
+OptionParser.new do |opts|
+  opts.on("--dry-run") { options[:dry_run] = true }
+  opts.on("--snapshot FILE") { |file| options[:snapshot] = File.expand_path(file) }
+  opts.on("--db FILE") { |file| options[:db] = File.expand_path(file) }
+end.parse!
+
+def sh!(*command, message:)
+  system(*command) || abort("#{message}（#{command.first(2).join(' ')}）")
+end
+
+# sqlite3 コマンドで SQL を流して、-json の結果を返す
+def query(db, sql)
+  out, status = Open3.capture2("sqlite3", "-json", db, sql)
+  abort "SQL の実行に失敗しました: #{sql[0, 60]}" unless status.success?
+  out.strip.empty? ? [] : JSON.parse(out)
+end
+
+def columns(db, table)
+  query(db, "PRAGMA table_info(#{table})").map { |row| row["name"] }
+end
+
+def accounts(db)
+  query(db, <<~SQL).to_h { |row| [ row["email_address"], row ] }
+    SELECT u.email_address, u.password_digest, u.updated_at,
+           p.state, p.firstname, p.lastname, p.sign_in_at, p.sign_out_at
+    FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id
+  SQL
+end
+
+def merge_sql(snapshot)
+  set_users = %w[password_digest updated_at].map do |col|
+    "#{col} = (SELECT pu.#{col} FROM prod.users pu WHERE pu.email_address = users.email_address)"
+  end.join(",\n    ")
+  set_profiles = %w[firstname lastname state sign_in_at sign_out_at updated_at].map do |col|
+    "#{col} = (SELECT pp.#{col} FROM prod.user_profiles pp JOIN acct_map m ON m.prod_id = pp.user_id " \
+      "WHERE m.dev_id = user_profiles.user_id)"
+  end.join(",\n    ")
+
+  <<~SQL
+    .bail on
+    .timeout 5000
+    ATTACH '#{snapshot.gsub("'", "''")}' AS prod;
+    BEGIN;
+
+    -- 両方にいる人: ConoHa のほうが新しければ、パスワードなどを ConoHa の値にする
+    UPDATE users SET
+        #{set_users}
+    WHERE EXISTS (SELECT 1 FROM prod.users pu
+                  WHERE pu.email_address = users.email_address AND pu.updated_at > users.updated_at);
+
+    -- ConoHa にだけいる人を追加する
+    INSERT INTO users (#{USER_COLUMNS.join(', ')})
+    SELECT #{USER_COLUMNS.join(', ')} FROM prod.users
+    WHERE email_address NOT IN (SELECT email_address FROM main.users);
+
+    -- id は食い違うので、メールアドレスで ConoHa の id と Mac の id を対応づける
+    CREATE TEMP TABLE acct_map AS
+      SELECT pu.id AS prod_id, u.id AS dev_id
+      FROM prod.users pu JOIN main.users u ON u.email_address = pu.email_address;
+
+    -- プロフィール（権限・名前・ログイン時刻）
+    UPDATE user_profiles SET
+        #{set_profiles}
+    WHERE EXISTS (SELECT 1 FROM prod.user_profiles pp JOIN acct_map m ON m.prod_id = pp.user_id
+                  WHERE m.dev_id = user_profiles.user_id AND pp.updated_at > user_profiles.updated_at);
+
+    INSERT INTO user_profiles (user_id, #{PROFILE_COLUMNS.join(', ')})
+    SELECT m.dev_id, #{PROFILE_COLUMNS.map { |col| "pp.#{col}" }.join(', ')}
+    FROM prod.user_profiles pp JOIN acct_map m ON m.prod_id = pp.user_id
+    WHERE m.dev_id NOT IN (SELECT user_id FROM main.user_profiles);
+
+    COMMIT;
+  SQL
+end
+
+abort "取り込み先の DB が見つかりません: #{options[:db]}" unless File.exist?(options[:db])
+
+Dir.mktmpdir("k6_pull_accounts") do |dir|
+  # 1) 本番 DB のコピーを用意する（稼働中の DB から .backup で一貫したコピーを取る。WAL の分も入る）
+  snapshot = options[:snapshot]
+  if snapshot
+    abort "指定の本番 DB のコピーが見つかりません: #{snapshot}" unless File.exist?(snapshot)
+  else
+    snapshot = File.join(dir, "prod_snapshot.sqlite3")
+    puts "ConoHa（#{HOST}）の DB のコピーを取ります…"
+    sh!("ssh", HOST, %(sqlite3 #{REMOTE_DB} ".backup '#{REMOTE_SNAPSHOT}'"),
+        message: "ConoHa での DB のコピーに失敗しました。ssh で繋げるか、ConoHa に sqlite3 コマンドがあるか確認してください")
+    sh!("scp", "-q", "#{HOST}:#{REMOTE_SNAPSHOT}", snapshot, message: "本番 DB のコピーの取得に失敗しました")
+    system("ssh", HOST, "rm", "-f", REMOTE_SNAPSHOT) # 失敗しても取り込みは続ける
+  end
+
+  # 2) 列が同じか確認する（列が増えていたら、この SQL が古いので止める）
+  { "users" => USER_COLUMNS, "user_profiles" => PROFILE_COLUMNS }.each do |table, cols|
+    [ [ "取り込み先", options[:db] ], [ "本番", snapshot ] ].each do |label, db|
+      actual = columns(db, table) - %w[id user_id]
+      next if actual.sort == cols.sort
+
+      abort "#{label}の #{table} の列がこのスクリプトの想定と違います（#{actual.sort.join(', ')}）。bin/pull_accounts の列を直してください"
+    end
+  end
+
+  # 3) 取り込む（--dry-run は、コピーに取り込んで、本物は変えない）
+  target = options[:db]
+  if options[:dry_run]
+    target = File.join(dir, "dry_run.sqlite3")
+    sh!("sqlite3", options[:db], ".backup '#{target}'", message: "試験用のコピーに失敗しました")
+  else
+    backup = File.join(Dir.tmpdir, "k6_dev_before_pull_accounts_#{Time.now.strftime('%Y%m%d%H%M%S')}.sqlite3")
+    sh!("sqlite3", options[:db], ".backup '#{backup}'", message: "取り込み前の DB の退避に失敗しました")
+    puts "取り込み前の DB を退避しました: #{backup}"
+  end
+
+  before = accounts(target)
+  out, status = Open3.capture2e("sqlite3", target, stdin_data: merge_sql(snapshot))
+  abort "取り込みに失敗しました（何も変わっていません）:\n#{out}" unless status.success?
+  after = accounts(target)
+
+  # 4) 何が変わったかを表示する（パスワードの値そのものは出さない）
+  added = after.keys - before.keys
+  password_changed = (after.keys & before.keys).select { |email| after[email]["password_digest"] != before[email]["password_digest"] }
+  profile_changed = (after.keys & before.keys).select do |email|
+    %w[state firstname lastname].any? { |key| after[email][key] != before[email][key] }
+  end
+
+  puts options[:dry_run] ? "【試行】開発 DB は変えていません。取り込むと、次のようになります。" : "取り込みました。"
+  puts "  追加（ConoHa で新規登録）: #{added.empty? ? 'なし' : added.join(', ')}"
+  puts "  パスワードを更新:         #{password_changed.empty? ? 'なし' : password_changed.join(', ')}"
+  puts "  権限・名前を更新:         #{profile_changed.empty? ? 'なし' : profile_changed.join(', ')}"
+  unless options[:dry_run]
+    puts "続けて、送る手順（sessions を空にする → wal_checkpoint → scp）に進んでください。"
+  end
+end
