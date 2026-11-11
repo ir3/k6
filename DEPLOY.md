@@ -80,22 +80,27 @@ sqlite3 storage/development.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
 scp storage/development.sqlite3 kobeengine@kobeengine.com:/var/www/k6/storage/production.sqlite3
 ```
 
-`bin/pull_accounts` は、ConoHa 側で次を **`ssh` で自動実行する**（本番の DB を止めずに、一貫したコピーを `/tmp` に取る）。
+`bin/pull_accounts` は、ConoHa 側で次を **`ssh` 1回で自動実行する**。必要なのは `users` と `user_profiles` だけなので、DB 全体（90MB 近く）は送らず、
+この 2 テーブルを SQL に書き出して（数十 KB）Mac へ流し、Mac で組み立て直す。本番の DB は読むだけで、止めない（WAL なので書き込みとぶつからない）。
+`kobeengine` ユーザーは公開鍵ではなくパスワード認証なので、聞かれるパスワードは1回（`ssh` を1本にしているのはそのため）。
 
 ```bash
 # ConoHa 側（bin/pull_accounts が自動で実行する。手で実行する必要はない）
-sqlite3 /var/www/k6/storage/production.sqlite3 ".backup '/tmp/k6_prod_snapshot.sqlite3'"
-# ↑ Mac が scp で取ったあと、bin/pull_accounts が rm -f /tmp/k6_prod_snapshot.sqlite3 で消す
+sqlite3 -cmd ".timeout 5000" /var/www/k6/storage/production.sqlite3 ".dump users user_profiles"
 ```
 
-自動の `ssh` が通らないときは、上の `.backup` を ConoHa で手で実行し、Mac で次のようにする（取り込みの結果は同じ）。
+自動の `ssh` が通らないときは、ConoHa で次を手で実行し、Mac で取り込む（取り込みの結果は同じ）。
 
 ```bash
-# Mac 側: 手で取ったコピーから取り込む
-scp kobeengine@kobeengine.com:/tmp/k6_prod_snapshot.sqlite3 /tmp/
-bin/pull_accounts --snapshot /tmp/k6_prod_snapshot.sqlite3
-rm -f /tmp/k6_prod_snapshot.sqlite3   # 本番のユーザーとパスワードのハッシュが入っているので、使い終わったら消す
-ssh kobeengine@kobeengine.com "rm -f /tmp/k6_prod_snapshot.sqlite3"   # ConoHa 側のコピーも消す
+# ConoHa 側
+sqlite3 /var/www/k6/storage/production.sqlite3 ".dump users user_profiles" > /tmp/k6_prod_accounts.sql
+
+# Mac 側: 取ってきて、DB に組み立てて、取り込む
+scp kobeengine@kobeengine.com:/tmp/k6_prod_accounts.sql /tmp/
+sqlite3 /tmp/k6_prod_accounts.sqlite3 < /tmp/k6_prod_accounts.sql
+bin/pull_accounts --snapshot /tmp/k6_prod_accounts.sqlite3
+rm -f /tmp/k6_prod_accounts.sql /tmp/k6_prod_accounts.sqlite3   # パスワードのハッシュが入っているので、使い終わったら消す
+ssh kobeengine@kobeengine.com "rm -f /tmp/k6_prod_accounts.sql"   # ConoHa 側も消す
 ```
 
 ```bash
@@ -118,6 +123,8 @@ sudo systemctl restart k6
   そこで、送る直前に本番の DB のコピーを `ssh`/`scp` で取り、`users`・`user_profiles` だけを Mac の DB に合流させる。
   - 合流の規則: `email_address` が鍵（id は食い違ってよい）。両方にいる人は `updated_at` が新しいほうの値にする。
     ConoHa にだけいる人は追加し、Mac にだけいる人はそのまま。`sessions` は取り込まない。
+    動作確認用のアカウント（`preview-check@kobeengine.com`。`bin/pull_accounts` の `EXCLUDED_EMAILS`）は、本番にあっても取り込まない。
+    取り込まないので、次に開発 DB を送って上書きすれば、本番から消える。
   - 取り込みから送信までの間に ConoHa で変わった分は消える。間を空けずに送る（気になるなら、`sudo systemctl stop k6` で止めてから取り込む）。
   - 取り込み前の開発 DB は `/var/folders/.../T/k6_dev_before_pull_accounts_*.sqlite3` に退避される（表示される）。
   - ConoHa に `sqlite3` コマンドが必要（`ssh` 先で `.backup` を使う）。無ければ `sudo apt install sqlite3`。

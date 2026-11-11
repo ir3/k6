@@ -28,10 +28,14 @@ require "tmpdir"
 ROOT = File.expand_path("..", __dir__)
 HOST = "kobeengine@kobeengine.com"
 REMOTE_DB = "/var/www/k6/storage/production.sqlite3"
-REMOTE_SNAPSHOT = "/tmp/k6_prod_snapshot.sqlite3"
 
 USER_COLUMNS = %w[email_address password_digest created_at updated_at].freeze
 PROFILE_COLUMNS = %w[firstname lastname state sign_in_at sign_out_at created_at updated_at].freeze
+
+# 取り込まないアカウント。動作確認用で、本番にも開発 DB にも置かない（開発 DB は本番へ丸ごと送るため）。
+# 本番に残っていても、取り込まなければ、次に開発 DB を送って上書きしたときに本番から消える。
+EXCLUDED_EMAILS = %w[preview-check@kobeengine.com].freeze
+STATE_NAMES = { 0 => "offline", 1 => "online", 2 => "manager", 9 => "admin" }.freeze
 
 options = { db: File.join(ROOT, "storage", "development.sqlite3"), dry_run: false, snapshot: nil }
 OptionParser.new do |opts|
@@ -84,10 +88,15 @@ def merge_sql(snapshot)
     WHERE EXISTS (SELECT 1 FROM prod.users pu
                   WHERE pu.email_address = users.email_address AND pu.updated_at > users.updated_at);
 
+    -- 取り込まないアカウント（動作確認用）
+    CREATE TEMP TABLE excluded_emails (email_address TEXT PRIMARY KEY);
+    INSERT INTO excluded_emails VALUES #{EXCLUDED_EMAILS.map { |email| "('#{email.gsub("'", "''")}')" }.join(', ')};
+
     -- ConoHa にだけいる人を追加する
     INSERT INTO users (#{USER_COLUMNS.join(', ')})
     SELECT #{USER_COLUMNS.join(', ')} FROM prod.users
-    WHERE email_address NOT IN (SELECT email_address FROM main.users);
+    WHERE email_address NOT IN (SELECT email_address FROM main.users)
+      AND email_address NOT IN (SELECT email_address FROM excluded_emails);
 
     -- id は食い違うので、メールアドレスで ConoHa の id と Mac の id を対応づける
     CREATE TEMP TABLE acct_map AS
@@ -118,11 +127,21 @@ Dir.mktmpdir("k6_pull_accounts") do |dir|
     abort "指定の本番 DB のコピーが見つかりません: #{snapshot}" unless File.exist?(snapshot)
   else
     snapshot = File.join(dir, "prod_snapshot.sqlite3")
-    puts "ConoHa（#{HOST}）の DB のコピーを取ります…"
-    sh!("ssh", HOST, %(sqlite3 #{REMOTE_DB} ".backup '#{REMOTE_SNAPSHOT}'"),
-        message: "ConoHa での DB のコピーに失敗しました。ssh で繋げるか、ConoHa に sqlite3 コマンドがあるか確認してください")
-    sh!("scp", "-q", "#{HOST}:#{REMOTE_SNAPSHOT}", snapshot, message: "本番 DB のコピーの取得に失敗しました")
-    system("ssh", HOST, "rm", "-f", REMOTE_SNAPSHOT) # 失敗しても取り込みは続ける
+    # kobeengine ユーザーはパスワード認証なので、接続は ssh 1 回だけにして、パスワードを 1 回で済ませる（パスワードの入力は端末で行われる）。
+    # 必要なのは users と user_profiles だけなので、DB 全体（90MB 近く。遅い回線だと十分以上かかる）は送らず、
+    # ConoHa でその 2 テーブルを SQL に書き出して（数十 KB）標準出力へ流し、Mac で組み立て直す。
+    # 稼働中の DB を読むだけなので、本番は止めない（WAL なので、書き込みとぶつからない）。
+    remote = %(sqlite3 -cmd ".timeout 5000" #{REMOTE_DB} ".dump users user_profiles")
+    puts "ConoHa（#{HOST}）から本番のアカウントを取ります…（パスワードを聞かれたら、kobeengine ユーザーのパスワード。1 回だけです）"
+    started = Time.now
+    dump = File.join(dir, "accounts.sql")
+    system("ssh", "-o", "ConnectTimeout=20", "-o", "ServerAliveInterval=15", HOST, remote, out: dump) ||
+      abort("ConoHa からの取得に失敗しました。ssh で繋げるか、ConoHa に sqlite3 コマンドがあるか確認してください")
+    # 途中で切れていないか（.dump は最後が COMMIT; で終わる）。切れていたら、組み立てても空になるので、ここで止める
+    abort "取得が途中で切れました。もう一度実行してください" unless File.read(dump).rstrip.end_with?("COMMIT;")
+    out, status = Open3.capture2e("sqlite3", snapshot, stdin_data: File.read(dump))
+    abort "取得したアカウントの組み立てに失敗しました:\n#{out}" unless status.success?
+    puts "  取得しました（#{(File.size(dump) / 1024.0).round(1)} KB、#{(Time.now - started).round(1)} 秒）"
   end
 
   # 2) 列が同じか確認する（列が増えていたら、この SQL が古いので止める）
@@ -154,14 +173,21 @@ Dir.mktmpdir("k6_pull_accounts") do |dir|
   # 4) 何が変わったかを表示する（パスワードの値そのものは出さない）
   added = after.keys - before.keys
   password_changed = (after.keys & before.keys).select { |email| after[email]["password_digest"] != before[email]["password_digest"] }
-  profile_changed = (after.keys & before.keys).select do |email|
-    %w[state firstname lastname].any? { |key| after[email][key] != before[email][key] }
+  # 権限・名前は、何から何へ変わるかも出す（空は「なし」）
+  show = ->(key, value) { key == "state" ? (STATE_NAMES[value] || value.inspect) : (value.to_s.empty? ? "なし" : value) }
+  profile_changed = (after.keys & before.keys).filter_map do |email|
+    diffs = %w[state firstname lastname].filter_map do |key|
+      "#{key}: #{show.call(key, before[email][key])} → #{show.call(key, after[email][key])}" if after[email][key] != before[email][key]
+    end
+    "#{email}（#{diffs.join(', ')}）" if diffs.any?
   end
+  skipped = EXCLUDED_EMAILS & query(snapshot, "SELECT email_address FROM users").map { |row| row["email_address"] }
 
   puts options[:dry_run] ? "【試行】開発 DB は変えていません。取り込むと、次のようになります。" : "取り込みました。"
   puts "  追加（ConoHa で新規登録）: #{added.empty? ? 'なし' : added.join(', ')}"
   puts "  パスワードを更新:         #{password_changed.empty? ? 'なし' : password_changed.join(', ')}"
-  puts "  権限・名前を更新:         #{profile_changed.empty? ? 'なし' : profile_changed.join(', ')}"
+  puts "  権限・名前を更新:         #{profile_changed.empty? ? 'なし' : profile_changed.join(' / ')}"
+  puts "  取り込まない（動作確認用）: #{skipped.join(', ')}（本番にあります。次に開発 DB を送ると、本番から消えます）" unless skipped.empty?
   unless options[:dry_run]
     puts "続けて、送る手順（sessions を空にする → wal_checkpoint → scp）に進んでください。"
   end
