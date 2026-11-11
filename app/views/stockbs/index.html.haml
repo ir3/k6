@@ -1,69 +1,38 @@
 - content_for :page_title, "Ｂ部品在庫表示"
-%table
-  %tr
-    %td
-      = paginate @stockbs, window: 4, outer_window: 5, left: 1, right: 3
-
-%table.center-table.radius-table.list-table{width: "100%"}
+.flex.gap-2.my-2.items-center
+  = form_with url: stockbs_path, method: :get, local: true, class: "flex gap-2 items-center" do |f|
+    = f.text_field :partno, value: @partno, placeholder: "部品コードの一部", size: 12, class: "input input-bordered input-sm", style: "ime-mode:disabled;"
+    %label.flex.items-center.gap-1
+      = f.check_box :in_stock, { checked: @in_stock }, "1", nil
+      %span.text-sm 在庫有りのみ
+    = f.submit "検索", class: "btn btn-sm btn-secondary"
+  = link_to "新規在庫登録", new_stockb_path, class: "btn btn-sm btn-info"
+= paginate @rows, window: 4, outer_window: 5, left: 1, right: 3
+%table.center-table.radius-table.zebra-table.list-table{width: "100%"}
   %thead.bg-primary.text-primary-content
     %tr
-      %th Id
-      %th Partno
-      %th Kind
-      %th Indate
-      %th Num
-      %th Inprice
-      %th Irprice
-      %th Invalue
-      %th Irvalue
-      %th Outdate
-      %th Onum
-      %th Mno
-      %th Orprice
-      %th Orvalue
-      %th Itemno
-      %th Cordno
-      %th Memo
-      %th Cname
-      %th Sname
-      %th Novalid
-      %th Ikubun
-      %th Okubun
-      %th Updated at
-      %th
-      %th
-      %th
-
-  %tbody
-    - @stockbs.each do |stockb|
-      %tr
-        %td= stockb.id
-        %td= stockb.partno
-        %td= stockb.kind
-        %td= stockb.indate
-        %td= stockb.num
-        %td= stockb.inprice
-        %td= stockb.irprice
-        %td= stockb.invalue
-        %td= stockb.irvalue
-        %td= stockb.outdate
-        %td= stockb.onum
-        %td= stockb.mno
-        %td= stockb.orprice
-        %td= stockb.orvalue
-        %td= stockb.itemno
-        %td= stockb.cordno
-        %td= stockb.memo
-        %td= stockb.cname
-        %td= stockb.sname
-        %td= stockb.novalid
-        %td= stockb.ikubun
-        %td= stockb.okubun
-        %td= stockb.updated_at.strftime('%Y/%m/%d %H:%M')
-        %td= link_to 'Show', stockb
-        %td= link_to 'Edit', edit_stockb_path(stockb)
-        %td= link_to 'Destroy', stockb, :method => :delete, :data => { :confirm => 'Are you sure?' }
-
-%br
-
-= link_to 'New Stockb', new_stockb_path
+      %th 部品コード
+      %th= @second_title
+      %th 和文名称
+      %th 英文名称
+      %th 販売単価
+      %th 在庫数
+      %th 販売単位
+      %th 重量(kg)
+      %th 計測単位
+  %tbody{style: "cursor: pointer"}
+    - @rows.each do |row|
+      %tr{data: {controller: "row-link", row_link_url_value: kepart_path(row.id), action: "click->row-link#navigate"}}
+        %td= link_to row.pcode, kepart_path(row.id), class: "font-bold"
+        %td= row.second
+        %td= row.jname
+        %td= row.ename
+        %td.text-right= number_with_delimiter(row.price)
+        %td= row.on_hand
+        %td= row.sel_unit
+        %td= row.weightkg
+        %td= row.munit
+= paginate @rows, window: 4, outer_window: 5, left: 1, right: 3
+%p.TB12.mt-2
+  部品コードに「~」を入れて検索すると、「~」付きの部品を寸法つきで表示します（入れないときは「~」の無い部品を型式つきで表示します）。
+  行をクリックすると、その部品の詳細（在庫の入庫・出庫）を開きます。
