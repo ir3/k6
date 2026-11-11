@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class MenusController < ApplicationController
-  allow_unauthenticated_access only: :index
-
   def index
     session[:visited_menu] = true
     unless session[:ymd]
@@ -33,5 +31,14 @@ class MenusController < ApplicationController
 
     Ksystem.set("sales_person", sales_person)
     redirect_to menu_path, notice: "営業担当(部品見積依頼票)を更新しました"
+  end
+
+  private
+
+  # ログインしていないままメニューを要求したら、ログイン画面ではなく HOME へ飛ばす。
+  # HOME もログインが要るので、そこからログイン画面へ進み、ログイン後は HOME → メニューの順になる。
+  # 「ログイン後に戻る先」はメニューのものを覚えさせない（PATCH の URL などを覚えても戻れないため）。
+  def request_authentication
+    redirect_to welcom_index_path
   end
 end
