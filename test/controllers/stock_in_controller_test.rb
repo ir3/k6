@@ -1,6 +1,6 @@
 require "test_helper"
 
-# 入庫入力（旧 zaikoin.asp）のテスト。在庫メンテナンスの「入庫入力」から開く
+# 入庫入力（旧 zaikoin.asp）のテスト。在庫メンテナンスの「入庫登録」から開く
 class StockInControllerTest < ActionDispatch::IntegrationTest
   setup do
     sign_in_as users(:one)
@@ -151,7 +151,7 @@ class StockInControllerTest < ActionDispatch::IntegrationTest
 
   test "the stock maintenance screen has the button to open the entry of the part" do
     get stock_maintenance_url(partno: "A001")
-    assert_select "a[href=?]", stock_in_path(partno: "A001"), text: "入庫入力"
+    assert_select "a[href=?]", stock_in_path(partno: "A001"), text: "入庫登録"
   end
 
   test "the explanations are in the annotation style and not on the table headers" do

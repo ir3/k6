@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # 入庫入力（旧 zaikoin.asp）。部品の入庫を、入庫数・仕入時販売単価・入庫区分・備考・船名・会社名で登録する。
-# 在庫メンテナンスの「入庫入力」から開く。部品番号が無いときは、旧ASPと同じく部品番号の入力欄を出す。
+# 在庫メンテナンスの「入庫登録」から開く。部品番号が無いときは、旧ASPと同じく部品番号の入力欄を出す。
 class StockInController < ApplicationController
   before_action :set_maintainer
   before_action :require_known_part, only: :create
