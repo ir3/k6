@@ -80,6 +80,24 @@ sqlite3 storage/development.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
 scp storage/development.sqlite3 kobeengine@kobeengine.com:/var/www/k6/storage/production.sqlite3
 ```
 
+`bin/pull_accounts` は、ConoHa 側で次を **`ssh` で自動実行する**（本番の DB を止めずに、一貫したコピーを `/tmp` に取る）。
+
+```bash
+# ConoHa 側（bin/pull_accounts が自動で実行する。手で実行する必要はない）
+sqlite3 /var/www/k6/storage/production.sqlite3 ".backup '/tmp/k6_prod_snapshot.sqlite3'"
+# ↑ Mac が scp で取ったあと、bin/pull_accounts が rm -f /tmp/k6_prod_snapshot.sqlite3 で消す
+```
+
+自動の `ssh` が通らないときは、上の `.backup` を ConoHa で手で実行し、Mac で次のようにする（取り込みの結果は同じ）。
+
+```bash
+# Mac 側: 手で取ったコピーから取り込む
+scp kobeengine@kobeengine.com:/tmp/k6_prod_snapshot.sqlite3 /tmp/
+bin/pull_accounts --snapshot /tmp/k6_prod_snapshot.sqlite3
+rm -f /tmp/k6_prod_snapshot.sqlite3   # 本番のユーザーとパスワードのハッシュが入っているので、使い終わったら消す
+ssh kobeengine@kobeengine.com "rm -f /tmp/k6_prod_snapshot.sqlite3"   # ConoHa 側のコピーも消す
+```
+
 ```bash
 # ConoHa 側: コピー後に反映する（「通常のデプロイ手順」と同じ）
 sudo systemctl restart k6
