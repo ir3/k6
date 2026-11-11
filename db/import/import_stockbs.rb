@@ -2,9 +2,15 @@
 
 # Access DB 在庫台帳B → k6 stockbs インポートスクリプト
 # 使い方: bin/rails runner db/import/import_stockbs.rb
+#   DRY_RUN=1 bin/rails runner db/import/import_stockbs.rb   … 何も変えずに、取り込みで消える行（と追加される行数）を表示する
+#   MAX_DELETE=件数 bin/rails runner db/import/import_stockbs.rb … Access に無い行を、既定の50件より多く消すとき
+#
+# Access に無い行（本番の旧システムで消された行）は、取り込みのあと k6 からも削除する（db/import/prune_missing.rb 参照）。
+# 消すのは、Access の最大ID以下の行だけで、k6 で後から足した行は消さない。
 
 require "csv"
 require "open3"
+require_relative "prune_missing"
 
 MDB_FILE = Rails.root.join("db/access/fsdb.mdb").to_s
 TABLE    = "在庫台帳B"
@@ -77,6 +83,9 @@ end
 imported = 0
 
 i        = 0
+access_ids = Set.new # Access にある行の ID（取り込みのあと、Access に無い行を消すのに使う）
+dry_run    = ENV["DRY_RUN"].present?
+max_delete = Integer(ENV.fetch("MAX_DELETE", ImportPrune::DEFAULT_MAX_DELETE))
 
 CSV.parse(csv_data, headers: true) do |row|
   i += 1
@@ -94,8 +103,21 @@ CSV.parse(csv_data, headers: true) do |row|
   attrs["updated_at"] ||= Time.current
   attrs["created_at"] = attrs["updated_at"]
 
-  Stockb.upsert(attrs)
+  access_ids << attrs["id"].to_i
+  Stockb.upsert(attrs) unless dry_run
   imported += 1
 end
 
-puts "完了: #{imported}件インポート"
+if dry_run
+  puts "DRY_RUN: Access 在庫台帳B #{imported}件のうち、k6 に無い行 #{(access_ids - Stockb.unscoped.pluck(:id).to_set).size}件（何も変えていません）"
+else
+  puts "完了: #{imported}件インポート"
+end
+
+# Access に無い行を削除する（取り込みに成功して、Access から行が読めたときだけ）
+begin
+  ImportPrune.call(Stockb, access_ids, label: "stockbs", max_delete: max_delete, dry_run: dry_run)
+rescue ImportPrune::TooMany => e
+  puts "ERROR: #{e.message}"
+  exit 1
+end

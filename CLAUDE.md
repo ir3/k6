@@ -140,6 +140,13 @@ bin/rails runner db/import/import_adlists.rb
 ```
 
 - `db/access/` は `.gitignore` 対象（機密データ）
+- **在庫台帳（`import_stocks.rb`）と在庫台帳B（`import_stockbs.rb`）は、Access に無い行を k6 からも削除する**
+  （本番の旧システムは台帳の行を消すことがあり、追加・更新だけの取り込みでは、消えた行が k6 に残って在庫数が食い違うため。
+  2026-11-11 に A部品10行・B部品2行がこの差になった）。処理は `db/import/prune_missing.rb`
+  - 消すのは、Access の最大ID以下で Access に無い行だけ。k6 で後から足した行（IDが最大より大きい）は消さない
+  - 消す行数が 50 件を超えたら、何も消さずに止まる（Access の取り違え・読み込み失敗の対策）。承知の上なら `MAX_DELETE=件数`
+  - `DRY_RUN=1 bin/rails runner db/import/import_stocks.rb` で、何も変えずに、消える行を確認できる
+  - 消した行は、実行のたびに全件表示される
 - CP932 特殊文字（㈱, 﨑 など）の文字化けは `MOJIBAKE_MAP` で gsub 置換
 - 詳細は `~/ob/Claude/access_to_sqlite3.md` 参照
 
