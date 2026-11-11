@@ -62,6 +62,9 @@ Rails.application.routes.draw do
   post 'stock_maintenance/adjust'   => 'stock_maintenance#adjust',   as: :stock_maintenance_adjust
   post 'stock_maintenance/standard' => 'stock_maintenance#standard', as: :stock_maintenance_standard
   post 'stock_maintenance/forecast' => 'stock_maintenance#forecast', as: :stock_maintenance_forecast
+  # 入庫入力（旧 zaikoin.asp）。在庫メンテナンスの「入庫入力」から開く。部品番号は ?partno= で渡す
+  get  'stock_in'                   => 'stock_in#new',              as: :stock_in
+  post 'stock_in'                   => 'stock_in#create'
   resources :stocks
   resources :stockbs
 

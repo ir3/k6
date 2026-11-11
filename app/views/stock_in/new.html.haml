@@ -1,0 +1,83 @@
+-# 入庫入力（旧 zaikoin.asp）。在庫メンテナンスの「入庫入力」から開く。
+- content_for :page_title, "入庫入力"
+- partno = @maintainer.partno
+- input_cls = "input input-bordered input-xs border-2 border-neutral bg-base-100"
+- head_cls = "bg-primary text-primary-content"
+- number = ->(value) { value.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ",") }
+- centered = "text-align: center;"
+- right = "text-align: right;"
+
+.mb-3.flex.items-center.gap-3
+  = link_to "戻る", stock_maintenance_path(partno: partno), class: "btn btn-sm btn-info"
+  %span 部品コード #{partno}
+
+%p.TB12{style: "margin: 0 0 4px 30px;"}
+  単価に修正があれば新単価も入力します。返品などの事情は、備考に入力します。
+
+= form_with url: stock_in_path, method: :post do
+  = hidden_field_tag :partno, partno, id: nil
+
+  %table.center-table.radius-table.row-compact{width: "99%", align: "center"}
+    %tr{class: head_cls}
+      %th{width: "18%"} 部品コード
+      %th{width: "8%"} 形式
+      %th{width: "20%"} 和文名称
+      %th 英文名称
+    %tr
+      %td{style: "#{centered} font-weight: bold;"}= @part&.pcode || partno
+      %td{style: centered}= @part&.form
+      %td= @part&.jname
+      %td= @part&.ename
+
+  %table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+    %tr{class: head_cls}
+      %th 販売単価
+      %th 仕入時販売単価
+      %th 現在在庫数
+      %th 今回入庫数
+      %th 販売単位
+      %th 重量(kg)
+      %th 計測単位
+    %tr
+      %td{style: right}= (number.call(@part.newprice) if @part&.newprice)
+      %td{style: centered}
+        = text_field_tag :price, @form[:price], size: 10, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 7rem; text-align: right;"
+      %td{style: "#{centered} font-weight: bold;"}= @on_hand
+      %td{style: centered}
+        = text_field_tag :num, @form[:num], size: 5, autocomplete: "off", autofocus: true, class: input_cls, style: "ime-mode:disabled; width: 5rem; text-align: right;"
+      %td{style: centered}= @part&.sel_unit
+      %td{style: centered}= @part&.weightkg
+      %td{style: centered}= @part&.munit
+  - if @part.nil?
+    %p.TB12{style: "margin: 4px 0 0 30px;"} この部品は部品台帳に登録がないので、部品の情報は表示できません（在庫台帳に登録のある部品です）。
+
+  %table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+    %tr{class: head_cls}
+      %th 備考
+    %tr
+      %td
+        = text_area_tag :memo, @form[:memo], cols: 120, rows: 2, class: "textarea textarea-bordered textarea-xs border-2 border-neutral bg-base-100", style: "width: 100%;"
+
+  %table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+    %tr{class: head_cls}
+      %th 入庫区分
+    %tr
+      %td{style: centered}
+        - Stock::INBOUND_KINDS.each do |kind, name|
+          %label{style: "margin: 0 8px; white-space: nowrap;"}
+            = radio_button_tag :ikubun, kind, @form[:ikubun].to_i == kind
+            = name
+
+  %table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+    %tr{class: head_cls}
+      %th 船名
+      %th 会社名
+    %tr
+      %td{style: centered}
+        = text_field_tag :ship, @form[:ship], size: 60, autocomplete: "off", class: input_cls, style: "width: 100%;"
+      %td{style: centered}
+        = text_field_tag :company, @form[:company], size: 60, autocomplete: "off", class: input_cls, style: "width: 100%;"
+
+  .mt-3.flex.items-center.gap-3{style: "margin-left: 30px;"}
+    %span.TB12 入庫数を入力後 右のボタンをクリックします。
+    = submit_tag "入庫登録", name: nil, class: "btn btn-sm btn-info"

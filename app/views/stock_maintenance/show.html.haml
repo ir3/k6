@@ -14,6 +14,7 @@
 
 .mb-3.flex.items-center.gap-3
   = link_to "戻る", :back, class: "btn btn-sm btn-info"
+  = link_to "入庫入力", stock_in_path(partno: partno), class: "btn btn-sm btn-info"
   %span 部品コード #{partno}
 
 %table.center-table.radius-table.row-compact{width: "99%", align: "center"}
