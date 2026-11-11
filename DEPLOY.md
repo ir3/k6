@@ -73,6 +73,7 @@ ConoHa で `db/import/*.rb` を個別に流したり、テーブルだけ流し�
 ```bash
 # Mac 側
 cd ~/k6
+sqlite3 storage/development.sqlite3 "DELETE FROM sessions;"   # Mac のログイン履歴を本番へ持ち込まない（Mac では再ログインになる）
 sqlite3 storage/development.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
 scp storage/development.sqlite3 kobeengine@163.44.127.60:/var/www/k6/storage/production.sqlite3
 ```
@@ -87,7 +88,12 @@ sudo systemctl restart k6
   `wal_checkpoint` の結果の先頭が `0` なら書き戻し完了。`1` なら開発サーバーが使用中なので、止めてからやり直す。
 - 念のため: ConoHa の `storage/` に `production.sqlite3-wal` / `production.sqlite3-shm` が残っていると、古い WAL が
   新しい DB に適用されて壊れる恐れがある。コピーの前後で `k6` を止められるなら、止めてから WAL/SHM を消して差し替えると確実。
-- **開発 DB の中身がそのまま本番に入る。** 動作確認用のアカウント（`preview-check@kobeengine.com`）も含まれる。
+- **開発 DB の中身がそのまま本番に入る。** そのため、動作確認用のアカウント（`preview-check@kobeengine.com`）は開発 DB に入れない。
+  ブラウザでの動作確認は、開発 DB のコピー `storage/preview.sqlite3` を使う（`bin/prepare_preview`。`.claude/launch.json` の `rails-preview` が `K6_DB=storage/preview.sqlite3` で起動）。
+  送る前に `sqlite3 storage/development.sqlite3 "select email_address from users"` で、見覚えのないアカウントが無いか見ておくと確実。
+- **`sessions` を空にしてから送る。** ログインの記録（IP・ブラウザ・ユーザーの対応）を本番へ持ち込まない。
+  本番とは `secret_key_base` が違うので、Mac のクッキーは本番では使えない。それでも、記録そのものを渡さないほうがよい。
+  Mac では、次にアクセスしたときに再ログインになる。
 - ConoHa 側で増えたデータ（注文・在庫の更新・ユーザー）はコピーで上書きされる。コピー前に、Mac 側が最新であることを確認する。
 
 ### なぜ `assets:precompile` だけで完結するのか（`yarn build`を別途叩く必要がない理由）

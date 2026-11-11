@@ -11,7 +11,9 @@ default: &default
 
 development:
   <<: *default
-  database: storage/development.sqlite3
+  # K6_DB は動作確認用（bin/prepare_preview）。普段は指定しないので開発 DB を使う。
+  # 動作確認用のアカウントを、本番へ丸ごとコピーする開発 DB に入れないために分けている。
+  database: <%= ENV.fetch("K6_DB", "storage/development.sqlite3") %>
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".

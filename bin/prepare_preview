@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# 動作確認（ブラウザ）用の DB を用意する。
+#
+# 開発 DB（storage/development.sqlite3）は ConoHa へ丸ごと scp するので、動作確認用のアカウントを入れない。
+# このスクリプトは開発 DB を storage/preview.sqlite3 にコピーして、その中だけに preview-check を作る。
+# 確認用のサーバーは .claude/launch.json の rails-preview（K6_DB=storage/preview.sqlite3）で起動する。
+#
+#   bin/prepare_preview           # preview.sqlite3 があればそのまま使い、アカウントだけ確認する
+#   bin/prepare_preview --fresh   # 開発 DB から作り直す（確認で変えたデータを捨てたいとき）
+
+require "fileutils"
+require "rbconfig"
+
+ROOT = File.expand_path("..", __dir__)
+SOURCE = File.join(ROOT, "storage", "development.sqlite3")
+PREVIEW = File.join(ROOT, "storage", "preview.sqlite3")
+EMAIL = "preview-check@kobeengine.com"
+# 確認用 DB の中だけで使うテスト用パスワード（このアカウントは開発 DB と本番には存在しない）
+PASSWORD = "previewcheck123"
+
+Dir.chdir(ROOT)
+
+if ARGV.include?("--fresh") || !File.exist?(PREVIEW)
+  abort "開発 DB が見つかりません: #{SOURCE}" unless File.exist?(SOURCE)
+
+  FileUtils.rm_f([ PREVIEW, "#{PREVIEW}-wal", "#{PREVIEW}-shm" ])
+  # WAL に残っている変更も含めて、一貫したコピーを取る
+  system("sqlite3", SOURCE, ".backup '#{PREVIEW}'") || abort("開発 DB のコピーに失敗しました")
+  puts "開発 DB から #{PREVIEW} を作りました"
+end
+
+# preview.sqlite3 にだけアカウントを作る（K6_DB を固定して、開発 DB には触れない）
+code = <<~RUBY
+  raise "preview.sqlite3 以外に接続しています" unless ActiveRecord::Base.connection_db_config.database.end_with?("preview.sqlite3")
+
+  user = User.find_or_initialize_by(email_address: "#{EMAIL}")
+  user.password = "#{PASSWORD}" if user.new_record?
+  user.save!
+  profile = user.user_profile || user.build_user_profile
+  profile.firstname = "preview" if profile.firstname.blank?
+  profile.lastname = "check" if profile.lastname.blank?
+  profile.state = :admin
+  profile.save!
+  puts "確認用アカウント: #{EMAIL}（管理者）"
+RUBY
+env = { "K6_DB" => "storage/preview.sqlite3", "LANG" => "ja_JP.UTF-8" }
+system(env, RbConfig.ruby, "bin/rails", "runner", code) || abort("アカウントの作成に失敗しました")
