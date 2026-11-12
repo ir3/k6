@@ -8,12 +8,50 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
                              itemno: "7", weightkg: 1.5, munit: 2, newprice: 2500, comment: "元の備考")
   end
 
-  test "the list headings are in Japanese" do
+  test "the list headings are in Japanese and the first column is the form" do
     get keparts_url
     headings = css_select("thead th").map { |th| th.text.strip }
-    assert_equal %w[No. ID 部品コード 形式 寸法 和文名称 現行単価(円) 在庫 販売単位 重量(kg) 計測単位 ItemNo CORDNo 備考 更新日], headings
+    assert_equal %w[No. ID 部品コード 形式 和文名称 現行単価(円) 在庫 販売単位 重量(kg) 計測単位 ItemNo CORDNo 備考 更新日], headings
     # 一覧の最下部に、新規作成のボタンは置かない
     assert_select "a[href=?]", new_kepart_path, count: 0
+  end
+
+  test "the list has the search frame with its button" do
+    get keparts_url(keyword: "E00")
+    assert_select "form[action=?][method=get]", keparts_path do
+      assert_select "input[name=keyword][value=?]", "E00"
+      assert_select "input[type=submit][value=?]", "Ｂ検索"
+    end
+    assert_match(/有効な検索条件：E00/, response.body)
+  end
+
+  test "without a tilde in the condition only the parts without a tilde are listed" do
+    Kepart.create!(pcode: "E002", size: "S", form: "F2")
+    get keparts_url
+    assert_select "td a", text: "E002"
+    assert_select "td a", text: "E001~", count: 0
+    get keparts_url(keyword: "E00")
+    assert_select "td a", text: "E002"
+    assert_select "td a", text: "E001~", count: 0
+  end
+
+  test "with a tilde in the condition only the parts with a tilde are listed and the column is the size" do
+    Kepart.create!(pcode: "E002", size: "S", form: "F2")
+    get keparts_url(keyword: "E001~")
+    assert_select "td a", text: "E001~"
+    assert_select "td a", text: "E002", count: 0
+    headings = css_select("thead th").map { |th| th.text.strip }
+    assert_includes headings, "寸法"
+    assert_not_includes headings, "形式"
+    row = css_select("tbody tr").find { |tr| tr.css("td a").map(&:text).include?("E001~") }
+    assert_includes row.css("td").map { |td| td.text.strip }, "10x20"
+  end
+
+  test "the search keeps the condition on the next page and takes full-width characters" do
+    Kepart.create!(pcode: "FW123")
+    get keparts_url(keyword: "ｆｗ１")
+    assert_select "td a", text: "FW123"
+    assert_match(/有効な検索条件：fw1/, response.body)
   end
 
   test "someone who is not signed in is sent to the login screen" do

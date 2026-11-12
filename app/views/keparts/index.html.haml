@@ -1,5 +1,14 @@
 - model_class = Kepart
 - content_for :page_title, "Ｂ部品台帳表示"
+-# 上部の検索の枠（旧 hiteijosel.asp）。部品コードの一部で検索する
+- input_cls = "input input-bordered input-sm border-2 border-neutral bg-base-100 w-44"
+- btn_cls = "btn btn-sm wtext btn-info"
+.mb-3.flex.flex-wrap.items-center.gap-x-6.gap-y-2
+  = form_with url: keparts_path, method: :get, class: "flex flex-wrap items-center gap-2" do
+    %span 有効な検索条件：#{@keyword}
+    %span.TB12 部品コードの一部を指定
+    = text_field_tag :keyword, @keyword, id: "keparts_keyword", size: 16, autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+    = submit_tag "Ｂ検索", name: nil, class: btn_cls
 %table
   %tr
     %td
@@ -11,8 +20,7 @@
       %th{style: 'width:30px'}= 'No.'
       %th{style: 'width:30px'}= model_class.human_attribute_name(:id)
       %th{style: 'width:90px'}= model_class.human_attribute_name(:pcode)
-      %th= model_class.human_attribute_name(:form)
-      %th= model_class.human_attribute_name(:size)
+      %th= model_class.human_attribute_name(@tilde ? :size : :form)
       %th= model_class.human_attribute_name(:jname)
       %th= model_class.human_attribute_name(:price)+'(円)'
       %th= model_class.human_attribute_name(:stock)
@@ -29,8 +37,7 @@
         %td{style: 'text-align:center'}= i+1
         %td{style: 'text-align:center'}= link_to kepart.id, kepart_path(kepart)
         %td= link_to kepart.pcode, kepart_path(kepart)
-        %td= kepart.form
-        %td= kepart.size
+        %td= @tilde ? kepart.size : kepart.form
         %td= kepart.jname
         %td{style: 'text-align:right'}= kepart.price.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
         %td= kepart.stock

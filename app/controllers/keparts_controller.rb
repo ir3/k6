@@ -5,13 +5,15 @@ class KepartsController < ApplicationController
 
   # GET /keparts
   # GET /keparts.json
+  # Ｂ部品台帳表示（旧 hiteijosel.asp）。部品コードの一部で検索する。
+  # 旧ASPと同じく、検索した部品コードに「~」が含まれるときは「~」付きのＢ部品だけ（列は寸法）、
+  # 含まれないとき（検索なしの初期表示も）は「~」の無いＢ部品だけ（列は形式）を出す。
   def index
-    @keyword = params[:keyword]
-    @keparts = if @keyword && !@keyword.empty?
-                 Kepart.where("pcode LIKE ?", "%#{Kepart.sanitize_sql_like(@keyword)}%").order(:id).page params[:page]
-               else
-                 Kepart.page params[:page]
-               end
+    @keyword = params[:keyword].to_s.unicode_normalize(:nfkc).strip
+    @tilde = @keyword.include?("~")
+    scope = Kepart.where("pcode LIKE ?", "%#{Kepart.sanitize_sql_like(@keyword)}%")
+    scope = @tilde ? scope.where("pcode LIKE '%~%'") : scope.where("pcode NOT LIKE '%~%'")
+    @keparts = scope.order(:id).page params[:page]
   end
 
   # POST /keparts/search
