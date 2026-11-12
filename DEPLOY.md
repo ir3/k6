@@ -43,6 +43,7 @@ yarn -v   # 1.22.x系（nodenv shims）が出ることを確認。出なけれ�
 # （本番はmaster.keyを置かず、SECRET_KEY_BASEをk6.serviceの環境変数としてのみ
 # 持っているため。2026-09-11に実際発生）。
 yarn install
+# k.cssを変更した場合は、この cp が必須（省くと、builds 側の古い k.css が配られる。理由は下の「k.css は cp が必須」参照）
 cp app/assets/stylesheets/k.css app/assets/builds/k.css
 RAILS_ENV=production bin/rails assets:precompile
 
@@ -57,6 +58,22 @@ sudo systemctl restart k6
 - `bin/rails assets:precompile` … 内部で `yarn build`（esbuild）・`yarn build:css`（Tailwind）を実行した後、**ダイジェスト（フィンガープリント）付きファイル名を生成して `public/assets` に配置する**（Propshaft本体の仕事）
 
 **`yarn build && yarn build:css` だけでは不十分。** nginx の設定（[config/nginx/k6.conf](config/nginx/k6.conf)）は `/assets/` 配下をPumaを経由せず直接静的ファイルとして配信するため、Railsのビューヘルパーが参照するダイジェスト付きファイル名と実ファイルが一致している必要がある。`assets:precompile` を省略すると、古いダイジェストファイル・古いmanifestが残ったままになり、**コードは更新されても画面は旧レイアウトのまま**になる（2026-07-08に実際発生）。
+
+**`k.css` は `cp app/assets/stylesheets/k.css app/assets/builds/k.css` が必須（`k.css` を変更したデプロイでは、省けない）。** 理由は3つ。
+
+- `k.css` は Tailwind の出力ではなく、`app/assets/stylesheets/` に直接書いた CSS で、`yarn build:css` は `app/assets/builds/` に `application.css` しか作らない。つまり `k.css` を `builds/` に置く処理は、この `cp` しか無い
+- Propshaft は `config.assets.paths` の順に探す。本番では `app/assets/builds` が `app/assets/stylesheets` より**先**なので、`builds/k.css` があると、そちらが配られる（`bin/rails runner` で `Rails.application.config.assets.paths` を表示して確認した。2026-11-12）
+- `app/assets/builds/*` は `.gitignore` の対象で、`git pull` では更新されない。前回のデプロイでコピーした古い `k.css` が、サーバー上に残り続ける
+
+したがって、`cp` を省くと、`git pull` で `app/assets/stylesheets/k.css` が新しくなっても、`assets:precompile` は **`builds/` の古い `k.css`** にダイジェストを付けて配る。コードは新しいのに、`k.css` の変更（色・余白・固定見出しの位置など）だけが画面に出ない。2026-11-12 に、出力日の項目名の色を `k.css` で変更したデプロイで、色が本番の画面に変わらなかった（`cp` と `assets:precompile` をやり直して再起動したら、変わった。開発環境では、Propshaft が `stylesheets/` を直接配るので、変わって見える。開発で確認できても、本番に出ているとは限らない）。
+
+サーバーで、どこまで新しいかを確かめるには、変更したクラス名などを `grep` する（出力が 1 以上なら新しい。0 なら、その場所が古い）。
+
+```bash
+grep -c "変更したクラス名" app/assets/stylesheets/k.css app/assets/builds/k.css public/assets/k-*.css
+```
+
+`public/assets/k-*.css` は、ダイジェストが違うファイルが複数あるので、一番新しいものが 1 以上かを見る。直すには、`cp` → `assets:precompile` → `sudo systemctl restart k6` をやり直し、ブラウザで再読み込みする（古い HTML が古い CSS の名前を覚えていることがある）。
 
 `sudo systemctl restart k6` は毎回必須（本番は `config.cache_classes = true` でコード変更を自動リロードしないため、`git pull` だけでは反映されない）。
 
