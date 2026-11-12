@@ -83,6 +83,13 @@
   font-weight: normal !important;
 }
 
+/* 注文部品詳細の「各種出力日」の項目名は、ほかの項目名（青系）と区別するため、緑系にする。
+   上の .center-table th の !important より強くするため、クラスを足して詳細度を上げている */
+.center-table th.output-dates-head {
+  background-color: #cde8d3 !important;
+  color: #3d6b4a !important;
+}
+
 .title {
   white-space: nowrap;
 }

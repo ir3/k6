@@ -800,4 +800,60 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     get edit_order_url(@order)
     assert_select "select[name='order[country]'] option[value='']", false
   end
+  # 各種出力日（旧 partsin.asp の請求管理）。帳票出力履歴（order_logs）の日付を、8項目の表で出す
+  def output_dates_row(label_text)
+    th = css_select("th").find { |cell| cell.text.gsub(/\s+/, "") == label_text }
+    assert th, "#{label_text} の見出しが無い"
+    index = th.parent.css("th").index(th)
+    th.parent.next_element.css("td")[index]
+  end
+
+  test "show lays the output dates out in one table of 8 items, with 未 for the ones not output yet" do
+    get order_url(@order)
+    assert_response :success
+    labels = [ "見積依頼出力日", "初回見積出力日", "最新見積出力日", "受注/受注メモ出力日", "納品書出力日(請求要となった日)",
+               "出荷案内出力日(請求要となった日)", "請求書出力日", "入金(確認)日" ]
+    header_row = css_select("tr").find { |tr| tr.css("th").map { |th| th.text.gsub(/\s+/, "") } == labels }
+    assert header_row, "8項目の見出しの行が無い"
+    assert_equal [ "未" ] * 8, header_row.next_element.css("td").map { |td| td.text.strip }
+  end
+
+  test "show puts the dates of the output history under their items" do
+    { 1 => Date.new(2026, 10, 16), 2 => Date.new(2026, 10, 17), 3 => Date.new(2026, 10, 18), 4 => Date.new(2026, 10, 19),
+      5 => Date.new(2026, 10, 20), 6 => Date.new(2026, 10, 21), 7 => Date.new(2026, 10, 22) }.each do |kubun, date|
+      OrderLog.create!(tvalid: 1, mno: @order.mno, kubun: kubun, datelog: date)
+    end
+    get order_url(@order)
+    {
+      "見積依頼出力日" => "2026/10/16", "初回見積出力日" => "2026/10/17", "最新見積出力日" => "2026/10/17",
+      "受注/受注メモ出力日" => "2026/10/18", "納品書出力日(請求要となった日)" => "2026/10/22",
+      "出荷案内出力日(請求要となった日)" => "2026/10/19", "請求書出力日" => "2026/10/20", "入金(確認)日" => "2026/10/21"
+    }.each do |label, text|
+      assert_equal text, output_dates_row(label).text.strip, label
+    end
+  end
+
+  test "show marks a manually entered date" do
+    OrderLog.create!(tvalid: 1, mno: @order.mno, kubun: 4, datelog: Date.new(2026, 10, 19))
+    OrderLog.create!(tvalid: 1, mno: @order.mno, kubun: 104, datelog: Date.new(2026, 10, 25))
+    get order_url(@order)
+    cell = output_dates_row("出荷案内出力日(請求要となった日)")
+    assert_equal "2026/10/25", cell.text.strip
+    assert_equal "手動で入力した日付", cell.at_css("span")["title"]
+    assert_nil output_dates_row("請求書出力日").at_css("span[title]")
+  end
+
+  test "show no longer prints the number of items under the delivery date" do
+    @order.update!(pnum: 7)
+    get order_url(@order)
+    assert_equal "未", output_dates_row("納品書出力日(請求要となった日)").text.strip
+  end
+  test "show gives the headings of the output dates their own (green) class" do
+    get order_url(@order)
+    th = css_select("th").find { |cell| cell.text.strip == "見積依頼出力日" }
+    assert_includes th["class"], "output-dates-head"
+    # 8項目すべての見出しが同じ色。ほかの項目名（取引管理No. など）には付かない
+    assert_equal 8, css_select("th.output-dates-head").size
+    assert_not_includes css_select("th").find { |cell| cell.text.strip == "取引管理No." }["class"], "output-dates-head"
+  end
 end

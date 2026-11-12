@@ -278,6 +278,8 @@ class OrdersController < ApplicationController
     @order = Order.find(params[:id])
     session[:order_id] = @order.id
     session[:mno] = @order.mno
+    # 各種出力日（旧 partsin.asp の請求管理）。帳票出力履歴から求める
+    @output_dates = OrderOutputDates.new(@order.mno).call
     # @orderparts = Orderpart.find_by_sql("SELECT * FROM orderparts WHERE (deleted_at IS NULL) AND mno=#{@order.mno}")
     # 各グループの中を「順(SNo)」順(同じ順は作成順＝古いものが上)で表示する。順が空の行は 0 として扱う
     # （並び替え後表示 OrderSortedItems と同じ）。Orderpartのdefault_scopeはid DESC(新しいものが上)なのでreorderで上書きする。

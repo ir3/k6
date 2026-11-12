@@ -64,32 +64,33 @@
       %br
       日時
     %td.datej.updated-at-col{width: "72px", style: "font-size: 9px;"}= @order.updated_at.strftime("%Y/%m/%d %H:%M")
-%table
+-# 各種出力日（旧 partsin.asp の請求管理）。帳票出力履歴の日付を、8項目の表にまとめる。
+-# 未出力は「未」、手で入れた日付は青字で出す。項目名は、ほかの項目名（青系）と区別するため緑系
+- output_items = [ |
+  ["見積依頼出力日", nil, @output_dates.request], |
+  ["初回見積出力日", nil, @output_dates.first_estimate], |
+  ["最新見積出力日", nil, @output_dates.latest_estimate], |
+  ["受注/受注メモ出力日", nil, @output_dates.order_memo], |
+  ["納品書出力日", "(請求要となった日)", @output_dates.delivery], |
+  ["出荷案内出力日", "(請求要となった日)", @output_dates.shipping], |
+  ["請求書出力日", nil, @output_dates.invoice], |
+  ["入金(確認)日", nil, @output_dates.payment] |
+] |
+%table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
-    %td
-      見積依頼出力日
-    %td
-      = @order.ndate
-      %br
-        初回見積出力日
-      %br= @order.mitday
-    %td
-      最新見積出力日
-      %br= @order.ldate
-    %td
-      受注or受注メモ出力日
-      %br= @order.tcondition
-    %td
-      納品or納品書(請求要となった)日
-      %br= @order.pnum
-    %td
-      出荷案内出力(請求要となった)日
-      %br= @order.syuday
-    %td
-      請求or請求書出力日
-      %br= @order.seiday
-    %td
-      入金(確認)日
+    - output_items.each do |label, note, _entry|
+      %th.output-dates-head{width: "12.5%", style: 'font-size: 11px;'}
+        = label
+        - if note
+          %br
+          %span= note
+  %tr
+    - output_items.each do |_label, _note, entry|
+      %td{style: "text-align:center; white-space:nowrap;"}
+        - if entry
+          %span{style: ("color:#1d4ed8;" if entry.manual), title: ("手動で入力した日付" if entry.manual)}= entry.date.strftime("%Y/%m/%d")
+        - else
+          %span{style: "color:#9ca3af;"} 未
 %table
   %tr
     %td{style:"padding: 5px 5px 5px 30px;"}
