@@ -45,11 +45,8 @@ Rails.application.routes.draw do
 
   resources :orderparts
   post 'orderparts/search/'  => 'orderparts#search'
-  post 'orderparts/select/'  => 'orderparts#select'
 
   resources :parts
-  post 'parts/search/'    => 'parts#search'
-  post 'parts/select/'    => 'parts#select'
   # Ａ部品メンテナンス（旧 partsmente.asp）の、1項目ずつの登録と、新部品の複製
   patch "parts/:id/field"     => "parts#update_field", as: :part_field
   post  "parts/:id/duplicate" => "parts#duplicate",    as: :part_duplicate

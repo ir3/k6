@@ -25,20 +25,6 @@ class PartsController < ApplicationController
     end
   end
 
-  # POST /parts/search
-  def search
-    session[:user_id]
-    keyword = params[:keyword]
-    logger.debug keyword
-    @parts = Part.find_by_sql("SELECT * FROM parts WHERE pcode like '#{keyword}%'")
-
-    respond_to do |format|
-      format.html # index.html.erb
-      format.xml  { render xml: @parts }
-      format.json { render json: @parts }
-    end
-  end
-
   # GET /parts/1
   # GET /parts/1.json
   # Ａ部品メンテナンス（旧 partsmente.asp）。部品台帳の定義を見て、項目ごとに登録し直す。

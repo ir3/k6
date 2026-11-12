@@ -229,6 +229,11 @@ class PartsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_url(format: :html)
   end
 
+  test "the old search by SQL string is gone (the list searches with GET /parts?keyword=)" do
+    post "/parts/search", params: { keyword: "A0001' OR '1'='1" }
+    assert_response :not_found
+  end
+
   test "the list links the part code to this screen" do
     get parts_url
     assert_select "a[href=?]", part_path(@part), text: "A0001"
