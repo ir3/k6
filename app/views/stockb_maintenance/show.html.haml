@@ -28,7 +28,7 @@
   %tr
     %td{style: "#{centered} font-weight: bold;"}
       = @part&.pcode || partno
-      -# 旧ASPの「部品定義参照」(hiteijomente.asp)は無いので、KE部品の詳細を開く
+      -# 旧ASPの「部品定義参照」は、Ｂ部品メンテナンス（旧 hiteijomente.asp）を開く
       - if @part
         = link_to "部品定義参照", kepart_path(@part.id), class: btn_cls
     %td{style: "#{centered} font-weight: bold; font-size: 1.2em;"}= @on_hand

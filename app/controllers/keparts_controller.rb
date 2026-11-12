@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class KepartsController < ApplicationController
-  before_action :set_kepart, only: %i[show edit update destroy]
+  before_action :set_kepart, only: %i[show edit update update_field destroy]
 
   # GET /keparts
   # GET /keparts.json
@@ -24,15 +24,18 @@ class KepartsController < ApplicationController
   end
 
   # GET /keparts/1
-  # GET /keparts/1.json
+  # Ｂ部品メンテナンス（旧 hiteijomente.asp）。KE部品の定義を見て、項目ごとに登録し直す。
+  # Ｂ部品在庫メンテナンスの「部品定義参照」、KE部品の一覧、注文部品の部品コードから開く。
   def show
-    @kepart = Kepart.find(params[:id])
-    @num = 0
-    @stockbs = Stockb.where(partno: @kepart.pcode)
-    @stockbs.each do |stock|
-      @num += stock.num
-    end
-    @stockb = Stockb.new
+    @stockb_rows = Stockb.where(partno: @kepart.pcode).count
+  end
+
+  # PATCH /keparts/1/field（1回に1項目。旧 kepartsedits / kepartseditt / kepricereg / hnpartsb 相当）
+  def update_field
+    result = KepartEditor.new(@kepart, params[:field], params[:value]).call
+    flash_key = result.success? ? :notice : :alert
+    redirect_to kepart_path(@kepart), status: :see_other,
+                flash_key => result.success? ? "#{result.label}を登録しました。" : result.error
   end
 
   # GET /keparts/new
@@ -75,10 +78,13 @@ class KepartsController < ApplicationController
 
   # DELETE /keparts/1
   # DELETE /keparts/1.json
+  # 旧 kepartsdel.asp と同じく、KE部品の行を消す（在庫台帳Bの履歴は消さない）。
+  # 削除のあとの転送は 303（Turbo の DELETE は、303 でないと、削除後の画面に DELETE を送り直す）
   def destroy
+    code = @kepart.pcode
     @kepart.destroy
     respond_to do |format|
-      format.html { redirect_to keparts_url, notice: 'Kepart was successfully destroyed.' }
+      format.html { redirect_to keparts_url, status: :see_other, notice: "Ｂ部品「#{code}」を削除しました。" }
       format.json { head :no_content }
     end
   end

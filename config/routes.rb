@@ -26,6 +26,8 @@ Rails.application.routes.draw do
 
   resources :keparts
   post 'keparts/search/'  => 'keparts#search'
+  # Ｂ部品メンテナンス（旧 hiteijomente.asp）の、1項目ずつの登録
+  patch "keparts/:id/field" => "keparts#update_field", as: :kepart_field
 
   match 'orders/search'  => 'orders#search',  via: %i[get post], as: 'orders_search'
   match 'orders/alllist' => 'orders#alllist', via: %i[get post], as: 'orders_alllist'

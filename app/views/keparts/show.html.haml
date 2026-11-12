@@ -1,182 +1,62 @@
-- model_class = Kepart
-%table{width:"37%", align:"center"}
-  %tbody
-    %tr
-      %td{width:"19%", style:'text-align:left'}
-        %h2=t '.title', default: model_class.model_name.human.titleize + ' 在庫'
-      %td{width:"10%", style: 'text-align:left;font-size:200%'}
-        = link_to "入庫", "JavaScript:disp('disp9');",  class:"btn wtext btn-info"
-      %td{width:"10%", style: 'text-align:left'}
-        = link_to "出庫", "JavaScript:disp('disp10');",  class:"btn wtext btn-info"
+-# Ｂ部品メンテナンス（旧 hiteijomente.asp）。KE部品の定義を見て、項目ごとに登録し直す。
+-# Ｂ部品在庫メンテナンスの「部品定義参照」、KE部品の一覧、注文部品の部品コードから開く。
+- content_for :page_title, "Ｂ部品メンテナンス"
+- input_cls = "input input-bordered input-xs border-2 border-neutral bg-base-100 flex-1"
+- btn_cls = "btn btn-xs wtext btn-info"
+- head_cls = "bg-primary text-primary-content"
+- centered = "text-align: center;"
+- number = ->(value) { value.to_i.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ",") }
+-# [列, 項目名, 現在の値の表示, ボタン名, 入力欄の幅, 英数字だけの欄か]（旧ASPの並び順とボタン名）
+- rows = [ |
+  [:size, "寸法", @kepart.size, "寸法登録", "30rem", false], |
+  [:form, "形式", @kepart.form, "形式登録", "30rem", false], |
+  [:itemno, "ItemNo", @kepart.itemno, "ItemNo登録", "30rem", true], |
+  [:jname, "和文名称", @kepart.jname, "和文名称変更登録", "30rem", false], |
+  [:ename, "英文名称", @kepart.ename, "英文名称変更登録", "30rem", false], |
+  [:munit, "計測単位", @kepart.munit, "計測単位登録", "10rem", true], |
+  [:weightkg, "重量(kg)", @kepart.weightkg, "重量登録", "10rem", true], |
+  [:newprice, "参考単価", (number.call(@kepart.newprice) unless @kepart.newprice.nil?), "参考単価登録", "10rem", true], |
+  [:comment, "備考", @kepart.comment, "備考登録", "40rem", false] |
+] |
 
-#disp9{style: 'display:none'}
-  = form_for(@stockb, url: stockbs_path) do |f|
-    %table.table-condensed{align:"center"}
-      %tr
-        %td
-          入庫数:
-        %td
-          = f.number_field "num", in:1...100
-        %td
-          入庫区分:
-        %td
-          = f.radio_button "ikubun", 1, {checked: true}
-          買取品
-          = f.radio_button "ikubun", 2
-          返品(貸出分)
-          = f.radio_button "ikubun", 3
-          返品(キャンセル)
-          = f.radio_button "ikubun", 4
-          返品(誤送)
-        %td
-          備考:
-        %td
-          = f.text_field "memo", {size: 40}
-        %td
-          - now = Time.now
-          - today = now.strftime('%Y/%m/%d')
-          = f.hidden_field(:cordno, value:'')
-          = f.hidden_field(:kind, value:'0')
-          = f.hidden_field(:indate, value:today)
-          = f.hidden_field(:irprice, value:@kepart.newprice)
-          = f.hidden_field(:invalue, value:0)
-          = f.hidden_field(:inprice, value:0)
-          = f.hidden_field(:irvalue, value:0)
-          = f.hidden_field(:itemno, value:@kepart.itemno)
-          = f.hidden_field(:onum, value:0)
-          = f.hidden_field(:orprice, value:0)
-          = f.hidden_field(:orvalue, value:0)
-          = f.hidden_field(:partno, value:@kepart.pcode)
-          = f.hidden_field(:sname, value:'')
-          = f.submit "入庫登録"
-        %td
-          = link_to '閉じる', "JavaScript:nondisp('disp9');"
-#disp10{style: 'display:none'}
-  = form_for(@stockb, url: stockbs_path) do |f|
-    %table.table-condensed{align:"center"}
-      %tr
-        %td
-          出庫数:
-          = f.number_field "num", in:1...100
-        %td
-          出庫区分:
-          = f.radio_button "okubun", 0
-          貸出分
-          = f.radio_button "okubun", 2, {checked: true}
-          売掛分
-        %td
-          取引管理No.:
-          = f.text_field "mno", {size:12, value:session[:mno]}
-        %td
-          備考:
-          = f.text_field "memo", {size:40}
-        %td
-          - now = Time.now
-          - today = now.strftime('%Y/%m/%d')
-          = f.hidden_field(:cordno, value:'')
-          = f.hidden_field(:kind, value:'0')
-          = f.hidden_field(:inprice, value:0)
-          = f.hidden_field(:invalue, value:0)
-          = f.hidden_field(:irprice, value:@kepart.newprice)
-          = f.hidden_field(:irvalue, value:0)
-          = f.hidden_field(:itemno, value:@kepart.itemno)
-          = f.hidden_field(:indate, value:today)
-          = f.hidden_field(:outdate, value:today)
-          = f.hidden_field(:onum, value:0)
-          = f.hidden_field(:orprice, value:0)
-          = f.hidden_field(:orvalue, value:0)
-          = f.hidden_field(:partno, value:@kepart.pcode)
-          = f.hidden_field(:sname, value:'')
-          = f.submit "出庫登録"
-        %td
-          = link_to '閉じる', "JavaScript:nondisp('disp10');"
-%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead.bg-primary.text-primary-content
-    %tr.headline
-      %th= model_class.human_attribute_name(:id)
-      %th= model_class.human_attribute_name(:pcode)
-      %th= model_class.human_attribute_name(:stock)
-      %th= model_class.human_attribute_name(:form)
-      %th= model_class.human_attribute_name(:jname)
-      %th= model_class.human_attribute_name(:ename)
-      %th= model_class.human_attribute_name(:size)
-      %th= model_class.human_attribute_name(:sel_unit)
-      %th= model_class.human_attribute_name(:price)
-      %th= model_class.human_attribute_name(:newprice)
-  %tbody
-    %tr
-      %td{style: 'text-align:center'}= @kepart.id
-      %td{style: 'text-align:center; font-size: xx-large'}= @kepart.pcode
-      %td{style: 'text-align:center; font-size: xx-large'}= @num
-      %td{style: 'text-align:center; font-size: xx-large'}= @kepart.form
-      %td{style: 'text-align:center; font-size: xx-large'}= @kepart.jname
-      %td{style: 'text-align:center'}= @kepart.ename
-      %td{style: 'text-align:center'}= @kepart.size
-      %td{style: 'text-align:center'}= @kepart.sel_unit
-      %td{style: 'text-align:center'}= @kepart.price.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
-      %td{style: 'text-align:center; font-size: xx-large'}= @kepart.newprice.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
-%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead.bg-primary.text-primary-content
-    %tr.headline
-      %th{width:"90px"}= model_class.human_attribute_name(:weightkg)
-      %th{width:"90px"}= model_class.human_attribute_name(:munit)
-      %th{width:"100px"}= model_class.human_attribute_name(:itemno)
-      %th{width:"90px"}=model_class.human_attribute_name(:cordno)
-      %th= model_class.human_attribute_name(:comment)
-      %th{width:"150px"}= model_class.human_attribute_name(:updated_at)
-      %th{width:"150px"}= model_class.human_attribute_name(:created_at)
-  %tbody
-    %tr
-      %td{style: 'text-align:center'}= @kepart.weightkg
-      %td{style: 'text-align:center'}= @kepart.munit
-      %td{style: 'text-align:center'}= @kepart.itemno
-      %td{style: 'text-align:center'}= @kepart.cordno
-      %td{style: 'text-align:center'}= @kepart.comment
-      %td{style: 'text-align:center'}= @kepart.updated_at.strftime('%Y/%m/%d %H:%M')
-      %td{style: 'text-align:center'}= @kepart.created_at.strftime('%Y/%m/%d %H:%M')
+.mb-3.flex.items-center.gap-3
+  = link_to "戻る", :back, class: "btn btn-sm btn-info"
+  %span 部品コード #{@kepart.pcode}
 
-この部品の入出荷状況
-%table.table-bordered.table-condensed.table-striped{width: "99%", align:"center"}
-  %thead.bg-primary.text-primary-content
-    %tr.headline
-      %th{width:"10px"}= '＃'
-      %th{width:"100px"}= '日付'
-      %th= '出荷先'
-      %th= '船名'
-      %th= '販売単価'
-      %th= '発注数'
-      %th= '入庫数'
-      %th= '入庫区分'
-      %th= '入荷額'
-      %th= '出庫数'
-      %th= '出庫区分'
-      %th= '出荷額'
-      %th= '備考'
-      %th= '取引管理No.'
-      %th{width:"160px"}= '更新日'
-  %tbody
-    - @stockbs.reverse.each do |stock|
-      %tr
-        %td{style:'text-align:center'}= stock.id
-        %td{style:'text-align:center'}= stock.indate.strftime('%Y/%m/%d') if stock.indate
-        - if stock.cname && stock.cname != '0'
-          - cname = stock.cname
-        - elsif stock.mno && stock.mno > 0
-          - cname = mno2name(stock.mno)
-        - else
-          - cname = ''
-        %td{style:'text-align:center'}= cname
-        - shipname = stock.sname if stock.sname
-        - shipname = mno2shipname(stock.mno) if stock.mno && stock.mno > 0
-        %td{style:'text-align:center'}= shipname
-        %td{style:'text-align:center'}= stock.irprice.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
-        %td{style:'text-align:center'}= stock.onum > 0 ? stock.onum : ''
-        %td{style:'text-align:center'}= stock.num > 0 ? stock.num : ''
-        %td{style:'text-align:center'}= inputkubun(stock.ikubun) if stock.num > 0
-        %td{style:'text-align:center'}= (stock.irprice * stock.num).to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,') if stock.num >  0
-        %td{style:'text-align:center'}= stock.num < 0 ? -stock.num : ''
-        %td{style:'text-align:center'}= outputkubun(stock.okubun) if stock.num < 0
-        %td{style:'text-align:center'}= (stock.irprice * -stock.num).to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,') if stock.num <  0
-        %td{style:'text-align:center'}= stock.memo
-        %td{style:'text-align:center'}= stock.mno ? (link_to stock.mno, order_path(id: mno2id(stock.mno)) if stock.mno > 0) : ' '
-        %td{style:'text-align:center'}= stock.created_at.strftime('%Y/%m/%d %H:%M')
+%table.center-table.radius-table.row-compact{width: "99%", align: "center"}
+  %tr{class: head_cls}
+    %th{width: "12%"} 項目
+    %th{width: "26%"} 現在の値
+    %th 変更
+  %tr
+    -# 項目名のセルは、他の画面（国別為替の詳細など）と同じ、濃い青地に白文字
+    %th{class: head_cls} 部品コード
+    %td{style: "#{centered} font-weight: bold; font-size: 1.2em;"}= @kepart.pcode
+    %td
+      = link_to "部品在庫参照", stockb_maintenance_path(partno: @kepart.pcode), class: "btn btn-sm btn-info"
+  - rows.each do |field, label, current, button, width, ascii|
+    %tr
+      %th{class: head_cls}= label
+      %td{style: centered}= current
+      %td
+        -# 1項目ずつ登録する（旧ASPも、項目ごとにフォームが分かれていた）
+        = form_with url: kepart_field_path(@kepart), method: :patch, class: "flex items-center gap-2" do
+          = hidden_field_tag :field, field, id: nil
+          = text_field_tag :value, @kepart[field], id: "kepart_#{field}", autocomplete: "off", class: input_cls, style: "max-width: #{width};#{' ime-mode:disabled;' if ascii}"
+          = submit_tag button, name: nil, class: btn_cls
+        - if field == :newprice
+          %span.TB12 Ｂ部品の時価は、取引毎に入力しますのでここでの入力は参考のみ。
+        - if field == :weightkg
+          %span.TB12 空欄にして登録すると、重量を消去します。
+
+%p.TB12{style: "margin: 8px 0 0 30px;"}
+  項目ごとに、入力してボタンをクリックすると、その項目だけを登録します。
+
+.mt-6.text-center
+  = button_to "この部品を削除する", kepart_path(@kepart), method: :delete, class: "btn btn-sm btn-error text-white",
+    form: { data: { turbo_confirm: "Ｂ部品「#{@kepart.pcode}」を削除します。元に戻せません。よろしいですか？" } }
+  %p.TB12{style: "margin-top: 4px;"}
+    - if @stockb_rows.positive?
+      この部品の在庫台帳Bの履歴（#{@stockb_rows} 件）は、部品を削除しても消えません。
+    - else
+      この部品の在庫台帳Bの履歴はありません。
