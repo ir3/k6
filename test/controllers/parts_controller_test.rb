@@ -156,6 +156,9 @@ class PartsControllerTest < ActionDispatch::IntegrationTest
       assert_select "input[type=submit][value=?]", "新規Ａ部品登録"
     end
     assert_match(/有効な検索条件：A00/, response.body)
+    # 一覧の最下部に、新規作成のボタン（リンク）は置かない。新規登録は上部の枠から行う
+    assert_select "a[href=?]", new_part_path, count: 0
+    assert_select "a.btn", text: "新規作成", count: 0
   end
 
   test "the search finds parts by a part of the code and keeps the condition" do

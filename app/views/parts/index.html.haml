@@ -59,5 +59,4 @@
         %td= part.updated_at.strftime('%Y/%m/%d %H:%M')
         %td= part.created_at.strftime('%Y/%m/%d %H:%M')
 
-= link_to '新規作成', new_part_path, class: 'btn btn-primary'
 = paginate @parts, window: 4, outer_window: 5, left: 1, right: 3
