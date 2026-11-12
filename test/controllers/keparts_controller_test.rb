@@ -20,7 +20,7 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
     get keparts_url(keyword: "E00")
     assert_select "form[action=?][method=get]", keparts_path do
       assert_select "input[name=keyword][value=?]", "E00"
-      assert_select "input[type=submit][value=?]", "Ｂ検索"
+      assert_select "input[type=submit][value=?]", "Ｂ部品検索"
     end
     assert_select "form[action=?][method=get]", new_kepart_path do
       assert_select "input[name=nparts][value=?]", "E00"

@@ -8,7 +8,7 @@
     %span 有効な検索条件：#{@keyword}
     %span.TB12 部品コードの一部を指定
     = text_field_tag :keyword, @keyword, id: "keparts_keyword", size: 16, autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
-    = submit_tag "Ｂ検索", name: nil, class: btn_cls
+    = submit_tag "Ｂ部品検索", name: nil, class: btn_cls
   = form_with url: new_kepart_path, method: :get, class: "flex items-center gap-2" do
     = text_field_tag :nparts, @keyword, id: "keparts_nparts", size: 16, autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
     = submit_tag "新規Ｂ部品登録", name: nil, class: btn_cls
