@@ -139,13 +139,97 @@ class PartsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, Stock.where(partno: "A0001").count
   end
 
-test "the list headings are in Japanese" do
-  get parts_url
-  headings = css_select("thead th").map { |th| th.text.strip }
-  assert_equal %w[No. ID 部品コード 形式 和文名称 英文名称 在庫 販売単位 現行単価 新単価(円) 重量(kg) 計測単位 ItemNo CORDNo 備考 更新日 登録日], headings
-end
+  test "the list headings are in Japanese" do
+    get parts_url
+    headings = css_select("thead th").map { |th| th.text.strip }
+    assert_equal %w[No. ID 部品コード 形式 和文名称 英文名称 在庫 販売単位 現行単価 新単価(円) 重量(kg) 計測単位 ItemNo CORDNo 備考 更新日 登録日], headings
+  end
 
-test "the list links the part code to this screen" do
+  test "the list has the search and the new registration frames with their buttons" do
+    get parts_url(keyword: "A00")
+    assert_select "form[action=?][method=get]", parts_path do
+      assert_select "input[name=keyword][value=?]", "A00"
+      assert_select "input[type=submit][value=?]", "Ａ部品検索"
+    end
+    assert_select "form[action=?][method=get]", new_part_path do
+      assert_select "input[name=nparts][value=?]", "A00"
+      assert_select "input[type=submit][value=?]", "新規Ａ部品登録"
+    end
+    assert_match(/有効な検索条件：A00/, response.body)
+  end
+
+  test "the search finds parts by a part of the code and keeps the condition" do
+    Part.create!(pcode: "B00X1")
+    Part.create!(pcode: "C9999")
+    get parts_url(keyword: "００X")
+    assert_select "td a", text: "B00X1"
+    assert_select "td a", text: "C9999", count: 0
+    assert_select "td a", text: "A0001", count: 0
+    assert_select "p", text: /旧部品番号.*を検出しました/, count: 0
+  end
+
+  test "the search finds the new part by an old part number and says so" do
+    StockSetting.create!(partno: "A0001", opartno: "OLD-77")
+    Part.create!(pcode: "ZZZ99")
+    get parts_url(keyword: "old-77")
+    assert_select "p", text: "旧部品番号:old-77 を検出しました。対応する新部品番号のデータを出力します。"
+    assert_select "td a", text: "A0001"
+    assert_select "td a", text: "ZZZ99", count: 0
+  end
+
+  test "the new registration screen takes the code from the frame" do
+    get new_part_url(nparts: "ｎｅｗ-1")
+    assert_response :success
+    assert_select "title", /Ａ部品詳細入力/
+    assert_select "input#part_pcode[value=?]", "NEW-1"
+    assert_select "input#part_munit[value=?]", "1"
+    assert_select "form[action=?][method=post]", parts_path do
+      %w[pcode form jname ename munit weightkg newprice].each { |item| assert_select "input[name=?]", "part[#{item}]" }
+      assert_select "input[type=submit][value=?]", "Ａ部品登録"
+    end
+  end
+
+  test "the registration makes the part and comes back to the list of its code" do
+    assert_difference -> { Part.count }, 1 do
+      post parts_url, params: { part: { pcode: "n0100", form: "6L", jname: "登録部品", ename: "REG", munit: "1", weightkg: "0.5", newprice: "1200" } }
+    end
+    assert_response :see_other
+    assert_redirected_to parts_url(keyword: "N0100")
+    assert_equal "Ａ部品「N0100」を登録しました。", flash[:notice]
+    part = Part.find_by!(pcode: "N0100")
+    assert_equal [ "登録部品", 1200, 1200 ], [ part.jname, part.newprice, part.price ]
+  end
+
+  test "a wrong registration shows the message and keeps what was typed" do
+    assert_no_difference -> { Part.count } do
+      post parts_url, params: { part: { pcode: "N0200", jname: "入力した名称", newprice: "abc" } }
+    end
+    assert_response :unprocessable_entity
+    assert_select "p.text-error", text: /単価は 0 から 2000000000 の整数/
+    assert_select "input#part_pcode[value=?]", "N0200"
+    assert_select "input#part_jname[value=?]", "入力した名称"
+    assert_select "input#part_newprice[value=?]", "abc"
+  end
+
+  test "registering an existing code is refused" do
+    assert_no_difference -> { Part.count } do
+      post parts_url, params: { part: { pcode: "a0001" } }
+    end
+    assert_response :unprocessable_entity
+    assert_select "p.text-error", text: /「A0001」は、すでにＡ部品台帳にあります/
+  end
+
+  test "someone who is not signed in cannot open or use the registration" do
+    delete session_url
+    get new_part_url
+    assert_redirected_to new_session_url(format: :html)
+    assert_no_difference -> { Part.count } do
+      post parts_url, params: { part: { pcode: "N0300" } }
+    end
+    assert_redirected_to new_session_url(format: :html)
+  end
+
+  test "the list links the part code to this screen" do
     get parts_url
     assert_select "a[href=?]", part_path(@part), text: "A0001"
   end

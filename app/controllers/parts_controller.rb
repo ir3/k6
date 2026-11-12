@@ -6,13 +6,18 @@ class PartsController < ApplicationController
 
   # GET /parts
   # GET /parts.json
+  # Ａ部品台帳表示（旧 partssel.asp）。部品コードの一部で検索する。
+  # 入れた値が在庫設定の旧部品番号と一致したら、対応する新しい部品も出す。
   def index
-    @keyword = params[:keyword]
-    @parts = if @keyword && !@keyword.empty?
-               Part.where("pcode LIKE ?", "%#{Part.sanitize_sql_like(@keyword)}%").order(:id).page params[:page]
-             else
-               Part.order('id').page params[:page]
-             end
+    @keyword = params[:keyword].to_s.unicode_normalize(:nfkc).strip
+    if @keyword.empty?
+      @parts = Part.order("id").page params[:page]
+    else
+      new_codes = StockSetting.where("UPPER(opartno) = ?", @keyword.upcase).pluck(:partno)
+      @old_number_found = new_codes.any?
+      @parts = Part.where("pcode LIKE ? OR pcode IN (?)", "%#{Part.sanitize_sql_like(@keyword)}%", new_codes)
+                   .order(:id).page params[:page]
+    end
 
     respond_to do |format|
       format.html # index.html.erb
@@ -68,12 +73,14 @@ class PartsController < ApplicationController
 
   # GET /parts/new
   # GET /parts/new.json
+  # Ａ部品詳細入力（旧 npartsr.asp）。Ａ部品台帳表示の「新規Ａ部品登録」から、?nparts= で部品コードを受け取る。
   def new
-    @part = Part.new
+    # 入力欄の初期値（数値欄の入力を、失敗のあと文字列のまま画面に戻すため、モデルではなく値で持つ）
+    @values = { pcode: PartCode.normalize(params[:nparts]), munit: "1" }
 
     respond_to do |format|
       format.html # new.html.erb
-      format.json { render json: @part }
+      format.json { render json: Part.new(@values) }
     end
   end
 
@@ -84,16 +91,23 @@ class PartsController < ApplicationController
 
   # POST /parts
   # POST /parts.json
+  # 旧 partsreg7.asp と同じく、Ａ部品台帳に登録したあと、その部品コードで絞り込んだ一覧（旧 partssel.asp）へ戻る
   def create
-    @part = Part.new(params[:part])
+    result = PartRegistrar.new(part_input).call
 
     respond_to do |format|
-      if @part.save
-        format.html { redirect_to @part, notice: 'Part was successfully created.' }
-        format.json { render json: @part, status: :created, location: @part }
+      if result.success?
+        format.html do
+          redirect_to parts_path(keyword: result.part.pcode), status: :see_other,
+                                                              notice: "Ａ部品「#{result.part.pcode}」を登録しました。"
+        end
+        format.json { render json: result.part, status: :created, location: result.part }
       else
-        format.html { render action: 'new' }
-        format.json { render json: @part.errors, status: :unprocessable_entity }
+        # 入力したままの値で、入力画面に戻る（Turbo は 422 でないと、画面を差し替えない）
+        @values = part_input.to_h.symbolize_keys
+        @error = result.error
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: { error: result.error }, status: :unprocessable_entity }
       end
     end
   end
@@ -133,5 +147,10 @@ class PartsController < ApplicationController
 
   def set_part
     @part = Part.find(params[:id])
+  end
+
+  # 登録画面から来る項目だけを受け付ける
+  def part_input
+    params.fetch(:part, {}).permit(:pcode, :form, :jname, :ename, :munit, :weightkg, :newprice)
   end
 end

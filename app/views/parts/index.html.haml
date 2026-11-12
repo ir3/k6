@@ -1,5 +1,19 @@
 - model_class = Part
 - content_for :page_title, "Ａ部品台帳表示"
+-# 上部の2つの枠（旧 partssel.asp）。検索は部品コードの一部、新規登録は部品コードを入れて詳細入力画面へ移る
+- input_cls = "input input-bordered input-sm border-2 border-neutral bg-base-100 w-44"
+- btn_cls = "btn btn-sm wtext btn-info"
+.mb-3.flex.flex-wrap.items-center.gap-x-6.gap-y-2
+  = form_with url: parts_path, method: :get, class: "flex flex-wrap items-center gap-2" do
+    %span 有効な検索条件：#{@keyword}
+    %span.TB12 検索したい部品コードの一部でよいので指定してください
+    = text_field_tag :keyword, @keyword, id: "parts_keyword", size: 16, autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+    = submit_tag "Ａ部品検索", name: nil, class: btn_cls
+  = form_with url: new_part_path, method: :get, class: "flex items-center gap-2" do
+    = text_field_tag :nparts, @keyword, id: "parts_nparts", size: 16, autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+    = submit_tag "新規Ａ部品登録", name: nil, class: btn_cls
+- if @old_number_found
+  %p.mb-2 旧部品番号:#{@keyword} を検出しました。対応する新部品番号のデータを出力します。
 %table
   %tr
     %td

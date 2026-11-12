@@ -1,4 +1,39 @@
-- model_class = Part
-.page-header
-  %h1=t '.title', default: [:'helpers.titles.new', 'New %{model}'], model: model_class.model_name.human.titleize
-= render partial: "form"
+-# Ａ部品詳細入力（旧 npartsr.asp）。Ａ部品台帳表示の「新規Ａ部品登録」から開く。登録の処理は旧 partsreg7.asp 相当
+- content_for :page_title, "Ａ部品詳細入力"
+- input_cls = "input input-bordered input-xs border-2 border-neutral bg-base-100 w-full"
+- head_cls = "bg-primary text-primary-content"
+- values = @values || {}
+
+.mb-3.flex.items-center.gap-3
+  = link_to "戻る", parts_path, class: "btn btn-sm btn-info"
+
+%p.mb-2 Ａ部品台帳に、指定の部品を追加します。Ａ部品として部品詳細情報を入力してください。
+- if @error
+  %p.mb-2.text-error.font-bold= @error
+
+= form_with url: parts_path, scope: :part, method: :post do |f|
+  %table.center-table.radius-table.row-compact{width: "99%", align: "center"}
+    %tr{class: head_cls}
+      %th{width: "14%"} 部品コード
+      %th{width: "12%"} 形式
+      %th 和文名称
+      %th 英文名称
+    %tr
+      %td= f.text_field :pcode, value: values[:pcode], id: "part_pcode", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;", autofocus: values[:pcode].blank?
+      %td= f.text_field :form, value: values[:form], id: "part_form", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      %td= f.text_field :jname, value: values[:jname], id: "part_jname", autocomplete: "off", class: input_cls, autofocus: values[:pcode].present?
+      %td= f.text_field :ename, value: values[:ename], id: "part_ename", autocomplete: "off", class: input_cls
+    %tr{class: head_cls}
+      %th 単位
+      %th 重量(kg)
+      %th 単価
+      %th
+    %tr
+      %td= f.text_field :munit, value: values[:munit], id: "part_munit", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      %td= f.text_field :weightkg, value: values[:weightkg], id: "part_weightkg", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      %td= f.text_field :newprice, value: values[:newprice], id: "part_newprice", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      %td
+        %span.TB12 単価は、新単価と現行単価の両方に登録します。空欄は 0 です。
+
+  .mt-4.text-center
+    = submit_tag "Ａ部品登録", name: nil, class: "btn btn-sm btn-info"

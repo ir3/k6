@@ -8,14 +8,14 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
                              itemno: "7", weightkg: 1.5, munit: 2, newprice: 2500, comment: "元の備考")
   end
 
-test "the list headings are in Japanese" do
-  get keparts_url
-  headings = css_select("thead th").map { |th| th.text.strip }
-  assert_equal %w[No. ID 部品コード 形式 寸法 和文名称 現行単価(円) 在庫 販売単位 重量(kg) 計測単位 ItemNo CORDNo 備考 更新日], headings
-  assert_select "a[href=?]", new_kepart_path, text: "新規作成"
-end
+  test "the list headings are in Japanese" do
+    get keparts_url
+    headings = css_select("thead th").map { |th| th.text.strip }
+    assert_equal %w[No. ID 部品コード 形式 寸法 和文名称 現行単価(円) 在庫 販売単位 重量(kg) 計測単位 ItemNo CORDNo 備考 更新日], headings
+    assert_select "a[href=?]", new_kepart_path, text: "新規作成"
+  end
 
-test "someone who is not signed in is sent to the login screen" do
+  test "someone who is not signed in is sent to the login screen" do
     delete session_url
     get kepart_url(@kepart)
     assert_redirected_to new_session_url(format: :html)
