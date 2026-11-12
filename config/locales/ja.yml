@@ -1,5 +1,45 @@
 ja:
   activerecord:
+    # Ａ部品台帳・Ｂ部品台帳の一覧の見出し（human_attribute_name）
+    models:
+      part: Ａ部品
+      kepart: Ｂ部品
+    attributes:
+      part:
+        id: ID
+        pcode: 部品コード
+        form: 形式
+        jname: 和文名称
+        ename: 英文名称
+        stock: 在庫
+        sel_unit: 販売単位
+        price: 現行単価
+        newprice: 新単価
+        weightkg: 重量(kg)
+        munit: 計測単位
+        itemno: ItemNo
+        cordno: CORDNo
+        comment: 備考
+        updated_at: 更新日
+        created_at: 登録日
+      kepart:
+        id: ID
+        pcode: 部品コード
+        form: 形式
+        size: 寸法
+        jname: 和文名称
+        ename: 英文名称
+        stock: 在庫
+        sel_unit: 販売単位
+        price: 現行単価
+        newprice: 参考単価
+        weightkg: 重量(kg)
+        munit: 計測単位
+        itemno: ItemNo
+        cordno: CORDNo
+        comment: 備考
+        updated_at: 更新日
+        created_at: 登録日
     errors:
       messages:
         record_invalid: 'バリデーションに失敗しました: %{errors}'

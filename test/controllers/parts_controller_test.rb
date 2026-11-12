@@ -139,7 +139,13 @@ class PartsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, Stock.where(partno: "A0001").count
   end
 
-  test "the list links the part code to this screen" do
+test "the list headings are in Japanese" do
+  get parts_url
+  headings = css_select("thead th").map { |th| th.text.strip }
+  assert_equal %w[No. ID 部品コード 形式 和文名称 英文名称 在庫 販売単位 現行単価 新単価(円) 重量(kg) 計測単位 ItemNo CORDNo 備考 更新日 登録日], headings
+end
+
+test "the list links the part code to this screen" do
     get parts_url
     assert_select "a[href=?]", part_path(@part), text: "A0001"
   end

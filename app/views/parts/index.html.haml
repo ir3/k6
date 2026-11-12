@@ -7,8 +7,8 @@
 %table.center-table.radius-table.zebra-table.list-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
     %tr.headline
+      %th{style: 'width:30px'}= 'No.'
       %th{style: 'width:30px'}= model_class.human_attribute_name(:id)
-      %th{style: 'width:30px'}= 'id'
       %th{style: 'width:90px'}= model_class.human_attribute_name(:pcode)
       %th= model_class.human_attribute_name(:form)
       %th= model_class.human_attribute_name(:jname)
