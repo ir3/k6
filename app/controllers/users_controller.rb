@@ -40,7 +40,7 @@ class UsersController < ApplicationController
 
   # DELETE /users/1 or /users/1.json
   def destroy
-    #@user.destroy!
+    # @user.destroy!
     @user.user_profile.state = "offline"
     @user.user_profile.save!
     respond_to do |format|
@@ -58,7 +58,7 @@ class UsersController < ApplicationController
     end
     redirect_to(root_url)
   end
-  
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_user
@@ -81,6 +81,6 @@ class UsersController < ApplicationController
     def admin_user
       @user =  Current.user
       redirect_to(root_url) unless @user.user_profile.read_attribute_before_type_cast(:state) > 1
-  #    redirect_to(root_url) unless current_user.admin?
+      #    redirect_to(root_url) unless current_user.admin?
     end
 end

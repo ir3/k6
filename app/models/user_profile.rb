@@ -1,6 +1,6 @@
 class UserProfile < ApplicationRecord
   belongs_to :user
-  enum :state, { offline: 0, online: 1, manager: 2, admin: 9 }, validate: true 
+  enum :state, { offline: 0, online: 1, manager: 2, admin: 9 }, validate: true
   validates :firstname, length: { maximum: 20 }
   validates :lastname, length: { maximum: 20 }
   def fullname
@@ -15,5 +15,3 @@ class UserProfile < ApplicationRecord
     end
   end
 end
-
-

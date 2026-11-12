@@ -7,7 +7,7 @@ Rails.application.routes.draw do
   resource :sign_up
   resources :users
   resources :user_profiles
-  #root to: 'welcom#index'
+  # root to: 'welcom#index'
 
   get "menu" => "menus#index", as: "menu"
   patch "menu/tax_rate" => "menus#update_tax_rate", as: "menu_tax_rate"

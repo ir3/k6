@@ -73,7 +73,7 @@ module Authentication
       begin
        Current.user.user_profile.sign_in_at = Time.current
        Current.user.user_profile.save!
-      rescue 
+      rescue
         Rails.logger.info("Created UserProfile for sign_in_at")
         user_profile = UserProfile.new
         user_profile.user_id = Current.user.id
