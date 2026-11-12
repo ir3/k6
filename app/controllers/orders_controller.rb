@@ -16,7 +16,7 @@ class OrdersController < ApplicationController
     logger.debug  @keyword
     logger.debug  @keykind
     mno_order = resolve_mno_order
-    ym = Time.now.strftime('%Y%m')
+    ym = Time.now.strftime("%Y%m")
     session[:keyword] = nil
     session[:keykind] = nil
     session[:shipname] = nil
@@ -24,21 +24,21 @@ class OrdersController < ApplicationController
     if @keyword && !@keyword.empty?
       session[:keyword] = @keyword.to_s
       logger.debug session[:keyword]
-      if (@keyword == 'next') || (@keyword == 'last') || (@keyword == 'now')
-        if session[:yearmonth] && !session[:yearmonth].empty? && @keyword != 'now'
+      if (@keyword == "next") || (@keyword == "last") || (@keyword == "now")
+        if session[:yearmonth] && !session[:yearmonth].empty? && @keyword != "now"
           ym = session[:yearmonth]
         end
-        date = Date.parse(ym + '01')
-        if @keyword == 'next'
-          ym = date.next_month.strftime('%Y%m')
-        elsif @keyword == 'last'
-          ym = date.last_month.strftime('%Y%m')
+        date = Date.parse(ym + "01")
+        if @keyword == "next"
+          ym = date.next_month.strftime("%Y%m")
+        elsif @keyword == "last"
+          ym = date.last_month.strftime("%Y%m")
         end
         @orders = Order.joins(:adlists).find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like '#{ym}%' ORDER BY id #{mno_order}")
         @search_condition = "対象年月: #{ym}"
-      elsif @keykind == 'companyid'
+      elsif @keykind == "companyid"
         session[:keykind] = @keykind.to_s
-        @orders = Order.where('adlist_id = ?', @keyword).order("id #{mno_order}")
+        @orders = Order.where("adlist_id = ?", @keyword).order("id #{mno_order}")
         @search_condition = "取引先ID: #{@keyword}"
       else
         @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND mno like'%#{@keyword}%' ORDER BY id #{mno_order}")
@@ -117,9 +117,9 @@ class OrdersController < ApplicationController
     mno_order = resolve_mno_order
     keykind_labels = { "etype" => "形式検索", "engno" => "機番検索", "shipname" => "船名検索", "company" => "会社名検索", "memo" => "メモ検索" }
     if keykind && !keykind.empty?
-      if keykind == 'company'
+      if keykind == "company"
         adlist_id = Adlist.find_by_sql("SELECT * FROM adlists WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%'").first
-        @orders = Order.where('adlist_id = ?', adlist_id.id).order("id #{mno_order}")
+        @orders = Order.where("adlist_id = ?", adlist_id.id).order("id #{mno_order}")
       else
         @orders = Order.find_by_sql("SELECT * FROM orders WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%' ORDER BY id #{mno_order}")
       end

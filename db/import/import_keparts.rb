@@ -14,7 +14,7 @@ MOJIBAKE_MAP = {
   "?鞄?"  => "㈱",
   "?鰍ﾖ"  => "へ",
   "?鰍ﾉ"  => "に",
-  "?ｱ"   => "﨑",
+  "?ｱ"   => "﨑"
 }.freeze
 
 def fix_mojibake(str)
@@ -38,7 +38,7 @@ COLUMN_MAP = {
   "ItemNo"      => "itemno",
   "CORDNo"      => "cordno",
   "Updata"      => "updated_at",
-  "備考"        => "comment",
+  "備考"        => "comment"
 }.freeze
 
 csv_data, stderr, status = Open3.capture3(

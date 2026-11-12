@@ -24,5 +24,5 @@
 
 class Part < ActiveRecord::Base
   #  attr_accessible :comment, :cordno, :ename, :form, :itemno, :jname, :munit, :newprice, :pcode, :price, :sel_unit, :stock, :weightkg
-  default_scope -> { where('deleted_at IS NULL').order('id DESC') }
+  default_scope -> { where("deleted_at IS NULL").order("id DESC") }
 end

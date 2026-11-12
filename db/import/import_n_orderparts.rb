@@ -17,7 +17,7 @@ MOJIBAKE_MAP = {
   "?鞄?"  => "㈱",
   "?鰍ﾖ"  => "へ",
   "?鰍ﾉ"  => "に",
-  "?ｱ"   => "﨑",
+  "?ｱ"   => "﨑"
 }.freeze
 
 def fix_mojibake(str)
@@ -40,7 +40,7 @@ COLUMN_MAP = {
   "TotalA"    => "totala",
   "Weight"    => "weight",
   "Updata"    => "updated_at",
-  "etc"       => "etc",
+  "etc"       => "etc"
 }.freeze
 
 DATETIME_COLS = %w[updated_at].freeze

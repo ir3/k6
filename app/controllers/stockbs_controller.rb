@@ -39,7 +39,7 @@ class StockbsController < ApplicationController
       if @stockb.save
         # B部品詳細表示更新へ
         id = Kepart.find_by(pcode: @stockb.partno).id
-        format.html { redirect_to "/keparts/#{id}", notice: '在庫を更新しました' }
+        format.html { redirect_to "/keparts/#{id}", notice: "\u5728\u5EAB\u3092\u66F4\u65B0\u3057\u307E\u3057\u305F" }
         #      format.html { redirect_to @stockb, notice: 'Stockb was successfully created.' }
         format.json { render :show, status: :created, location: @stockb }
       else
@@ -54,7 +54,7 @@ class StockbsController < ApplicationController
   def update
     respond_to do |format|
       if @stockb.update(stockb_params)
-        format.html { redirect_to @stockb, notice: 'Stockb was successfully updated.' }
+        format.html { redirect_to @stockb, notice: "Stockb was successfully updated." }
         format.json { render :show, status: :ok, location: @stockb }
       else
         format.html { render :edit }
@@ -68,7 +68,7 @@ class StockbsController < ApplicationController
   def destroy
     @stockb.destroy
     respond_to do |format|
-      format.html { redirect_to stockbs_url, notice: 'Stockb was successfully destroyed.' }
+      format.html { redirect_to stockbs_url, notice: "Stockb was successfully destroyed." }
       format.json { head :no_content }
     end
   end

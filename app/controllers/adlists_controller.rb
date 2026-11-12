@@ -2,7 +2,7 @@
 
 class AdlistsController < ApplicationController
   before_action :require_authentication
-  after_action :add_no, only: [:create]
+  after_action :add_no, only: [ :create ]
 
   # GET /adlists
   # GET /adlists.json
@@ -14,9 +14,9 @@ class AdlistsController < ApplicationController
       @adlists = adlists_by_gyo(@gyo)
     elsif @keyword.present?
       like = "%#{@keyword}%"
-      @adlists = Adlist.where('ruby LIKE ? OR company LIKE ? OR name LIKE ?', like, like, like).reorder(Arel.sql('CAST(no AS INTEGER) ASC'))
+      @adlists = Adlist.where("ruby LIKE ? OR company LIKE ? OR name LIKE ?", like, like, like).reorder(Arel.sql("CAST(no AS INTEGER) ASC"))
     else
-      @adlists = Adlist.reorder(Arel.sql('CAST(no AS INTEGER) ASC')).page params[:page]
+      @adlists = Adlist.reorder(Arel.sql("CAST(no AS INTEGER) ASC")).page params[:page]
     end
 
     respond_to do |format|
@@ -24,8 +24,8 @@ class AdlistsController < ApplicationController
       format.xml  { render xml: @adlists }
       format.xlsx do
         send_data Adlist.xlsx_report,
-                  filename: 'lists.xlsx',
-                  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                  filename: "lists.xlsx",
+                  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       end
     end
   end
@@ -67,10 +67,10 @@ class AdlistsController < ApplicationController
                        adlists1 | adlists2
                      else
                        adlists1
-                                end
-                   else
+                     end
+        else
                      adlists2
-                   end
+        end
         @adlists |= adlists3 if adlists3
         @adlists |= adlists4 if adlists4
         @adlists |= adlists5 if adlists5
@@ -92,8 +92,8 @@ class AdlistsController < ApplicationController
       format.json { render json: @adlist }
       format.xlsx do
         send_data Adlist.xlsx_report,
-                  filename: 'lists.xlsx',
-                  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                  filename: "lists.xlsx",
+                  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       end
     end
   end
@@ -161,10 +161,10 @@ class AdlistsController < ApplicationController
 
     respond_to do |format|
       if @adlist.save
-        format.html { redirect_to @adlist, notice: 'Adlist was successfully created.' }
+        format.html { redirect_to @adlist, notice: "Adlist was successfully created." }
         format.json { render json: @adlist, status: :created, location: @adlist }
       else
-        format.html { render action: 'new' }
+        format.html { render action: "new" }
         format.json { render json: @adlist.errors, status: :unprocessable_entity }
       end
     end
@@ -178,10 +178,10 @@ class AdlistsController < ApplicationController
     respond_to do |format|
       #      if @adlist.update_attributes(params[:adlist])
       if @adlist.update(adlist_params)
-        format.html { redirect_to @adlist, notice: 'Adlist was successfully updated.' }
+        format.html { redirect_to @adlist, notice: "Adlist was successfully updated." }
         format.json { head :no_content }
       else
-        format.html { render action: 'edit' }
+        format.html { render action: "edit" }
         format.json { render json: @adlist.errors, status: :unprocessable_entity }
       end
     end
@@ -205,28 +205,28 @@ class AdlistsController < ApplicationController
     redirect_to adlists_url unless cookies[:ids]
     p = Axlsx::Package.new
     wb = p.workbook
-    wb.add_worksheet(name: '一覧') do |sheet|
-      sheet.add_row ['■', '一覧']
-      sheet.add_row ['＃', '名前', '組織', '〒', '住所', '作成日', '更新日']
+    wb.add_worksheet(name: "\u4E00\u89A7") do |sheet|
+      sheet.add_row [ "\u25A0", "\u4E00\u89A7" ]
+      sheet.add_row [ "\uFF03", "\u540D\u524D", "\u7D44\u7E54", "\u3012", "\u4F4F\u6240", "\u4F5C\u6210\u65E5", "\u66F4\u65B0\u65E5" ]
       adlists = []
-      cookies[:ids].split('&').each do |id|
+      cookies[:ids].split("&").each do |id|
         adlists << Adlist.find(id)
       end
       adlists.each do |adlist|
-        org = adlist.company || ''
+        org = adlist.company || ""
         org << adlist.section if adlist.section
         org << adlist.section2 if adlist.section2
-        address = adlist.address1 || ' '
+        address = adlist.address1 || " "
         address << adlist.address2 if adlist.address2
         address << adlist.address3 if adlist.address3
         address << adlist.coad1 if adlist.coad1
         address << adlist.coad2 if adlist.coad2
         address << adlist.coad3 if adlist.coad3
-        sheet.add_row [adlist.id, adlist.name, org, adlist.cozip7, address, adlist.created_at.strftime('%Y/%m/%d %H:%M'), adlist.updated_at.strftime('%Y/%m/%d %H:%M')]
+        sheet.add_row [ adlist.id, adlist.name, org, adlist.cozip7, address, adlist.created_at.strftime("%Y/%m/%d %H:%M"), adlist.updated_at.strftime("%Y/%m/%d %H:%M") ]
       end
     end
 
-    file_path = File.join(Rails.root, 'tmp', 'tatelist.xlsx')
+    file_path = File.join(Rails.root, "tmp", "tatelist.xlsx")
     logger.info file_path
     p.serialize file_path
     filename = ERB::Util.url_encode("#{Time.now.strftime('%Y%m%d%H%M')}一覧.xlsx")
@@ -271,7 +271,7 @@ class AdlistsController < ApplicationController
 
   # 「た」なら「た」「だ」のように、清音とその濁音・半濁音をまとめて返す
   def kana_with_voiced_variants(kana)
-    [kana] + DAKUTEN_MAP.fetch(kana, [])
+    [ kana ] + DAKUTEN_MAP.fetch(kana, [])
   end
 
   # ひらがなをカタカナに変換する（ひらがなとカタカナのコードポイントは 0x60 差分で対応）
@@ -301,7 +301,7 @@ class AdlistsController < ApplicationController
     @adlist.no    = @adlist.id
     @adlist.kbn   = @adlist.ruby[0]
     @adlist.update(adlist_params)
-    logger.debug 'create後の処理'
+    logger.debug "create\u5F8C\u306E\u51E6\u7406"
     logger.debug @adlist.ruby
     logger.debug @adlist.ruby[0]
   end

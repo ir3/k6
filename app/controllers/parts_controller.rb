@@ -106,10 +106,10 @@ class PartsController < ApplicationController
     respond_to do |format|
       #      if @part.update_attributes(params[:part])
       if @part.update(part_params)
-        format.html { redirect_to @part, notice: 'Part was successfully updated.' }
+        format.html { redirect_to @part, notice: "Part was successfully updated." }
         format.json { head :no_content }
       else
-        format.html { render action: 'edit' }
+        format.html { render action: "edit" }
         format.json { render json: @part.errors, status: :unprocessable_entity }
       end
     end

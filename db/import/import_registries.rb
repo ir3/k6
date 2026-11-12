@@ -12,7 +12,7 @@ TABLE    = "船籍"
 COLUMN_MAP = {
   "countryID" => "countryid",
   "country"   => "country",
-  "rate"      => "rate",
+  "rate"      => "rate"
 }.freeze
 
 csv_data, stderr, status = Open3.capture3(

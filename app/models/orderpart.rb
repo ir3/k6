@@ -3,7 +3,7 @@
 class Orderpart < ActiveRecord::Base
   #  attr_accessible :bqty, :deleted_at, :info, :irate, :itemno, :kzaiko, :mno, :partid, :partno, :qty, :sno, :totaLWeight, :total2, :totala, :unit, :unitpd, :unitpi, :unitpi2, :unitweight, :updated_at
   #  belongs_to :order
-  default_scope -> { where('deleted_at IS NULL').order('id DESC') }
+  default_scope -> { where("deleted_at IS NULL").order("id DESC") }
 
   # 部品台帳(なければKE部品台帳)の該当部品。注文部品詳細と同じく部品番号(pcode)で探す
   def master_part

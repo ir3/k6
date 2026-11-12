@@ -9,7 +9,7 @@ class OrderpartsController < ApplicationController
       logger.debug  @keyword
       @orderparts = Orderpart.find_by_sql("SELECT * FROM orderparts WHERE pcode like '#{keyword}%' ORDER BY id DESC")
     else
-      @orderparts = Orderpart.order('id').page params[:page]
+      @orderparts = Orderpart.order("id").page params[:page]
     end
 
     respond_to do |format|
@@ -42,8 +42,8 @@ class OrderpartsController < ApplicationController
   # GET /orderparts/1
   # GET /orderparts/1.json
   def show
-    if params[:id] == 'search'
-      redirect_to action: 'index'
+    if params[:id] == "search"
+      redirect_to action: "index"
     else
       @orderpart = Orderpart.find(params[:id])
       respond_to do |format|
@@ -78,10 +78,10 @@ class OrderpartsController < ApplicationController
 
     respond_to do |format|
       if @orderpart.save
-        format.html { redirect_to @orderpart, notice: 'Orderpart was successfully created.' }
+        format.html { redirect_to @orderpart, notice: "Orderpart was successfully created." }
         format.json { render json: @orderpart, status: :created, location: @orderpart }
       else
-        format.html { render action: 'new' }
+        format.html { render action: "new" }
         format.json { render json: @orderpart.errors, status: :unprocessable_entity }
       end
     end

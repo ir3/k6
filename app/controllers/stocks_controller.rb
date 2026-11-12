@@ -38,7 +38,7 @@ class StocksController < ApplicationController
       if @stock.save
         # 部品詳細表示更新へ
         id = Part.find_by(pcode: @stock.partno).id
-        format.html { redirect_to "/parts/#{id}", notice: '在庫を更新しました' }
+        format.html { redirect_to "/parts/#{id}", notice: "\u5728\u5EAB\u3092\u66F4\u65B0\u3057\u307E\u3057\u305F" }
         format.json { render :show, status: :created, location: @stock }
       else
         format.html { render :new }
@@ -52,7 +52,7 @@ class StocksController < ApplicationController
   def update
     respond_to do |format|
       if @stock.update(stock_params)
-        format.html { redirect_to @stock, notice: 'Stock was successfully updated.' }
+        format.html { redirect_to @stock, notice: "Stock was successfully updated." }
         format.json { render :show, status: :ok, location: @stock }
       else
         format.html { render :edit }
@@ -66,7 +66,7 @@ class StocksController < ApplicationController
   def destroy
     @stock.destroy
     respond_to do |format|
-      format.html { redirect_to stocks_url, notice: 'Stock was successfully destroyed.' }
+      format.html { redirect_to stocks_url, notice: "Stock was successfully destroyed." }
       format.json { head :no_content }
     end
   end

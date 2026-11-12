@@ -46,11 +46,11 @@ class Adlist < ActiveRecord::Base
 
   #  acts_as_xlsx
   #  acts_as_paranoid
-  default_scope -> { where('deleted_at IS NULL').order('id DESC') }
+  default_scope -> { where("deleted_at IS NULL").order("id DESC") }
 
   def self.xlsx_report
     package = Adlist.to_xlsx
-    header_style = { bg_color: '00', fg_color: 'FF', alignment: { horizontal: :center }, bold: true }
+    header_style = { bg_color: "00", fg_color: "FF", alignment: { horizontal: :center }, bold: true }
     bordered = package.workbook.styles.add_style(border: Axlsx::STYLE_THIN_BORDER)
     header_xf = package.workbook.styles.add_style header_style
     package.workbook.worksheets.first.tap do |sheet|

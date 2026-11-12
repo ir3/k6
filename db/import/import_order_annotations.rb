@@ -14,7 +14,7 @@ MOJIBAKE_MAP = {
   "?鞄?"  => "㈱",
   "?鰍ﾖ"  => "へ",
   "?鰍ﾉ"  => "に",
-  "?ｱ"   => "﨑",
+  "?ｱ"   => "﨑"
 }.freeze
 
 def fix_mojibake(str)
@@ -27,7 +27,7 @@ COLUMN_MAP = {
   "Valid"   => "tvalid",
   "MNo"     => "mno",
   "Comment" => "comment",
-  "updata"  => "updated_at",
+  "updata"  => "updated_at"
 }.freeze
 
 def parse_datetime(str)

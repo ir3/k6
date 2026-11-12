@@ -47,10 +47,10 @@ class RegistriesController < ApplicationController
 
     respond_to do |format|
       if @registry.save
-        format.html { redirect_to @registry, notice: 'Registry was successfully created.' }
+        format.html { redirect_to @registry, notice: "Registry was successfully created." }
         format.json { render json: @registry, status: :created, location: @registry }
       else
-        format.html { render action: 'new' }
+        format.html { render action: "new" }
         format.json { render json: @registry.errors, status: :unprocessable_entity }
       end
     end
@@ -66,10 +66,10 @@ class RegistriesController < ApplicationController
 
     respond_to do |format|
       if @registry.update(attrs)
-        format.html { redirect_to @registry, notice: 'Registry was successfully updated.' }
+        format.html { redirect_to @registry, notice: "Registry was successfully updated." }
         format.json { head :no_content }
       else
-        format.html { render action: 'edit' }
+        format.html { render action: "edit" }
         format.json { render json: @registry.errors, status: :unprocessable_entity }
       end
     end

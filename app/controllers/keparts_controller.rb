@@ -97,7 +97,7 @@ class KepartsController < ApplicationController
   def update
     respond_to do |format|
       if @kepart.update(kepart_params)
-        format.html { redirect_to @kepart, notice: 'Kepart was successfully updated.' }
+        format.html { redirect_to @kepart, notice: "Kepart was successfully updated." }
         format.json { render :show, status: :ok, location: @kepart }
       else
         format.html { render :edit }

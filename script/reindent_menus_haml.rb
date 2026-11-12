@@ -8,7 +8,7 @@ path = File.expand_path('../app/views/menus/index.html.haml', __dir__)
 lines = File.readlines(path, encoding: 'UTF-8')
 
 # インデント修正が必要な行範囲（1始まり、両端含む）
-ranges = [(22..76), (86..119), (134..175), (177..179)]
+ranges = [ (22..76), (86..119), (134..175), (177..179) ]
 
 ranges.each do |range|
   range.each do |i|
