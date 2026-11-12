@@ -36,6 +36,7 @@ Rails.application.routes.draw do
       get :sorted
       post :add_part
       post :add_part_name
+      post :output_dates
       get "report/:kind", to: "orders#report", as: :report
     end
   end

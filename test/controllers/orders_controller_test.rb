@@ -848,6 +848,67 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     get order_url(@order)
     assert_equal "未", output_dates_row("納品書出力日(請求要となった日)").text.strip
   end
+  # 日付を手で入れる欄（旧 partsin.asp → torihikikanri.asp）
+  test "show has the check boxes only on the six items of the old screen, the date field and the button" do
+    get order_url(@order)
+    form = "order_output_dates_form"
+    assert_select "form##{form}[method=post][action=?]", output_dates_order_path(@order)
+    boxes = css_select("input[type=checkbox][name='kubun[]'][form=#{form}]")
+    assert_equal %w[102 103 104 105 106 107], boxes.map { |box| box["value"] }.sort
+    # 見積依頼・初回見積の欄には、旧ASPと同じく、チェックボックスが無い
+    assert_nil output_dates_row("見積依頼出力日").at_css("input[type=checkbox]")
+    assert_nil output_dates_row("初回見積出力日").at_css("input[type=checkbox]")
+    assert_equal "102", output_dates_row("最新見積出力日").at_css("input[type=checkbox]")["value"]
+    assert_equal "107", output_dates_row("納品書出力日(請求要となった日)").at_css("input[type=checkbox]")["value"]
+    assert_equal "104", output_dates_row("出荷案内出力日(請求要となった日)").at_css("input[type=checkbox]")["value"]
+    assert_select "input#output_inputday[type=date][form=#{form}][value=?]", Date.current.strftime("%Y-%m-%d")
+    assert_select "input[type=submit][value=?][form=#{form}]", "日付更新"
+  end
+
+  test "the date update adds a manual record for each checked item and comes back to the order" do
+    assert_difference -> { OrderLog.where(mno: @order.mno).count }, 2 do
+      post output_dates_order_url(@order), params: { kubun: %w[104 106], inputday: "2026-11-20" }
+    end
+    assert_response :see_other
+    assert_redirected_to order_url(@order)
+    assert_equal "出荷案内出力日、入金(確認)日に、2026/11/20 を登録しました。", flash[:notice]
+    assert_equal [ [ 104, Date.new(2026, 11, 20) ], [ 106, Date.new(2026, 11, 20) ] ],
+                 OrderLog.where(mno: @order.mno).order(:kubun).pluck(:kubun, :datelog)
+
+    follow_redirect!
+    cell = output_dates_row("出荷案内出力日(請求要となった日)")
+    assert_equal "2026/11/20", cell.text.strip
+    assert_equal "手動で入力した日付", cell.at_css("span")["title"]
+    assert_equal "2026/11/20", output_dates_row("入金(確認)日").text.strip
+  end
+
+  test "the date update with nothing checked or a wrong date is refused with a message and adds nothing" do
+    assert_no_difference -> { OrderLog.count } do
+      post output_dates_order_url(@order), params: { inputday: "2026-11-20" }
+      assert_redirected_to order_url(@order)
+      assert_equal "日付を登録する項目にチェックを入れてください。", flash[:alert]
+
+      post output_dates_order_url(@order), params: { kubun: %w[105], inputday: "" }
+      assert_match(/日付を入力してください/, flash[:alert])
+
+      post output_dates_order_url(@order), params: { kubun: %w[105], inputday: "2026-02-30" }
+      assert_match(/日付を入力してください/, flash[:alert])
+    end
+  end
+
+  test "the date update takes only the kinds of the six check boxes" do
+    post output_dates_order_url(@order), params: { kubun: %w[1 2 101 105], inputday: "2026-11-20" }
+    assert_equal [ 105 ], OrderLog.where(mno: @order.mno).pluck(:kubun)
+  end
+
+  test "the date update of an order that does not exist is not found and someone who is not signed in cannot use it" do
+    post output_dates_order_url(id: 0), params: { kubun: %w[105], inputday: "2026-11-20" }
+    assert_response :not_found
+    delete session_url
+    post output_dates_order_url(@order), params: { kubun: %w[105], inputday: "2026-11-20" }
+    assert_redirected_to new_session_url(format: :html)
+    assert_equal 0, OrderLog.where(mno: @order.mno).count
+  end
   test "show gives the headings of the output dates their own (green) class" do
     get order_url(@order)
     th = css_select("th").find { |cell| cell.text.strip == "見積依頼出力日" }

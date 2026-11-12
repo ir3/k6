@@ -65,32 +65,43 @@
       日時
     %td.datej.updated-at-col{width: "72px", style: "font-size: 9px;"}= @order.updated_at.strftime("%Y/%m/%d %H:%M")
 -# 各種出力日（旧 partsin.asp の請求管理）。帳票出力履歴の日付を、8項目の表にまとめる。
--# 未出力は「未」、手で入れた日付は青字で出す。項目名は、ほかの項目名（青系）と区別するため緑系
+-# 未出力は「未」、手で入れた日付は青字で出す。
+-# 日付を手で入れる欄（旧 torihikikanri.asp）: チェックボックスと日付と「日付更新」は、表の中のセルに散らばるので、
+-# 掛け率と同じく、空のフォームを表の外に置き、form 属性で関連付ける。チェックボックスが付くのは、旧ASPと同じ6項目（kubun の値）
 - output_items = [ |
-  ["見積依頼出力日", nil, @output_dates.request], |
-  ["初回見積出力日", nil, @output_dates.first_estimate], |
-  ["最新見積出力日", nil, @output_dates.latest_estimate], |
-  ["受注/受注メモ出力日", nil, @output_dates.order_memo], |
-  ["納品書出力日", "(請求要となった日)", @output_dates.delivery], |
-  ["出荷案内出力日", "(請求要となった日)", @output_dates.shipping], |
-  ["請求書出力日", nil, @output_dates.invoice], |
-  ["入金(確認)日", nil, @output_dates.payment] |
+  ["見積依頼出力日", nil, nil, @output_dates.request], |
+  ["初回見積出力日", nil, nil, @output_dates.first_estimate], |
+  ["最新見積出力日", nil, 102, @output_dates.latest_estimate], |
+  ["受注/受注メモ出力日", nil, 103, @output_dates.order_memo], |
+  ["納品書出力日", "(請求要となった日)", 107, @output_dates.delivery], |
+  ["出荷案内出力日", "(請求要となった日)", 104, @output_dates.shipping], |
+  ["請求書出力日", nil, 105, @output_dates.invoice], |
+  ["入金(確認)日", nil, 106, @output_dates.payment] |
 ] |
+%form#order_output_dates_form{method: "post", action: output_dates_order_path(@order)}
+  = hidden_field_tag("authenticity_token", form_authenticity_token, id: nil)
 %table.center-table.radius-table.row-compact{width: "99%", align:"center"}
   %tr
-    - output_items.each do |label, note, _entry|
+    - output_items.each do |label, note, _kubun, _entry|
       %th.output-dates-head{width: "12.5%", style: 'font-size: 11px;'}
         = label
         - if note
           %br
           %span= note
   %tr
-    - output_items.each do |_label, _note, entry|
+    - output_items.each do |label, _note, kubun, entry|
       %td{style: "text-align:center; white-space:nowrap;"}
+        - if kubun
+          = check_box_tag "kubun[]", kubun, false, id: "output_kubun_#{kubun}", form: "order_output_dates_form", title: "#{label}に、右の日付を登録する"
         - if entry
           %span{style: ("color:#1d4ed8;" if entry.manual), title: ("手動で入力した日付" if entry.manual)}= entry.date.strftime("%Y/%m/%d")
         - else
           %span{style: "color:#9ca3af;"} 未
+  %tr
+    %td{colspan: 8, style: "text-align:left; white-space:nowrap;"}
+      %span.TB12 日付を手で登録: 項目にチェックを入れ、日付を入力して「日付更新」（チェックした項目すべてに、同じ日付を登録）
+      = date_field_tag :inputday, Date.current.strftime("%Y-%m-%d"), id: "output_inputday", form: "order_output_dates_form", class: "input input-bordered input-xs border-2 border-neutral bg-base-100", style: "width: 9rem; ime-mode:disabled; margin-left: 8px;"
+      = submit_tag "日付更新", form: "order_output_dates_form", name: nil, class: "btn btn-xs wtext btn-info", style: "margin-left: 4px;"
 %table
   %tr
     %td{style:"padding: 5px 5px 5px 30px;"}

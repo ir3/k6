@@ -307,6 +307,20 @@ class OrdersController < ApplicationController
     redirect_to @order
   end
 
+  # POST /orders/1/output_dates
+  # 注文部品詳細の「日付更新」（旧 torihikikanri.asp）。チェックした項目に、入力した日付を手動の記録として足し、注文部品詳細へ戻る。
+  def output_dates
+    @order = Order.find(params[:id])
+    result = OrderOutputDateRecorder.new(@order, params[:kubun], params[:inputday]).call
+
+    if result.success?
+      flash[:notice] = "#{result.labels.join('、')}に、#{result.date.strftime('%Y/%m/%d')} を登録しました。"
+    else
+      flash[:alert] = result.error
+    end
+    redirect_to order_path(@order), status: :see_other
+  end
+
   # POST /orders/1/add_part_name
   # 注文部品詳細の「部品番号が不明な分を部品名入力」。部品名だけで部品番号なしの明細を仮登録する。
   def add_part_name
