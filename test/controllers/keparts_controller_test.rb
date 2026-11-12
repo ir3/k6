@@ -16,11 +16,15 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", new_kepart_path, count: 0
   end
 
-  test "the list has the search frame with its button" do
+  test "the list has the search and the new registration frames with their buttons" do
     get keparts_url(keyword: "E00")
     assert_select "form[action=?][method=get]", keparts_path do
       assert_select "input[name=keyword][value=?]", "E00"
       assert_select "input[type=submit][value=?]", "Ｂ検索"
+    end
+    assert_select "form[action=?][method=get]", new_kepart_path do
+      assert_select "input[name=nparts][value=?]", "E00"
+      assert_select "input[type=submit][value=?]", "新規Ｂ部品登録"
     end
     assert_match(/有効な検索条件：E00/, response.body)
   end
@@ -52,6 +56,98 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
     get keparts_url(keyword: "ｆｗ１")
     assert_select "td a", text: "FW123"
     assert_match(/有効な検索条件：fw1/, response.body)
+  end
+
+  test "the new registration from a code that is a part makes the screen from the part" do
+    Part.create!(pcode: "A0100", jname: "Ａ部品の和名", ename: "A PART NAME", sel_unit: "10", weightkg: 2.5, newprice: 3000)
+    get new_kepart_url(nparts: "ａ0100")
+    assert_response :success
+    assert_select "title", /Ｂ部品新規登録/
+    assert_select "input#kepart_pcode[value=?]", "A0100~"
+    assert_select "input#kepart_jname[value=?]", "Ａ部品の和名"
+    assert_select "input#kepart_ename[value=?]", "A PART NAME"
+    assert_select "input#kepart_munit[value=?]", "10"
+    assert_select "input#kepart_num[value=?]", "1"
+    assert_select "input#kepart_weightkg[value=?]", "2.5"
+    assert_select "input#kepart_newprice[value=?]", "3000"
+    assert_select "input#kepart_itemno[value=?]", "0"
+    assert_select "input[name=source][value=part]"
+    assert_select "input[name=?][type=radio]", "kepart[ikubun]", count: 4
+    assert_select "input#kepart_ikubun_1[checked]"
+    assert_select "input[type=submit][value=?]", "新規Ｂ部品在庫登録"
+  end
+
+  test "the new registration from a code that is not a part makes the detail input screen" do
+    get new_kepart_url(nparts: "zz-1")
+    assert_response :success
+    assert_select "title", /Ｂ部品詳細入力/
+    assert_match(/Ａ部品台帳には、指定の部品コードはありません/, response.body)
+    assert_select "input#kepart_pcode[value=?]", "ZZ-1"
+    assert_select "input#kepart_munit[value=?]", "1"
+    assert_select "input[name=source][value=scratch]"
+    assert_select "input#kepart_ename", count: 0
+    assert_select "input[type=submit][value=?]", "Ｂ部品登録"
+  end
+
+  test "the new registration from a code that is already a B part goes to the stock maintenance" do
+    get new_kepart_url(nparts: "e001~")
+    assert_redirected_to stockb_maintenance_url(partno: "E001~")
+    assert_match(/Ｂ部品「E001~」は、すでにＢ部品台帳にあります/, flash[:notice])
+  end
+
+  test "the new registration without a code comes back to the list" do
+    get new_kepart_url(nparts: "  ")
+    assert_redirected_to keparts_url
+    assert_equal "新規登録する部品コードを入力してください。", flash[:alert]
+  end
+
+  test "the registration from a part makes the part and a stock row and comes back to the list of its code" do
+    assert_difference [ -> { Kepart.count }, -> { Stockb.count } ], 1 do
+      post keparts_url, params: { source: "part", kepart: { pcode: "a0100~", size: "5x5", jname: "和名", ename: "ENG", munit: "10", num: "2",
+                                                            weightkg: "2.5", newprice: "3000", itemno: "0", ikubun: "1" } }
+    end
+    assert_response :see_other
+    assert_redirected_to keparts_url(keyword: "A0100~")
+    assert_equal "Ｂ部品「A0100~」と、在庫台帳Ｂの1行を登録しました。", flash[:notice]
+    assert_equal [ 0, 2 ], Stockb.find_by!(partno: "A0100~").then { |stock| [ stock.kind, stock.num ] }
+  end
+
+  test "the registration from nothing is kind 1 and the name is both names" do
+    post keparts_url, params: { source: "scratch", kepart: { pcode: "zz-1", jname: "名称のみ", munit: "1", num: "1", newprice: "100" } }
+    assert_redirected_to keparts_url(keyword: "ZZ-1")
+    kepart = Kepart.find_by!(pcode: "ZZ-1")
+    assert_equal [ "名称のみ", "名称のみ" ], [ kepart.jname, kepart.ename ]
+    assert_equal 1, Stockb.find_by!(partno: "ZZ-1").kind
+  end
+
+  test "a wrong registration shows the message and keeps what was typed" do
+    assert_no_difference [ -> { Kepart.count }, -> { Stockb.count } ] do
+      post keparts_url, params: { source: "part", kepart: { pcode: "N0200~", jname: "入力した名称", newprice: "abc", ikubun: "3" } }
+    end
+    assert_response :unprocessable_entity
+    assert_select "p.text-error", text: /単価は 0 から 2000000000 の整数/
+    assert_select "input#kepart_pcode[value=?]", "N0200~"
+    assert_select "input#kepart_jname[value=?]", "入力した名称"
+    assert_select "input#kepart_newprice[value=?]", "abc"
+    assert_select "input#kepart_ikubun_3[checked]"
+  end
+
+  test "registering an existing code is refused" do
+    assert_no_difference -> { Kepart.count } do
+      post keparts_url, params: { source: "scratch", kepart: { pcode: "e001~" } }
+    end
+    assert_response :unprocessable_entity
+    assert_select "p.text-error", text: /「E001~」は、すでにＢ部品台帳にあります/
+  end
+
+  test "someone who is not signed in cannot open or use the registration" do
+    delete session_url
+    get new_kepart_url(nparts: "ZZ-9")
+    assert_redirected_to new_session_url(format: :html)
+    assert_no_difference -> { Kepart.count } do
+      post keparts_url, params: { source: "scratch", kepart: { pcode: "ZZ-9" } }
+    end
+    assert_redirected_to new_session_url(format: :html)
   end
 
   test "someone who is not signed in is sent to the login screen" do

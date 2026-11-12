@@ -40,9 +40,27 @@ class KepartsController < ApplicationController
                 flash_key => result.success? ? "#{result.label}を登録しました。" : result.error
   end
 
-  # GET /keparts/new
+  # GET /keparts/new?nparts=部品コード
+  # 新規Ｂ部品登録（旧 hnpartsreg.asp → npartsr3.asp）。Ｂ部品台帳表示の「新規Ｂ部品登録」の枠から開く。
+  # - Ａ部品に、その部品コードがある: Ａ部品の名称・単価・重量を引き継いだ登録画面（部品コードは末尾に「~」）
+  # - Ｂ部品台帳に、すでにある: 登録できないので、在庫を登録するＢ部品在庫メンテナンスへ案内する
+  # - どちらにも無い: Ｂ部品詳細入力（旧 npartsr32.asp）の登録画面
   def new
-    @kepart = Kepart.new
+    code = PartCode.normalize(params[:nparts])
+    return redirect_to(keparts_path, alert: "新規登録する部品コードを入力してください。") if code.empty?
+
+    part = Part.where("UPPER(pcode) = ?", code).first
+    existing = Kepart.where("UPPER(pcode) = ?", code).first
+    if part
+      @source = :part
+      @values = KepartRegistrar.defaults_from(part)
+    elsif existing
+      redirect_to stockb_maintenance_path(partno: existing.pcode),
+                  notice: "Ｂ部品「#{existing.pcode}」は、すでにＢ部品台帳にあります。在庫は、このＢ部品在庫メンテナンスで登録してください。"
+    else
+      @source = :scratch
+      @values = { pcode: code, munit: "1", num: "1" }
+    end
   end
 
   # GET /keparts/1/edit
@@ -50,16 +68,26 @@ class KepartsController < ApplicationController
 
   # POST /keparts
   # POST /keparts.json
+  # 旧 hpartsreg6.asp / partsreg44.asp と同じく、KE部品台帳と在庫台帳Ｂに1行ずつ登録する。
+  # 登録のあとは、その部品コードで絞り込んだ一覧（旧 hiteijosel.asp）へ戻る
   def create
-    @kepart = Kepart.new(kepart_params)
+    source = params[:source].to_s == "scratch" ? :scratch : :part
+    result = KepartRegistrar.new(kepart_input, source: source).call
 
     respond_to do |format|
-      if @kepart.save
-        format.html { redirect_to @kepart, notice: 'Kepart was successfully created.' }
-        format.json { render :show, status: :created, location: @kepart }
+      if result.success?
+        format.html do
+          redirect_to keparts_path(keyword: result.kepart.pcode), status: :see_other,
+                                                                  notice: "Ｂ部品「#{result.kepart.pcode}」と、在庫台帳Ｂの1行を登録しました。"
+        end
+        format.json { render json: result.kepart, status: :created, location: result.kepart }
       else
-        format.html { render :new }
-        format.json { render json: @kepart.errors, status: :unprocessable_entity }
+        # 入力したままの値で、登録画面に戻る（Turbo は 422 でないと、画面を差し替えない）
+        @source = source
+        @values = kepart_input.to_h.symbolize_keys
+        @error = result.error
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: { error: result.error }, status: :unprocessable_entity }
       end
     end
   end
@@ -96,6 +124,11 @@ class KepartsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_kepart
     @kepart = Kepart.find(params[:id])
+  end
+
+  # 登録画面から来る項目だけを受け付ける
+  def kepart_input
+    params.fetch(:kepart, {}).permit(:pcode, :size, :jname, :ename, :munit, :num, :weightkg, :newprice, :itemno, :ikubun)
   end
 
   # Never trust parameters from the scary internet, only allow the white list through.

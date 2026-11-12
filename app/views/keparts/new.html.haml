@@ -1,5 +1,81 @@
-%h1 New kepart
+-# 新規Ｂ部品登録。Ｂ部品台帳表示の「新規Ｂ部品登録」の枠から開く。
+-#   Ａ部品から作る（旧 hnpartsreg.asp → hpartsreg6.asp）／Ａ部品に無い部品コードから作る（旧 npartsr32.asp → partsreg44.asp）
+- from_part = @source == :part
+- content_for :page_title, from_part ? "Ｂ部品新規登録" : "Ｂ部品詳細入力"
+- input_cls = "input input-bordered input-xs border-2 border-neutral bg-base-100 w-full"
+- head_cls = "bg-primary text-primary-content"
+- values = @values || {}
+- ikubun_kinds = StockLedger::INBOUND_KINDS
 
-= render 'form'
+.mb-3.flex.items-center.gap-3
+  = link_to "戻る", keparts_path, class: "btn btn-sm btn-info"
 
-= link_to 'Back', keparts_path
+- if from_part
+  %p.mb-2 指定された部品を新規にＢ在庫として登録します。データに変更があれば変更入力してください。
+- else
+  %p.mb-2 Ａ部品台帳には、指定の部品コードはありません。Ｂ部品として部品詳細情報を入力してください。
+- if @error
+  %p.mb-2.text-error.font-bold= @error
+
+= form_with url: keparts_path, scope: :kepart, method: :post do |f|
+  = hidden_field_tag :source, @source, id: nil
+  - if from_part
+    %table.center-table.radius-table.row-compact{width: "99%", align: "center"}
+      %tr{class: head_cls}
+        %th{width: "20%"} 部品コード
+        %th 寸法
+      %tr
+        %td= f.text_field :pcode, value: values[:pcode], id: "kepart_pcode", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+        %td= f.text_field :size, value: values[:size], id: "kepart_size", autocomplete: "off", class: input_cls
+    %table.center-table.radius-table.row-compact.mt-2{width: "99%", align: "center"}
+      %tr{class: head_cls}
+        %th 和文名称
+        %th 英文名称
+      %tr
+        %td= f.text_field :jname, value: values[:jname], id: "kepart_jname", autocomplete: "off", class: input_cls
+        %td= f.text_field :ename, value: values[:ename], id: "kepart_ename", autocomplete: "off", class: input_cls
+  - else
+    %table.center-table.radius-table.row-compact{width: "99%", align: "center"}
+      %tr{class: head_cls}
+        %th{width: "20%"} 部品コード
+        %th{width: "14%"} ItemNo
+        %th 名称
+      %tr
+        %td= f.text_field :pcode, value: values[:pcode], id: "kepart_pcode", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+        %td= f.text_field :itemno, value: values[:itemno], id: "kepart_itemno", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+        %td= f.text_field :jname, value: values[:jname], id: "kepart_jname", autocomplete: "off", class: input_cls, autofocus: true
+
+  %table.center-table.radius-table.row-compact.mt-2{width: "99%", align: "center"}
+    %tr{class: head_cls}
+      %th 計測単位(通常は1)
+      %th 数量
+      %th 重量(kg)
+      %th 単価
+      - if from_part
+        %th ItemNo
+    %tr
+      %td= f.text_field :munit, value: values[:munit], id: "kepart_munit", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      %td= f.text_field :num, value: values[:num], id: "kepart_num", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      %td= f.text_field :weightkg, value: values[:weightkg], id: "kepart_weightkg", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      %td= f.text_field :newprice, value: values[:newprice], id: "kepart_newprice", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      - if from_part
+        %td= f.text_field :itemno, value: values[:itemno], id: "kepart_itemno", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+
+  - if from_part
+    %table.center-table.radius-table.row-compact.mt-2{width: "99%", align: "center"}
+      %tr{class: head_cls}
+        %th 入庫区分
+      %tr
+        %td
+          - ikubun_kinds.each do |value, label|
+            %label.mr-4.cursor-pointer
+              = radio_button_tag "kepart[ikubun]", value, (values[:ikubun] || "1").to_s == value.to_s, id: "kepart_ikubun_#{value}"
+              = label
+
+  %p.TB12.mt-2
+    単価は、新単価と現行単価の両方に登録します。空欄は 0 です。
+    - unless from_part
+      名称は、和文名称と英文名称の両方に登録します。
+
+  .mt-4.text-center
+    = submit_tag(from_part ? "新規Ｂ部品在庫登録" : "Ｂ部品登録", name: nil, class: "btn btn-sm btn-info")
