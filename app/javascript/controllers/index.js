@@ -24,3 +24,6 @@ application.register("table-font-size", TableFontSizeController)
 
 import UpdatedAtToggleController from "./updated_at_toggle_controller"
 application.register("updated-at-toggle", UpdatedAtToggleController)
+
+import StickyOffsetController from "./sticky_offset_controller"
+application.register("sticky-offset", StickyOffsetController)

@@ -15,7 +15,7 @@
     = stylesheet_link_tag "application", "data-turbo-track": "reload"
     = stylesheet_link_tag "k", "data-turbo-track": "reload"
     = javascript_include_tag "application", "data-turbo-track": "reload", type: "module"
-  %body{data: {controller: "table-font-size updated-at-toggle"}}
+  %body{data: {controller: "table-font-size updated-at-toggle sticky-offset"}}
     .navbar.bg-blue-900.text-white{style: "min-height: 50px; padding-top: 0; padding-bottom: 0;"}
       - if session[:visited_menu]
         %a.btn.btn-ghost.normal-case.text-xl{style: "color: #fde047; font-size: 0.85rem;"} 神戸エンジンサービス

@@ -40,7 +40,9 @@
 
 .center-table thead th {
   position: sticky;
-  top: 4rem;
+  /* ナビバーの直下にぴったり付ける。高さは sticky_offset_controller.js が測って入れる（測れるまでの仮の値が 4rem） */
+  /* 1px だけナビバーの下に潜らせる（結合した罫線のぶんの隙間から、データ行の文字がのぞくため） */
+  top: calc(var(--navbar-height, 4rem) - 1px);
   z-index: 10;
   background-color: var(--color-primary);
   color: var(--color-primary-content);
