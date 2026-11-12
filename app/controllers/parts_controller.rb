@@ -2,6 +2,7 @@
 
 class PartsController < ApplicationController
   before_action :require_authentication
+  before_action :set_part, only: %i[show update_field duplicate destroy]
 
   # GET /parts
   # GET /parts.json
@@ -35,19 +36,33 @@ class PartsController < ApplicationController
 
   # GET /parts/1
   # GET /parts/1.json
+  # Ａ部品メンテナンス（旧 partsmente.asp）。部品台帳の定義を見て、項目ごとに登録し直す。
+  # Ａ部品台帳表示の部品コード、注文明細・並べ替え画面の部品コードから開く。在庫は「部品在庫参照」から見る。
   def show
-    @part = Part.find(params[:id])
-
-    @num = 0
-    @stocks = Stock.where(partno: @part.pcode)
-    @stocks.each do |stock|
-      @num += stock.num
-    end
-    @stock = Stock.new
+    @stock_rows = Stock.where("UPPER(partno) = ?", @part.pcode.to_s.upcase).count
+    @old_part_number = StockSetting.find_by(partno: @part.pcode.to_s.strip.upcase)&.opartno
 
     respond_to do |format|
-      format.html # show.html.erb
+      format.html
       format.json { render json: @part }
+    end
+  end
+
+  # PATCH /parts/1/field（1回に1項目。旧 npartsedit* 相当）
+  def update_field
+    result = PartEditor.new(@part, params[:field], params[:value]).call
+    flash_key = result.success? ? :notice : :alert
+    redirect_to part_path(@part), status: :see_other,
+                flash_key => result.success? ? "#{result.label}を登録しました。" : result.error
+  end
+
+  # POST /parts/1/duplicate（旧 npartsreg2 相当。新しい部品コードで、元の情報を保持した部品を作る）
+  def duplicate
+    result = PartDuplicator.new(@part, params[:new_code]).call
+    if result.success?
+      redirect_to part_path(result.part), status: :see_other, notice: "新しい部品「#{result.part.pcode}」を作りました。"
+    else
+      redirect_to part_path(@part), status: :see_other, alert: result.error
     end
   end
 
@@ -102,13 +117,21 @@ class PartsController < ApplicationController
 
   # DELETE /parts/1
   # DELETE /parts/1.json
+  # 旧 partsdelA.asp と同じく、部品台帳の行を消す（在庫台帳の履歴は消さない）。
+  # 削除のあとの転送は 303（Turbo の DELETE は、303 でないと、削除後の画面に DELETE を送り直す）
   def destroy
-    @part = Part.find(params[:id])
+    code = @part.pcode
     @part.destroy
 
     respond_to do |format|
-      format.html { redirect_to parts_url }
+      format.html { redirect_to parts_url, status: :see_other, notice: "Ａ部品「#{code}」を削除しました。" }
       format.json { head :no_content }
     end
+  end
+
+  private
+
+  def set_part
+    @part = Part.find(params[:id])
   end
 end
