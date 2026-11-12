@@ -180,6 +180,21 @@ bin/rails runner db/import/import_stockb_settings.rb          # fsdb.mdb が必�
 - Access に行がある部品は、nonview の値によらず非表示(nonview=1)として取り込む
 - 運用開始後に再実行しても、Access に無い（k6 で非表示にした）部品は変わらない
 
+#### Ｂ部品の英文名称を、Ａ部品から埋める（2026-11-12 追加）
+
+Access の `ke部品` は、英文名称が和文名称と同じ行が大半（部品コードが「~」で終わる、Ａ部品から作ったＢ部品 795 件のうち 761 件）。
+元のＡ部品には別の英文名称があるので、Ｂ部品メンテナンス画面（`/keparts/ID`）で英文名称が和文名称と同じに見える。
+**`import_keparts.rb` と `import_parts.rb` のあとに実行する**（`import_keparts.rb` は英文名称を Access の値に戻すので、取り込み直すたびに実行し直す）。
+
+```bash
+DRY_RUN=1 bin/rails runner db/import/fill_kepart_enames_from_parts.rb   # 何も変えずに、直す行を見る
+bin/rails runner db/import/fill_kepart_enames_from_parts.rb             # 直す。何度実行してもよい（2026-11-12時点で578件）
+```
+
+- 直すのは、部品コードが「~」で終わり、英文名称が和文名称と同じＢ部品だけ。「~」の無いＢ部品は、Ａ部品と同じコードでも別の部品のことがあるので触らない
+- 元のＡ部品（「~」を除いた部品コード）の英文名称が1通りで、アルファベットを含み、Ｂ部品の英文名称と違うときだけ写す。更新日は変えない
+- 本体は `db/import/kepart_ename_fill.rb`（テストは `test/import/kepart_ename_fill_test.rb`）
+
 #### 帳票出力履歴の `order_logs`（2026-10-07 追加）
 
 旧Accessの `取引管理`（MNo, datelog, kubun）を `order_logs` に持つ。**追記専用の出力履歴**で、帳票を出力するたびに1行増える
