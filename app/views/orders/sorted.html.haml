@@ -50,7 +50,8 @@
       - if item.part_source == :part
         %td= (link_to item.code, parts_path+"/#{item.part.id}")+ item.kzaiko.to_s
       - elsif item.part_source == :kepart
-        %td= (link_to item.code, keparts_path+"/#{item.part.id}")+ item.kzaiko.to_s
+        -# Ｂ部品の部品コードは、注文部品詳細と同じく、Ｂ部品詳細編集（旧 partsin22.asp）へ
+        %td= (link_to item.code, edit_orderpart_path(item.record))+ item.kzaiko.to_s
       - else
         %td= item.code
       %td= item.itemno

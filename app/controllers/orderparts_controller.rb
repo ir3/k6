@@ -69,6 +69,8 @@ class OrderpartsController < ApplicationController
   def edit
     @orderpart = Orderpart.find(params[:id])
     prepare_edit_screen
+    # Ｂ部品の明細は、Ｂ部品詳細編集（旧 partsin22.asp）の画面
+    render edit_template
   end
 
   # POST /orderparts
@@ -100,7 +102,7 @@ class OrderpartsController < ApplicationController
       @orderpart.reload
       prepare_edit_screen
       flash.now[:alert] = result.error
-      render :edit, status: :unprocessable_entity
+      render edit_template, status: :unprocessable_entity
     end
   end
 
@@ -116,6 +118,11 @@ class OrderpartsController < ApplicationController
   end
 
   private
+
+  # 編集画面。Ｂ部品（部品台帳＝Ａ部品に無く、KE部品台帳にある部品）の明細は、Ｂ部品詳細編集（旧 partsin22.asp）
+  def edit_template
+    @part.is_a?(Kepart) ? :edit_b_part : :edit
+  end
 
   # 編集画面に出す、注文・部品台帳の情報
   def prepare_edit_screen

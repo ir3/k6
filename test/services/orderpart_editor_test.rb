@@ -118,7 +118,7 @@ class OrderpartEditorTest < ActiveSupport::TestCase
     row = b_part_row
     result = OrderpartEditor.new(row, unitpd: "1500").call
     assert result.success?
-    assert_equal "単価", result.label
+    assert_equal "時価", result.label
     row.reload
     assert_equal [ 1500, 4500 ], [ row.unitpd, row.totala ]
     # 参考単価（KE部品台帳）は変わらない
@@ -138,7 +138,7 @@ class OrderpartEditorTest < ActiveSupport::TestCase
     [ "abc", "1.5", "-1", "", "2000000001" ].each do |bad|
       result = OrderpartEditor.new(row, unitpd: bad).call
       assert_not result.success?, bad.inspect
-      assert_equal "単価は 0 から 2000000000 の整数で入力してください。", result.error
+      assert_equal "時価は 0 から 2000000000 の整数で入力してください。", result.error
     end
     assert_equal 700, row.reload.unitpd
   end
@@ -148,7 +148,7 @@ class OrderpartEditorTest < ActiveSupport::TestCase
     before = @orderpart.unitpd
     result = OrderpartEditor.new(@orderpart, unitpd: "1").call
     assert_not result.success?
-    assert_equal "単価を変えられるのは、Ｂ部品の明細だけです。", result.error
+    assert_equal "時価を変えられるのは、Ｂ部品の明細だけです。", result.error
     assert_equal before, @orderpart.reload.unitpd
   end
 
@@ -161,5 +161,63 @@ class OrderpartEditorTest < ActiveSupport::TestCase
   test "a part that is both an A part and a B part is an A part, so its unit price cannot be changed" do
     Kepart.create!(pcode: @orderpart.partno, newprice: 1)
     assert_not OrderpartEditor.new(@orderpart, unitpd: "1").call.success?
+  end
+  # Ｂ部品詳細編集（旧 partsin22.asp）: 個別掛け率・名称
+  test "changes the individual rate of a B part row" do
+    row = b_part_row
+    result = OrderpartEditor.new(row, irate: "1.25").call
+    assert result.success?
+    assert_equal "個別掛け率", result.label
+    assert_in_delta 1.25, row.reload.irate
+    assert OrderpartEditor.new(row, irate: "１．５").call.success?
+    assert_in_delta 1.5, row.reload.irate
+    assert OrderpartEditor.new(row, irate: "0").call.success?
+    assert_in_delta 0.0, row.reload.irate
+  end
+
+  test "a wrong individual rate is refused and nothing changes" do
+    row = b_part_row
+    row.update!(irate: 1.1)
+    [ "", "  ", "abc", "-1", "1,5", "1000.1" ].each do |bad|
+      result = OrderpartEditor.new(row, irate: bad).call
+      assert_not result.success?, bad.inspect
+      assert_equal "個別掛け率は 0 から 1000 の数で入力してください。", result.error
+    end
+    assert_in_delta 1.1, row.reload.irate
+    assert OrderpartEditor.new(row, irate: "1000").call.success?
+  end
+
+  test "the individual rate of an A part row cannot be changed from here" do
+    result = OrderpartEditor.new(@orderpart, irate: "2").call
+    assert_not result.success?
+    assert_equal "個別掛け率を変えられるのは、Ｂ部品の明細だけです。", result.error
+    assert_in_delta 1.0, @orderpart.reload.irate.to_f.nonzero? || 1.0
+  end
+
+  test "the names of a B part row change the names of the B part master, not the row" do
+    row = b_part_row
+    assert OrderpartEditor.new(row, jname: "新しい和文").call.success?
+    result = OrderpartEditor.new(row, ename: "NEW ENGLISH").call
+    assert result.success?
+    assert_equal "英文名称", result.label
+    kepart = Kepart.find_by!(pcode: "B-PRICE~")
+    assert_equal [ "新しい和文", "NEW ENGLISH" ], [ kepart.jname, kepart.ename ]
+  end
+
+  test "a name may be cleared, and a too long name is refused" do
+    row = b_part_row
+    Kepart.find_by!(pcode: "B-PRICE~").update!(jname: "消す")
+    assert OrderpartEditor.new(row, jname: "  ").call.success?
+    assert_nil Kepart.find_by!(pcode: "B-PRICE~").jname
+    result = OrderpartEditor.new(row, ename: "E" * 256).call
+    assert_not result.success?
+    assert_equal "英文名称は 255 文字以内で入力してください。", result.error
+  end
+
+  test "the names of an A part row cannot be changed from here and the A part is not touched" do
+    result = OrderpartEditor.new(@orderpart, jname: "書き換え").call
+    assert_not result.success?
+    assert_equal "和文名称を変えられるのは、Ｂ部品の明細だけです。", result.error
+    assert_equal "和名", @part.reload.jname
   end
 end

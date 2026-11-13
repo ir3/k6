@@ -1,15 +1,21 @@
 # frozen_string_literal: true
 
-# 注文部品詳細編集画面からの1項目の登録（asp/partseditA / partseditI / partseditB / partsreg2 / partsedit22P と
-# partsregbara 相当）。画面のフォームは1項目ずつ送るので、1回に1項目だけ受け付ける。
+# 注文部品詳細編集画面からの1項目の登録（asp/partseditA / partseditI / partseditB / partsreg2 / partsedit22P /
+# partsedit22K / partnamesedit と partsregbara 相当）。画面のフォームは1項目ずつ送るので、1回に1項目だけ受け付ける。
 class OrderpartEditor
   Result = Data.define(:label, :error) do
     def success? = error.nil?
   end
 
-  LABELS = { sno: "順", itemno: "ItemNo", info: "備考", qty: "数量", bqty: "バラ売り数量", unitpd: "単価" }.freeze
+  # unitpd（時価）・irate（個別掛け率）・jname / ename（Ｂ部品台帳の名称）は、Ｂ部品の明細（Ｂ部品詳細編集）だけ
+  LABELS = { sno: "順", itemno: "ItemNo", info: "備考", qty: "数量", bqty: "バラ売り数量",
+             unitpd: "時価", irate: "個別掛け率", jname: "和文名称", ename: "英文名称" }.freeze
   INTEGER_RANGES = { sno: -99_999..99_999, qty: 0..999_999, bqty: 0..999_999, unitpd: 0..2_000_000_000 }.freeze
   TEXT_MAX_LENGTH = { itemno: 30, info: 100 }.freeze
+  B_PART_ONLY = %i[unitpd irate jname ename].freeze
+  # 個別掛け率は、数（小数も可）。旧 partsin22.asp は、1000 より大きい値を 1 として扱った
+  RATE_FORMAT = /\A\d+(\.\d+)?\z/
+  RATE_MAX = 1000.0
 
   def initialize(orderpart, input)
     @orderpart = orderpart
@@ -21,13 +27,18 @@ class OrderpartEditor
     return failure(nil, "登録する項目がありません。") unless field
 
     label = LABELS.fetch(field)
-    # 単価を変えられるのは、Ｂ部品（KE部品台帳にあって、Ａ部品に無い部品）の明細だけ。
-    # Ｂ部品は時価なので、旧 partsedit22P.asp（Ｂ部品単価変更）と同じく、取引ごとに明細の単価を入力する。
-    # Ａ部品の単価は、部品台帳（新単価）から入るので、ここでは変えない
-    return failure(label, "単価を変えられるのは、Ｂ部品の明細だけです。") if field == :unitpd && !b_part?
+    # 時価・個別掛け率・名称を変えられるのは、Ｂ部品（KE部品台帳にあって、Ａ部品に無い部品）の明細だけ。
+    # Ｂ部品は時価なので、旧 partsedit22P.asp（Ｂ部品単価変更）と同じく、取引ごとに明細の時価を入力する。
+    # Ａ部品の単価は、部品台帳（新単価）から入るので、ここでは変えない。
+    # 名称は、旧 partnamesedit.asp（Ｂ部品名称変更）と同じく、明細ではなく、Ｂ部品台帳（KE部品台帳）の名称を変える
+    return failure(label, "#{label}を変えられるのは、Ｂ部品の明細だけです。") if B_PART_ONLY.include?(field) && !b_part?
 
     if INTEGER_RANGES.key?(field)
       save_integer(field, label)
+    elsif field == :irate
+      save_rate(label)
+    elsif %i[jname ename].include?(field)
+      save_master_name(field, label)
     else
       save_text(field, label)
     end
@@ -59,6 +70,23 @@ class OrderpartEditor
 
     @orderpart.update!(field => text.presence)
     Result.new(label: label, error: nil)
+  end
+
+  # 個別掛け率（旧 partsedit22K.asp）。明細の掛け率を変える。空欄・数でない値・大きすぎる値は断る
+  def save_rate(label)
+    raw = @input[:irate].to_s.unicode_normalize(:nfkc).strip
+    unless raw.match?(RATE_FORMAT) && raw.to_f <= RATE_MAX
+      return failure(label, "#{label}は 0 から #{RATE_MAX.to_i} の数で入力してください。")
+    end
+
+    @orderpart.update!(irate: raw.to_f)
+    Result.new(label: label, error: nil)
+  end
+
+  # Ｂ部品台帳（KE部品台帳）の和文名称・英文名称を変える（旧 partnamesedit.asp）
+  def save_master_name(field, label)
+    result = KepartEditor.new(@orderpart.master_part, field, @input[field]).call
+    Result.new(label: label, error: result.error)
   end
 
   # 部品台帳（Ａ部品）に無く、KE部品台帳（Ｂ部品）にある部品の明細か

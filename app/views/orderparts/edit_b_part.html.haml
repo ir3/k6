@@ -1,0 +1,120 @@
+-# Ｂ部品詳細編集（旧 partsin22.asp）。注文部品詳細の、Ｂ部品の部品コードから開く。
+-# Ａ部品の明細は、注文部品詳細編集（edit.html.haml）。Ｂ部品の時価は取引ごとに入力するので、単価ではなく「時価」。
+- content_for :page_title, "Ｂ部品詳細編集"
+- input_cls = "input input-bordered input-sm border-2 border-neutral bg-base-100"
+- btn_cls = "btn btn-sm wtext btn-info"
+- number = ->(value) { value.to_i.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ",") }
+-# 掛け率は注文部品詳細と同じ（Ｂ部品は、明細の個別掛け率が1より大きければそれ、無ければ注文のＢ部品共通掛け率）
+- rate = ItemPricing.effective_rate(@order, :kepart, @orderpart.irate)
+- price = @orderpart.unitpd.to_i
+- calculated = rate * price
+- sel_unit = @orderpart.unit.presence || @part&.sel_unit
+- pricing = ItemPricing.for_orderpart(@orderpart, sel: sel_unit, rate: rate)
+- update_path = orderpart_path(@orderpart)
+- form_cls = "flex items-center gap-2"
+
+.mb-3.flex.items-center.gap-3
+  = link_to "注文部品詳細へ戻る", (@order ? order_path(@order) : orders_path), class: btn_cls
+  - if @order
+    %span 取引No. #{@order.mno}　#{@order.shipname}
+
+%table.center-table.radius-table.row-compact{width: "99%", align: "center"}
+  %tr.bg-primary.text-primary-content
+    %th{width: "40px"} 順
+    %th{width: "13%"} 部品コード
+    %th{width: "8%"} ItemNo
+    %th 名称
+    %th 備考
+    %th{width: "6%"} 単位
+    %th{width: "6%"} 数量
+    %th{width: "7%"} 重量
+    %th{width: "9%"} 時価
+    %th{width: "10%"} 金額
+  %tr
+    %td{style: "text-align: center;"}= @orderpart.sno
+    %td{style: "text-align: center; font-weight: bold;"}
+      -# Ｂ部品台帳の定義（Ｂ部品メンテナンス）へ
+      - if @part_path
+        = link_to @orderpart.partno, @part_path
+      - else
+        = @orderpart.partno
+    %td= @orderpart.itemno
+    %td= @name
+    %td= @orderpart.info
+    %td{style: "text-align: center;"}= sel_unit
+    %td{style: "text-align: right;"}= @orderpart.qty
+    %td{style: "text-align: right;"}= @orderpart.totalweight&.round(2)
+    %td{style: "text-align: right;"}= number.call(price)
+    %td{style: "text-align: right;"}= number.call(pricing.amount)
+
+%table.center-table.radius-table.row-compact{width: "99%", align: "center", style: "margin-top: 8px;"}
+  %tr
+    %th.bg-primary.text-primary-content{width: "80px"} 新価格
+    %td{style: "text-align: right;"}= number.call(price)
+    %th.bg-primary.text-primary-content{width: "80px"} 掛け率
+    %td{style: "text-align: right;"}= rate
+    %th.bg-primary.text-primary-content{width: "140px"} 単純計算単価
+    %td{style: "text-align: right;"}= number.call(calculated)
+    %th.bg-primary.text-primary-content{width: "140px"} 計算後単価(上)
+    %td{style: "text-align: right;"}= number.call(PriceRounding.round_up(calculated))
+    %th.bg-primary.text-primary-content{width: "140px"} 計算後単価(捨)
+    %td{style: "text-align: right;"}= number.call(PriceRounding.round_half_up(calculated))
+
+-# 各フォームは1項目ずつ登録する（旧 partseditA / partseditI / partnamesedit / partseditB / partsreg22 / partsedit22P / partsedit22K）
+.flex.flex-col{style: "margin: 12px 0 0 30px; gap: 8px;"}
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span 順入力
+    = f.text_field :sno, value: @orderpart.sno, size: 8, maxlength: 6, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 6rem; text-align: right;"
+    = f.submit "順変更", name: nil, class: btn_cls
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span ItemNoを入力してください。
+    = f.text_field :itemno, value: @orderpart.itemno, size: 30, maxlength: OrderpartEditor::TEXT_MAX_LENGTH[:itemno], autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 14rem;"
+    = f.submit "ItemNo登録", name: nil, class: btn_cls
+  -# 名称は、明細ではなく、Ｂ部品台帳（KE部品台帳）の名称を変える（旧 partnamesedit.asp）
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span 和文名称変更入力
+    = f.text_field :jname, value: @part&.jname, size: 60, autocomplete: "off", class: input_cls, style: "width: 32rem;"
+    = f.submit "和文名称変更登録", name: nil, class: btn_cls
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span 英文名称変更入力
+    = f.text_field :ename, value: @part&.ename, size: 60, autocomplete: "off", class: input_cls, style: "width: 32rem;"
+    = f.submit "英文名称変更登録", name: nil, class: btn_cls
+    %span.TB12 名称は、Ｂ部品台帳の名称を変更します。
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span 備考入力
+    = f.text_field :info, value: @orderpart.info, size: 60, maxlength: OrderpartEditor::TEXT_MAX_LENGTH[:info], autocomplete: "off", class: input_cls, style: "width: 32rem;"
+    = f.submit "備考登録", name: nil, class: btn_cls
+
+%div{style: "margin: 12px 0 0 30px;"}
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: "flex items-center gap-2 mb-2"} do |f|
+    %span 数量入力
+    %span.TB12 数量をクリックして選択するか数字を入力してください。
+    = f.text_field :qty, value: @orderpart.qty, size: 10, maxlength: 7, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 6rem; text-align: right;"
+    = f.submit "数量入力", name: nil, class: btn_cls
+  -# 0〜139 のどれかを押すと、その数量で登録する（1つのフォームに140個の送信ボタン。旧 partsin22.asp は7段）
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart do |f|
+    %table.qty-grid{style: "border-collapse: collapse;"}
+      - 7.times do |row|
+        %tr
+          - 20.times do |col|
+            - qty = row * 20 + col
+            %td{style: "border: 1px solid #999; padding: 0;"}
+              = button_tag qty, type: "submit", name: "orderpart[qty]", value: qty, class: "w-full cursor-pointer #{'bg-warning font-bold' if qty == @orderpart.qty}", style: "width: 2.2rem; padding: 2px 0; text-align: center;"
+
+.flex.flex-col{style: "margin: 16px 0 0 30px; gap: 8px;"}
+  -# Ｂ部品の時価は、取引ごとに入力する（掛け率は掛けない）
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span 掛け率の掛からない時価を入力してください。
+    = f.text_field :unitpd, value: @orderpart.unitpd, size: 12, maxlength: 10, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 8rem; text-align: right;"
+    = f.submit "時価登録", name: nil, class: btn_cls
+  = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+    %span 掛け率を入力してください。
+    = f.text_field :irate, value: @orderpart.irate, size: 8, maxlength: 8, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 6rem; text-align: right;"
+    = f.submit "個別掛率登録", name: nil, class: btn_cls
+    %span.TB12 1 より大きい値のときだけ、この部品の個別掛け率として使います（それ以外は、注文のＢ部品共通掛け率）。
+
+%hr{style: "margin: 16px 0;"}
+.flex.items-center.gap-3{style: "margin-left: 30px;"}
+  = button_to "この部品を削除する", orderpart_path(@orderpart), method: :delete, form: {data: {turbo_confirm: "部品 #{@orderpart.partno}#{@orderpart.kzaiko} を削除します。元に戻せません。よろしいですか？"}}, class: btn_cls
+  -# Ｂ部品の在庫台帳での入出庫の状況（旧 hzaikomente.asp のＢ部品在庫メンテナンス）へ
+  = link_to "部品在庫参照", stockb_maintenance_path(partno: @orderpart.partno), class: btn_cls

@@ -937,4 +937,16 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 8, css_select("th.output-dates-head").size
     assert_not_includes css_select("th").find { |cell| cell.text.strip == "取引管理No." }["class"], "output-dates-head"
   end
+  # 並び替え後表示の部品コードのリンク（注文部品詳細と同じ）
+  test "the sorted view links the part code of a B part to the B part detail edit screen and an A part to its maintenance" do
+    part = Part.create!(pcode: "SA001", jname: "Ａの部品", newprice: 100)
+    Kepart.create!(pcode: "SB001~", jname: "Ｂの部品", newprice: 100)
+    Orderpart.create!(mno: @order.mno, sno: 10, partno: "SA001", qty: 1, unitpd: 100, irate: 1.0)
+    b_row = Orderpart.create!(mno: @order.mno, sno: 20, partno: "SB001~", qty: 1, unitpd: 100, irate: 1.0)
+    get sorted_order_url(@order)
+    assert_response :success
+    links = css_select("td a").to_h { |a| [ a.text.strip, a["href"] ] }
+    assert_equal edit_orderpart_path(b_row), links["SB001~"]
+    assert_equal part_path(part), links["SA001"]
+  end
 end

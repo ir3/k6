@@ -271,29 +271,9 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     assert positions.all?, "部品名が表示されていない: #{positions.inspect}"
     assert_equal positions.sort, positions
   end
-  test "the edit screen has the unit price form only for a B part row" do
-    kepart = Kepart.create!(pcode: "KE-PRICE~", newprice: 100)
-    b_row = Orderpart.create!(mno: @order.mno, sno: 30, partno: "KE-PRICE~", qty: 2, unitpd: 0, irate: 1.0)
-    get edit_orderpart_url(b_row)
-    assert_select "input[name=?][value=?]", "orderpart[unitpd]", "0"
-    assert_select "input[type=submit][value=?]", "単価変更"
-    assert_select "span.TB12", text: /Ｂ部品の時価は、取引毎に入力します/
-    get edit_orderpart_url(@orderpart)
-    assert_select "input[name=?]", "orderpart[unitpd]", count: 0
-    assert_equal kepart, Kepart.find_by(pcode: "KE-PRICE~")
-  end
 
-  test "the unit price form changes the price of a B part row and comes back to the edit screen" do
-    Kepart.create!(pcode: "KE-PRICE2~", newprice: 100)
-    row = Orderpart.create!(mno: @order.mno, sno: 31, partno: "KE-PRICE2~", qty: 4, unitpd: 0, irate: 1.0)
-    patch orderpart_url(row), params: { orderpart: { unitpd: "2500" } }
-    assert_response :see_other
-    assert_redirected_to edit_orderpart_url(row)
-    assert_equal "単価を登録しました。", flash[:notice]
-    assert_equal [ 2500, 10_000 ], row.reload.then { |r| [ r.unitpd, r.totala ] }
-  end
 
-  test "the unit price form refuses the price of an A part row" do
+  test "the market price form refuses the price of an A part row" do
     patch orderpart_url(@orderpart), params: { orderpart: { unitpd: "1" } }
     assert_response :unprocessable_entity
     assert_equal 1228, @orderpart.reload.unitpd
@@ -308,5 +288,107 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     cells = tr.css("td").map { |td| td.text.strip }
     assert_includes cells, "3,000"
     assert_includes cells, "6,000"
+  end
+  # Ｂ部品詳細編集（旧 partsin22.asp）
+  def b_row(code: "KE-B1~", **attrs)
+    Kepart.create!(pcode: code, jname: "Ｂの和名", ename: "B ENGLISH", newprice: 100)
+    Orderpart.create!({ mno: @order.mno, sno: 30, partno: code, qty: 2, unitpd: 500, irate: 1.0, itemno: "7", info: "Ｂの備考" }.merge(attrs))
+  end
+
+  test "a B part row opens the B part detail edit screen, an A part row the part edit screen" do
+    row = b_row
+    get edit_orderpart_url(row)
+    assert_response :success
+    assert_select "title", /Ｂ部品詳細編集/
+    get edit_orderpart_url(@orderpart)
+    assert_select "title", /注文部品詳細編集/
+  end
+
+  test "the B part detail edit screen shows the row like the old partsin22" do
+    row = b_row
+    get edit_orderpart_url(row)
+    headings = css_select("th").map { |th| th.text.strip }
+    %w[順 部品コード ItemNo 名称 備考 単位 数量 重量 時価 金額 新価格 掛け率 単純計算単価 計算後単価(上) 計算後単価(捨)].each do |heading|
+      assert_includes headings, heading
+    end
+    assert_select "a[href=?]", kepart_path(Kepart.find_by!(pcode: "KE-B1~")), text: "KE-B1~"
+    cells = css_select("tr").find { |tr| tr.css("td a").map(&:text).include?("KE-B1~") }.css("td").map { |td| td.text.strip }
+    assert_includes cells, "500"
+    assert_includes cells, "1,000"
+    assert_includes cells, "Ｂの備考"
+  end
+
+  test "the B part detail edit screen has one form for each item with the buttons of the old screen" do
+    row = b_row
+    get edit_orderpart_url(row)
+    { sno: "順変更", itemno: "ItemNo登録", jname: "和文名称変更登録", ename: "英文名称変更登録", info: "備考登録", qty: "数量入力",
+      unitpd: "時価登録", irate: "個別掛率登録" }.each do |field, button|
+      assert_select "form[action=?][method=post]", orderpart_path(row) do
+        assert_select "input[name=?]", "orderpart[#{field}]"
+        assert_select "input[type=submit][value=?]", button
+      end
+    end
+    assert_select "input[name=?][value=?]", "orderpart[jname]", "Ｂの和名"
+    assert_select "input[name=?][value=?]", "orderpart[ename]", "B ENGLISH"
+    assert_select "input[name=?][value=?]", "orderpart[unitpd]", "500"
+    # 数量の選択表は 0〜139（7段）
+    assert_equal 140, css_select("table.qty-grid button").size
+    assert_select "table.qty-grid button[value=?]", "139"
+    assert_select "span.TB12", text: /名称は、Ｂ部品台帳の名称を変更します/
+    assert_select "form[action=?][data-turbo-confirm] button, form[action=?][data-turbo-confirm] input[type=submit]", orderpart_path(row), orderpart_path(row), text: /この部品を削除する/
+    assert_select "a[href=?]", stockb_maintenance_path(partno: "KE-B1~"), text: "部品在庫参照"
+  end
+
+  test "the A part edit screen has no market price, individual rate or name forms" do
+    get edit_orderpart_url(@orderpart)
+    %w[unitpd irate jname ename].each { |field| assert_select "input[name=?]", "orderpart[#{field}]", count: 0 }
+  end
+
+  test "the market price form changes the price of a B part row and comes back to the B part edit screen" do
+    row = b_row(unitpd: 0)
+    patch orderpart_url(row), params: { orderpart: { unitpd: "2500" } }
+    assert_response :see_other
+    assert_redirected_to edit_orderpart_url(row)
+    assert_equal "時価を登録しました。", flash[:notice]
+    assert_equal [ 2500, 5000 ], row.reload.then { |r| [ r.unitpd, r.totala ] }
+    follow_redirect!
+    assert_select "title", /Ｂ部品詳細編集/
+  end
+
+  test "the individual rate form changes the rate of the row" do
+    row = b_row
+    patch orderpart_url(row), params: { orderpart: { irate: "1.2" } }
+    assert_equal "個別掛け率を登録しました。", flash[:notice]
+    assert_in_delta 1.2, row.reload.irate
+  end
+
+  test "the name forms change the B part master and the name shows again on the screen" do
+    row = b_row
+    patch orderpart_url(row), params: { orderpart: { jname: "書き換えた和名" } }
+    assert_equal "和文名称を登録しました。", flash[:notice]
+    assert_equal "書き換えた和名", Kepart.find_by!(pcode: "KE-B1~").jname
+    follow_redirect!
+    assert_select "input[name=?][value=?]", "orderpart[jname]", "書き換えた和名"
+  end
+
+  test "a wrong value on the B part edit screen shows the message on the same screen and changes nothing" do
+    row = b_row
+    patch orderpart_url(row), params: { orderpart: { unitpd: "abc" } }
+    assert_response :unprocessable_entity
+    assert_select "title", /Ｂ部品詳細編集/
+    assert_select ".alert-error, .alert", text: /時価は 0 から 2000000000 の整数/
+    assert_equal 500, row.reload.unitpd
+    patch orderpart_url(row), params: { orderpart: { irate: "x" } }
+    assert_response :unprocessable_entity
+    assert_select "title", /Ｂ部品詳細編集/
+  end
+
+  test "the order detail links the part code of a B part to the B part detail edit screen and an A part to its maintenance" do
+    row = b_row(code: "KE-B2~")
+    get order_url(@order)
+    link = css_select("td a").find { |a| a.text == "KE-B2~" }
+    assert_equal edit_orderpart_path(row), link["href"]
+    a_link = css_select("td a").find { |a| a.text == "A001" }
+    assert_equal part_path(@part), a_link["href"]
   end
 end

@@ -4,7 +4,8 @@
   - if part_source == :part
     %td= (link_to orderpart.partno, parts_path+"/#{part.id}")+ orderpart.kzaiko
   - elsif part_source == :kepart
-    %td= (link_to orderpart.partno, keparts_path+"/#{part.id}")+ orderpart.kzaiko
+    -# Ｂ部品の部品コードは、Ｂ部品詳細編集（旧 partsin22.asp）へ。Ｂ部品台帳の定義は、その画面の部品コードから見る
+    %td= (link_to orderpart.partno, edit_orderpart_path(orderpart))+ orderpart.kzaiko
   - else
     %td= ''
   %td= orderpart.itemno
