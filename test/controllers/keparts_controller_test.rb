@@ -85,7 +85,14 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input#kepart_pcode[value=?]", "ZZ-1"
     assert_select "input#kepart_munit[value=?]", "1"
     assert_select "input[name=source][value=scratch]"
-    assert_select "input#kepart_ename", count: 0
+    # 「名称」は「和文名称」になり、英文名称の入力枠がある
+    headings = css_select("th").map { |th| th.text.strip }
+    assert_includes headings, "和文名称"
+    assert_includes headings, "英文名称"
+    assert_not_includes headings, "名称"
+    assert_select "input#kepart_jname"
+    assert_select "input#kepart_ename[name=?]", "kepart[ename]"
+    assert_match(/英文名称が空欄のときは、和文名称を英文名称にも登録します/, response.body)
     assert_select "input[type=submit][value=?]", "Ｂ部品登録"
   end
 
@@ -112,12 +119,25 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ 0, 2 ], Stockb.find_by!(partno: "A0100~").then { |stock| [ stock.kind, stock.num ] }
   end
 
-  test "the registration from nothing is kind 1 and the name is both names" do
+  test "the registration from nothing is kind 1 and an empty English name is the Japanese name" do
     post keparts_url, params: { source: "scratch", kepart: { pcode: "zz-1", jname: "名称のみ", munit: "1", num: "1", newprice: "100" } }
     assert_redirected_to keparts_url(keyword: "ZZ-1")
     kepart = Kepart.find_by!(pcode: "ZZ-1")
     assert_equal [ "名称のみ", "名称のみ" ], [ kepart.jname, kepart.ename ]
     assert_equal 1, Stockb.find_by!(partno: "ZZ-1").kind
+  end
+
+  test "the registration from nothing writes an entered English name" do
+    post keparts_url, params: { source: "scratch", kepart: { pcode: "zz-2", jname: "和文の名称", ename: "ENGLISH NAME", munit: "1", num: "1" } }
+    kepart = Kepart.find_by!(pcode: "ZZ-2")
+    assert_equal [ "和文の名称", "ENGLISH NAME" ], [ kepart.jname, kepart.ename ]
+  end
+
+  test "a wrong registration from nothing keeps the typed English name" do
+    post keparts_url, params: { source: "scratch", kepart: { pcode: "zz-3", jname: "和文", ename: "KEEP ME", newprice: "abc" } }
+    assert_response :unprocessable_entity
+    assert_select "input#kepart_jname[value=?]", "和文"
+    assert_select "input#kepart_ename[value=?]", "KEEP ME"
   end
 
   test "a wrong registration shows the message and keeps what was typed" do

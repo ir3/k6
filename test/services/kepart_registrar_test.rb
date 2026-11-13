@@ -28,17 +28,43 @@ class KepartRegistrarTest < ActiveSupport::TestCase
     assert_equal [ 0, nil ], [ stock.num, stock.indate ]
   end
 
-  test "from nothing: the name goes to both names, the stock row is kind 1 without a kind of receipt or a date" do
-    result = register(:scratch, pcode: "x-100", jname: "新しい部品", munit: "1", num: "4", weightkg: "0.5", newprice: "1200", itemno: "9",
-                                size: "無視される", ename: "IGNORED", ikubun: "3")
+  test "from nothing: an entered English name is written as it is, the stock row is kind 1 without a kind of receipt or a date" do
+    result = register(:scratch, pcode: "x-100", jname: "新しい部品", ename: "NEW PART", munit: "1", num: "4", weightkg: "0.5", newprice: "1200",
+                                itemno: "9", size: "無視される", ikubun: "3")
     assert result.success?
     kepart = Kepart.find_by!(pcode: "X-100")
-    assert_equal [ "新しい部品", "新しい部品", "9", "2" ], [ kepart.jname, kepart.ename, kepart.itemno, kepart.cordno ]
+    assert_equal [ "新しい部品", "NEW PART", "9", "2" ], [ kepart.jname, kepart.ename, kepart.itemno, kepart.cordno ]
     assert_nil kepart.size
     assert_equal [ 1200, 1200 ], [ kepart.newprice, kepart.price ]
 
     stock = Stockb.find_by!(partno: "X-100")
     assert_equal [ 1, 4, 1200, nil, nil ], [ stock.kind, stock.num, stock.irprice, stock.ikubun, stock.indate ]
+  end
+
+  test "from nothing: without an English name the Japanese name is copied to it like before" do
+    kepart = register(:scratch, pcode: "COPY-1", jname: "和文のみ").kepart
+    assert_equal [ "和文のみ", "和文のみ" ], [ kepart.jname, kepart.ename ]
+    # 空白だけの英文名称も、入力なしと同じ
+    kepart = register(:scratch, pcode: "COPY-2", jname: "和文のみ", ename: "　 ").kepart
+    assert_equal "和文のみ", kepart.ename
+  end
+
+  test "from nothing: with an English name and no Japanese name only the English name is written" do
+    kepart = register(:scratch, pcode: "ENG-ONLY", ename: "ENGLISH ONLY").kepart
+    assert_nil kepart.jname
+    assert_equal "ENGLISH ONLY", kepart.ename
+  end
+
+  test "from nothing: a too long English name is refused" do
+    assert_no_difference [ -> { Kepart.count }, -> { Stockb.count } ] do
+      assert_equal "英文名称は 255 文字以内で入力してください。", register(:scratch, jname: "和", ename: "E" * 256).error
+    end
+    assert register(:scratch, pcode: "LONG-OK", jname: "和", ename: "E" * 255).success?
+  end
+
+  test "from a part: an empty English name stays empty (it is not copied from the Japanese name)" do
+    kepart = register(:part, pcode: "PART-1~", jname: "和文のみ").kepart
+    assert_nil kepart.ename
   end
 
   test "empty unit is 1, empty weight is 0, empty price is 0 and empty quantity is 0 like the old screens" do

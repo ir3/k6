@@ -7,7 +7,7 @@
 #   KE部品: 部品コード（末尾に「~」）・寸法・和文名称・英文名称・計測単位・重量・ItemNo・新単価と現行単価・CORDNo(2)
 #   在庫台帳Ｂ: 部品・kind 0・入庫区分・入庫日付（数量が 1 以上のとき今日）・数量・単価
 # source: :scratch（Ａ部品に無い部品コードから作る。旧 npartsr32.asp → partsreg44.asp）
-#   KE部品: 部品コード・和文名称（英文名称にも同じ値）・計測単位・重量・ItemNo・新単価と現行単価・CORDNo(2)
+#   KE部品: 部品コード・和文名称・英文名称（空欄のときは和文名称と同じ値）・計測単位・重量・ItemNo・新単価と現行単価・CORDNo(2)
 #   在庫台帳Ｂ: 部品・kind 1・数量・単価（入庫区分と入庫日付は入れない。旧ASPは、数量欄の値を無視して常に 1 だった）
 # どちらも、計測単位の空欄は 1、重量の空欄は 0、単価の空欄は 0 にする（旧ASPのとおり）。
 # 登録済みの部品コードは断る（旧ASPは重複を調べず、同じ行が2つできた）。
@@ -39,7 +39,7 @@ class KepartRegistrar
   end
 
   # input: ActionController::Parameters でも Hash でもよい
-  # （キーは pcode size jname ename munit num weightkg newprice itemno ikubun。:scratch では size ename ikubun は使わない）
+  # （キーは pcode size jname ename munit num weightkg newprice itemno ikubun。:scratch では size ikubun は使わない）
   def initialize(input, source:)
     raise ArgumentError, "source は #{SOURCES.inspect} のどちらか" unless SOURCES.include?(source)
 
@@ -92,7 +92,8 @@ class KepartRegistrar
   # 文字の項目を読む。長すぎるときは、メッセージ（String）を返す
   def read_texts
     fields = { jname: [ "和文名称", NAME_MAX ], itemno: [ "ItemNo", ITEMNO_MAX ] }
-    fields.merge!(size: [ "寸法", SIZE_MAX ], ename: [ "英文名称", NAME_MAX ]) if @source == :part
+    fields[:ename] = [ "英文名称", NAME_MAX ]
+    fields[:size] = [ "寸法", SIZE_MAX ] if @source == :part
 
     texts = {}
     fields.each do |field, (label, max)|
@@ -101,8 +102,9 @@ class KepartRegistrar
 
       texts[field] = text.presence
     end
-    # 旧 partsreg44.asp は、名称を和文名称と英文名称の両方に入れる
-    texts[:ename] = texts[:jname] if @source == :scratch
+    # Ａ部品に無い部品コードから作るとき、旧 partsreg44.asp は、名称を和文名称と英文名称の両方に入れた。
+    # 今は英文名称も入力できる。英文名称が空欄のときだけ、従来どおり和文名称を英文名称にも入れる
+    texts[:ename] ||= texts[:jname] if @source == :scratch
     texts
   end
 

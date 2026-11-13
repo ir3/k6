@@ -39,11 +39,13 @@
       %tr{class: head_cls}
         %th{width: "20%"} 部品コード
         %th{width: "14%"} ItemNo
-        %th 名称
+        %th 和文名称
+        %th 英文名称
       %tr
         %td= f.text_field :pcode, value: values[:pcode], id: "kepart_pcode", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
         %td= f.text_field :itemno, value: values[:itemno], id: "kepart_itemno", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
         %td= f.text_field :jname, value: values[:jname], id: "kepart_jname", autocomplete: "off", class: input_cls, autofocus: true
+        %td= f.text_field :ename, value: values[:ename], id: "kepart_ename", autocomplete: "off", class: input_cls
 
   %table.center-table.radius-table.row-compact.mt-2{width: "99%", align: "center"}
     %tr{class: head_cls}
@@ -75,7 +77,7 @@
   %p.TB12.mt-2
     単価は、新単価と現行単価の両方に登録します。空欄は 0 です。
     - unless from_part
-      名称は、和文名称と英文名称の両方に登録します。
+      英文名称が空欄のときは、和文名称を英文名称にも登録します。
 
   .mt-4.text-center
     = submit_tag(from_part ? "新規Ｂ部品在庫登録" : "Ｂ部品登録", name: nil, class: "btn btn-sm btn-info")
