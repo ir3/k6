@@ -187,4 +187,27 @@ class StockOutControllerTest < ActionDispatch::IntegrationTest
     assert_select "span.TB12", text: /出庫数を入力後/
     assert_select "th.TB12, th .TB12", false
   end
+  # 出庫数の初期値（?num=。注文部品詳細の「この部品を在庫から引き当て、在庫数を減算する」が、明細の数量を渡す）
+  test "new takes the quantity that is passed as the first value of the quantity to take out" do
+    get stock_out_url(partno: "A001", mno: "202611001", num: "3")
+    assert_select "input[name=num][value=3]"
+    assert_select "input[name=mno][value=202611001]"
+    assert_select "input[name=ship][value=?]", "注文の船"
+  end
+
+  test "a quantity that cannot be taken out is not used as the first value" do
+    [ "0", "-2", "abc", "1.5", "", "1000000" ].each do |bad|
+      get stock_out_url(partno: "A001", num: bad)
+      assert_response :success
+      assert_select "input[name=num]:not([value])"
+    end
+    get stock_out_url(partno: "A001", num: "２")
+    assert_select "input[name=num][value=2]"
+  end
+
+  test "the first value is only shown, nothing is taken out until the entry is registered" do
+    assert_no_difference -> { Stock.count } do
+      get stock_out_url(partno: "A001", mno: "202611001", num: "4")
+    end
+  end
 end

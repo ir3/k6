@@ -124,3 +124,8 @@
   = button_to "この部品を削除する", orderpart_path(@orderpart), method: :delete, form: {data: {turbo_confirm: "部品 #{@orderpart.partno}#{@orderpart.kzaiko} を削除します。元に戻せません。よろしいですか？"}}, class: btn_cls
   -# 在庫台帳での入出庫の状況(旧 zaikomente.asp の在庫メンテナンス)へ
   = link_to "この部品の在庫状況", stock_maintenance_path(partno: @orderpart.partno), class: btn_cls
+  -# この注文の出荷分として、在庫から引き当てて、在庫数を減算する（旧 partsin2.asp → zaikoout.asp）。
+  -# 出庫入力へ、部品番号・この注文の取引管理No・この明細の数量（出庫数の初期値）を渡す。出庫入力は、取引管理No の出荷先の船名・会社名を取引台帳から入れる。
+  -# 出庫入力は、部品台帳（Ａ部品）にある部品だけ（台帳に無い部品の明細には出さない）
+  - if @part.is_a?(Part)
+    = link_to "この部品を在庫から引き当て、在庫数を減算する", stock_out_path(partno: @orderpart.partno, mno: @orderpart.mno, num: @orderpart.qty), class: btn_cls

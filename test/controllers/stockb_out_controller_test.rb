@@ -102,4 +102,10 @@ class StockbOutControllerTest < ActionDispatch::IntegrationTest
       assert_redirected_to stockb_out_url
     end
   end
+  test "new takes the quantity that is passed as the first value like the A part stock out" do
+    get stockb_out_url(partno: "E001~", num: "5")
+    assert_select "input[name=num][value=5]"
+    get stockb_out_url(partno: "E001~", num: "0")
+    assert_select "input[name=num]:not([value])"
+  end
 end

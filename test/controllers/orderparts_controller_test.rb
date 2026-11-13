@@ -398,4 +398,46 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     get edit_orderpart_url(@orderpart)
     assert_select "a[href=?]", part_path(@part), text: "A001"
   end
+  # 「この部品を在庫から引き当て、在庫数を減算する」（旧 partsin2.asp → zaikoout.asp）
+  test "the A part detail edit screen has the button that opens the stock out screen of this part for this order" do
+    get edit_orderpart_url(@orderpart)
+    # 出庫数の初期値として、この明細の数量を渡す
+    assert_select "a[href=?]", stock_out_path(partno: "A001", mno: @order.mno, num: @orderpart.qty), text: "この部品を在庫から引き当て、在庫数を減算する"
+    # 在庫の状況を見る既存のボタンも、そのまま
+    assert_select "a[href=?]", stock_maintenance_path(partno: "A001"), text: "この部品の在庫状況"
+  end
+
+  test "the button opens the stock out screen with the part and the shipping destination of the order filled in" do
+    Stock.create!(partno: "A001", num: 5, irprice: 100, ikubun: 1)
+    get stock_out_url(partno: "A001", mno: @order.mno)
+    assert_response :success
+    assert_select "input[name=mno][value=?]", @order.mno.to_s
+    assert_select "input[name=ship][value=?]", "第一丸"
+  end
+
+  test "a row whose part is in no master, and a B part row, have no button to take the part out of the stock" do
+    row = Orderpart.create!(mno: @order.mno, sno: 20, partno: "NOMASTER", qty: 1, unitpd: 10, irate: 1.0)
+    get edit_orderpart_url(row)
+    assert_select "a", text: /在庫から引き当て/, count: 0
+    Kepart.create!(pcode: "KE-OUT~", newprice: 1)
+    b_row = Orderpart.create!(mno: @order.mno, sno: 30, partno: "KE-OUT~", qty: 1, unitpd: 1, irate: 1.0)
+    get edit_orderpart_url(b_row)
+    assert_select "a", text: /在庫から引き当て/, count: 0
+    assert_select "a[href=?]", stockb_maintenance_path(partno: "KE-OUT~"), text: "部品在庫参照"
+  end
+  test "the quantity of the row is the first value of the quantity to take out, and the quantity that was changed is passed" do
+    patch orderpart_url(@orderpart), params: { orderpart: { qty: "7" } }
+    get edit_orderpart_url(@orderpart)
+    assert_select "a[href=?]", stock_out_path(partno: "A001", mno: @order.mno, num: 7), text: /在庫から引き当て/
+    follow = css_select("a").find { |a| a.text.include?("在庫から引き当て") }["href"]
+    get follow
+    assert_select "input[name=num][value=7]"
+  end
+
+  test "a row with the quantity 0 opens the stock out screen with an empty quantity" do
+    patch orderpart_url(@orderpart), params: { orderpart: { qty: "0" } }
+    get edit_orderpart_url(@orderpart)
+    get css_select("a").find { |a| a.text.include?("在庫から引き当て") }["href"]
+    assert_select "input[name=num]:not([value])"
+  end
 end

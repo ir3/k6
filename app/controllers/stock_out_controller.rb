@@ -2,6 +2,7 @@
 
 # 出庫入力（旧 zaikoout.asp）。部品の出庫を、出庫数・仕入時販売単価・取引管理No・出庫区分・備考・船名・会社名で登録する。
 # 在庫メンテナンスの「出庫登録」から開く。取引管理No が渡されたとき(?mno=)は、出荷先の船名・会社名を取引台帳から入れる。
+# 出庫数が渡されたとき(?num=)は、出庫数の初期値にする。
 # Ｂ部品は StockbOutController（旧 zaikoout2.asp / syukoEntry2.asp）が、行き先と台帳だけ入れ替えて使う。
 class StockOutController < ApplicationController
   before_action :set_maintainer
@@ -13,7 +14,10 @@ class StockOutController < ApplicationController
     return render :select if @maintainer.partno.empty?
     return redirect_to(entry_path, alert: @maintainer.unknown_message) unless @maintainer.known?
 
-    @form = { price: @maintainer.part&.newprice, okubun: 2, mno: params[:mno].to_s.strip.presence }
+    # ?num= は、出庫数の初期値（注文部品詳細の「この部品を在庫から引き当て、在庫数を減算する」が、その明細の数量を渡す）。
+    # 出庫数として受け付けられない値（0・負・数でない値・大きすぎる値）は、空白のままにする
+    @form = { price: @maintainer.part&.newprice, okubun: 2, mno: params[:mno].to_s.strip.presence,
+              num: IntegerInput.parse(params[:num], StockMaintainer::ISSUE_RANGE) }
     destination = StockMaintainer.destination(@form[:mno])
     @form.merge!(ship: destination[:ship], company: destination[:company]) if destination
     load_screen
