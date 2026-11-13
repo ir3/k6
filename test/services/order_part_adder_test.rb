@@ -59,11 +59,62 @@ class OrderPartAdderTest < ActiveSupport::TestCase
     assert_equal 2, add("A00401252").rows.size
   end
 
-  test "an unknown part number adds nothing" do
-    result = add("ZZZ999")
+  test "a number that is neither an A part nor a B part adds nothing and says it was not found" do
+    result = add("zzz999")
     assert_not result.success?
     assert_match(/見つかりません/, result.error)
+    assert result.not_found
+    # 探した部品番号（大文字にそろえたもの）を返す。画面は、Ｂ部品の登録へ進む
+    assert_equal "ZZZ999", result.partno
     assert_empty rows_of
+  end
+
+  # Ａ部品に無いときは、Ｂ部品（KE部品台帳）から探す（旧 partsin3.asp）
+  test "a B part is added as a row when there is no A part with the number" do
+    Kepart.create!(pcode: "E001~", jname: "Ｂの部品", newprice: 5000, weightkg: 4.0, munit: 2, itemno: "3", cordno: "8")
+    result = add("e001~")
+    assert result.success?
+    assert_equal :kepart, result.source
+    assert_not result.not_found
+    assert_equal "E001~", result.partno
+    row = rows_of.sole
+    assert_equal [ "E001~", "3", "8", 1, 2.0, 2.0 ], [ row.partno, row.itemno, row.cordno, row.qty, row.unitweight, row.totalweight ]
+    assert_nil row.kzaiko
+  end
+
+  test "a B part is added at price 0 because the B part price is the market price, and with no warning" do
+    Kepart.create!(pcode: "E002~", newprice: 5000, price: 4000)
+    result = add("E002~")
+    row = rows_of.sole
+    assert_equal [ 0, 0 ], [ row.unitpd, row.totala ]
+    assert_equal [], result.warnings
+  end
+
+  test "a B part uses the same defaults as an A part for itemno, cordno and the rate" do
+    Kepart.create!(pcode: "E003~")
+    row = add("E003~").then { rows_of.sole }
+    assert_equal [ "1", "2", 0.85 ], [ row.itemno, row.cordno, row.irate ]
+  end
+
+  test "a B part in the stock ledger does not add the ^ stock row" do
+    Kepart.create!(pcode: "E004~")
+    Stock.create!(partno: "E004~", num: 3)
+    add("E004~")
+    assert_equal [ nil ], rows_of.map(&:kzaiko)
+  end
+
+  test "the A part wins when the same number is both an A part and a B part" do
+    Kepart.create!(pcode: "A00401252", newprice: 9999)
+    result = add("A00401252")
+    assert_equal :part, result.source
+    assert_equal 140, rows_of.sole.unitpd
+  end
+
+  test "a B part is added to the order that was given and continues its sno" do
+    Kepart.create!(pcode: "E005~")
+    add("A00401252")
+    add("E005~")
+    assert_equal [ 10, 20 ], rows_of.map(&:sno)
   end
 
   test "a blank input adds nothing" do

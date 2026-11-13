@@ -8,7 +8,10 @@
 - ikubun_kinds = StockLedger::INBOUND_KINDS
 
 .mb-3.flex.items-center.gap-3
-  = link_to "戻る", keparts_path, class: "btn btn-sm btn-info"
+  -# 注文部品詳細の「部品番号を入力して部品選択」から来たときは、注文へ戻る
+  = link_to "戻る", (@order ? order_path(@order) : keparts_path), class: "btn btn-sm btn-info"
+  - if @order
+    %span.TB12 注文 #{@order.mno} に追加する部品を登録します。登録すると、Ｂ部品台帳とこの注文の明細に追加して、注文に戻ります。
 
 - if from_part
   %p.mb-2 指定された部品を新規にＢ在庫として登録します。データに変更があれば変更入力してください。
@@ -19,6 +22,8 @@
 
 = form_with url: keparts_path, scope: :kepart, method: :post do |f|
   = hidden_field_tag :source, @source, id: nil
+  - if @order
+    = hidden_field_tag :order_id, @order.id, id: nil
   - if from_part
     %table.center-table.radius-table.row-compact{width: "99%", align: "center"}
       %tr{class: head_cls}
@@ -55,6 +60,9 @@
       %th 単価
       - if from_part
         %th ItemNo
+      -# 注文から来たとき（旧 partsin32.asp）: 数量 × 単価 が、注文の明細の金額になる
+      - if @order
+        %th 金額
     %tr
       %td= f.text_field :munit, value: values[:munit], id: "kepart_munit", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
       %td= f.text_field :num, value: values[:num], id: "kepart_num", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
@@ -62,8 +70,11 @@
       %td= f.text_field :newprice, value: values[:newprice], id: "kepart_newprice", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
       - if from_part
         %td= f.text_field :itemno, value: values[:itemno], id: "kepart_itemno", autocomplete: "off", class: input_cls, style: "ime-mode:disabled;"
+      - if @order
+        %td 自動計算
 
-  - if from_part
+  -# 入庫区分は、在庫台帳Ｂに足すときだけ（注文から来たときは、在庫台帳Ｂには足さない）
+  - if from_part && !@order
     %table.center-table.radius-table.row-compact.mt-2{width: "99%", align: "center"}
       %tr{class: head_cls}
         %th 入庫区分
@@ -78,6 +89,8 @@
     単価は、新単価と現行単価の両方に登録します。空欄は 0 です。
     - unless from_part
       英文名称が空欄のときは、和文名称を英文名称にも登録します。
+    - if @order
+      この注文の明細には、数量と単価をそのまま入れます（在庫台帳Ｂには登録しません）。
 
   .mt-4.text-center
-    = submit_tag(from_part ? "新規Ｂ部品在庫登録" : "Ｂ部品登録", name: nil, class: "btn btn-sm btn-info")
+    = submit_tag((from_part && !@order) ? "新規Ｂ部品在庫登録" : "Ｂ部品登録", name: nil, class: "btn btn-sm btn-info")

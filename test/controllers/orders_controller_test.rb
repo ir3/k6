@@ -247,13 +247,24 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".alert-warning", /単価0/
   end
 
-  test "add_part with an unknown number shows an error and adds nothing" do
+  test "add_part with a number that is not an A part goes to the B part registration and adds nothing yet" do
     assert_no_difference -> { Orderpart.where(mno: @order.mno).count } do
-      post add_part_order_url(@order), params: { partsno: "ZZZ999" }
+      post add_part_order_url(@order), params: { partsno: "zzz999" }
+    end
+    assert_redirected_to new_kepart_url(nparts: "ZZZ999", order_id: @order.id)
+    assert_match(/部品番号「ZZZ999」は、Ａ部品にもＢ部品にもありません。Ｂ部品として登録してください/, flash[:notice])
+  end
+
+  test "add_part adds a B part as a row at price 0 when there is no A part with the number" do
+    Kepart.create!(pcode: "E001~", jname: "Ｂの部品", newprice: 5000)
+    assert_difference -> { Orderpart.where(mno: @order.mno).count }, 1 do
+      post add_part_order_url(@order), params: { partsno: "e001~" }
     end
     assert_redirected_to order_url(@order)
     follow_redirect!
-    assert_select ".alert-error", /見つかりません/
+    assert_select ".alert-success", /Ｂ部品 E001~ を追加しました。単価は、明細で入力してください/
+    assert_select ".alert-warning", false
+    assert_equal 0, Orderpart.where(mno: @order.mno).sole.unitpd
   end
 
   test "add_part with a blank number shows an error" do

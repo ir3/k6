@@ -298,6 +298,13 @@ class OrdersController < ApplicationController
     @order = Order.find(params[:id])
     result = OrderPartAdder.new(@order, params[:partsno]).call
 
+    # Ａ部品にもＢ部品にも無い部品番号は、Ｂ部品の登録へ進む（旧 partsin3.asp → partsin32.asp）。
+    # 登録のあと、注文に戻って、その部品を明細に追加する
+    if result.not_found
+      return redirect_to new_kepart_path(nparts: result.partno, order_id: @order.id),
+                         notice: "部品番号「#{result.partno}」は、Ａ部品にもＢ部品にもありません。Ｂ部品として登録してください（登録すると、この注文の明細に追加します）。"
+    end
+
     if result.success?
       flash[:notice] = added_part_message(result)
       flash[:warning] = result.warnings.join(" ") if result.warnings.any?
@@ -570,6 +577,9 @@ class OrdersController < ApplicationController
   end
 
   def added_part_message(result)
+    # Ｂ部品は時価なので、単価0で追加する（明細で単価を入力する）
+    return "Ｂ部品 #{result.partno} を追加しました。単価は、明細で入力してください（Ｂ部品は時価です）。" if result.source == :kepart
+
     message = "部品 #{result.partno} を追加しました。"
     message += "（在庫台帳にあるため、在庫分と通常の#{result.rows.size}行）" if result.rows.size > 1
     message

@@ -46,6 +46,8 @@ class KepartsController < ApplicationController
   # - Ｂ部品台帳に、すでにある: 登録できないので、在庫を登録するＢ部品在庫メンテナンスへ案内する
   # - どちらにも無い: Ｂ部品詳細入力（旧 npartsr32.asp）の登録画面
   def new
+    # 注文部品詳細の「部品番号を入力して部品選択」から来たときは、登録のあと、その注文に戻って明細に追加する
+    @order = Order.find_by(id: params[:order_id]) if params[:order_id].present?
     code = PartCode.normalize(params[:nparts])
     return redirect_to(keparts_path, alert: "新規登録する部品コードを入力してください。") if code.empty?
 
@@ -72,10 +74,18 @@ class KepartsController < ApplicationController
   # 登録のあとは、その部品コードで絞り込んだ一覧（旧 hiteijosel.asp）へ戻る
   def create
     source = params[:source].to_s == "scratch" ? :scratch : :part
-    result = KepartRegistrar.new(kepart_input, source: source).call
+    @order = Order.find_by(id: params[:order_id]) if params[:order_id].present?
+    result = KepartRegistrar.new(kepart_input, source: source, order: @order).call
 
     respond_to do |format|
-      if result.success?
+      if result.success? && @order
+        # 注文から来たときは、KE部品台帳と注文の明細に足して（在庫台帳Ｂには足さない。旧 partsreg4.asp）、注文に戻る
+        format.html do
+          redirect_to order_path(@order), status: :see_other,
+                                          notice: "Ｂ部品「#{result.kepart.pcode}」を登録し、この注文の明細に追加しました（数量 #{result.orderpart.qty}・単価 #{result.orderpart.unitpd}）。"
+        end
+        format.json { render json: result.kepart, status: :created, location: result.kepart }
+      elsif result.success?
         format.html do
           redirect_to keparts_path(keyword: result.kepart.pcode), status: :see_other,
                                                                   notice: "Ｂ部品「#{result.kepart.pcode}」と、在庫台帳Ｂの1行を登録しました。"

@@ -297,4 +297,68 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Ｂ部品「E001~」を削除しました。", flash[:notice]
     assert_equal 1, Stockb.where(partno: "E001~").count
   end
+  # 注文部品詳細の「部品番号を入力して部品選択」から来たとき（Ａ部品にもＢ部品にも無い部品番号）
+  test "the registration from an order keeps the order, goes back to it and shows what it will do" do
+    order = Order.create!(mno: 202611050, shipname: "第一丸")
+    get new_kepart_url(nparts: "zz-ord-1", order_id: order.id)
+    assert_response :success
+    assert_select "input#kepart_pcode[value=?]", "ZZ-ORD-1"
+    assert_select "input[type=hidden][name=order_id][value=?]", order.id.to_s
+    assert_select "a[href=?]", order_path(order), text: "戻る"
+    assert_select "span.TB12", text: /注文 202611050 に追加する部品を登録します/
+  end
+
+  test "the registration screen without an order has no hidden order and goes back to the list" do
+    get new_kepart_url(nparts: "zz-ord-2")
+    assert_select "input[name=order_id]", count: 0
+    assert_select "a[href=?]", keparts_path, text: "戻る"
+    assert_select "span.TB12", text: /に追加する部品を登録します/, count: 0
+  end
+
+  test "an order id that does not exist is ignored" do
+    get new_kepart_url(nparts: "zz-ord-3", order_id: 0)
+    assert_response :success
+    assert_select "input[name=order_id]", count: 0
+  end
+
+  test "the registration from an order makes the B part and an order row with the entered quantity and price, but no stock row, and comes back to the order" do
+    order = Order.create!(mno: 202611051, shipname: "第一丸")
+    assert_difference [ -> { Kepart.count }, -> { Orderpart.where(mno: order.mno).count } ], 1 do
+      assert_no_difference -> { Stockb.count } do
+        post keparts_url, params: { source: "scratch", order_id: order.id,
+                                    kepart: { pcode: "zz-ord-4", jname: "注文から登録", itemno: "5", munit: "1", num: "3", weightkg: "2", newprice: "1500" } }
+      end
+    end
+    assert_response :see_other
+    assert_redirected_to order_url(order)
+    assert_equal "Ｂ部品「ZZ-ORD-4」を登録し、この注文の明細に追加しました（数量 3・単価 1500）。", flash[:notice]
+    row = Orderpart.where(mno: order.mno).sole
+    assert_equal [ "ZZ-ORD-4", "5", "2", 3, 1500, 4500, 2.0, 6.0 ],
+                 [ row.partno, row.itemno, row.cordno, row.qty, row.unitpd, row.totala, row.unitweight, row.totalweight ]
+    assert_equal [ 1500, 1500 ], Kepart.find_by!(pcode: "ZZ-ORD-4").then { |kepart| [ kepart.newprice, kepart.price ] }
+  end
+
+  test "the registration screen from an order has the amount column and no kind of receipt" do
+    order = Order.create!(mno: 202611053, shipname: "第一丸")
+    get new_kepart_url(nparts: "zz-ord-6", order_id: order.id)
+    headings = css_select("th").map { |th| th.text.strip }
+    assert_includes headings, "金額"
+    assert_select "td", text: "自動計算"
+    assert_select "input[name=?]", "kepart[ikubun]", count: 0
+    assert_select "span.TB12", text: /Ｂ部品台帳とこの注文の明細に追加して、注文に戻ります/
+    assert_select "p.TB12", text: /この注文の明細には、数量と単価をそのまま入れます（在庫台帳Ｂには登録しません）/
+    # 注文から来ないときは、金額の列は無い
+    get new_kepart_url(nparts: "zz-ord-7")
+    assert_not_includes css_select("th").map { |th| th.text.strip }, "金額"
+  end
+
+  test "a wrong registration from an order keeps the order and adds nothing to it" do
+    order = Order.create!(mno: 202611052, shipname: "第一丸")
+    assert_no_difference [ -> { Kepart.count }, -> { Orderpart.where(mno: order.mno).count } ] do
+      post keparts_url, params: { source: "scratch", order_id: order.id, kepart: { pcode: "zz-ord-5", jname: "名", newprice: "abc" } }
+    end
+    assert_response :unprocessable_entity
+    assert_select "input[type=hidden][name=order_id][value=?]", order.id.to_s
+    assert_select "a[href=?]", order_path(order), text: "戻る"
+  end
 end

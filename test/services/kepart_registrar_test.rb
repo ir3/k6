@@ -126,4 +126,85 @@ class KepartRegistrarTest < ActiveSupport::TestCase
   test "an unknown source is refused" do
     assert_raises(ArgumentError) { KepartRegistrar.new({}, source: :other) }
   end
+  # 注文から来たとき（旧 partsin32.asp → partsreg4.asp）
+  def register_for(order, **input)
+    KepartRegistrar.new({ pcode: "ORD1" }.merge(input), source: :scratch, order: order).call
+  end
+
+  def order_for_test
+    Order.create!(mno: 202611060, adlist_id: 1, irate: 0.85)
+  end
+
+  test "from an order: the part and one order row are made, the stock row is not" do
+    order = order_for_test
+    assert_difference [ -> { Kepart.count }, -> { Orderpart.where(mno: order.mno).count } ], 1 do
+      assert_no_difference -> { Stockb.count } do
+        result = register_for(order, jname: "和", ename: "ENG", itemno: "7", munit: "2", num: "4", weightkg: "3", newprice: "1000")
+        assert result.success?
+        assert_equal result.kepart.pcode, result.orderpart.partno
+      end
+    end
+    kepart = Kepart.find_by!(pcode: "ORD1")
+    assert_equal [ "和", "ENG", "7", "2", 3.0, 1000, 1000, "2" ],
+                 [ kepart.jname, kepart.ename, kepart.itemno, kepart.munit.to_s, kepart.weightkg, kepart.newprice, kepart.price, kepart.cordno ]
+  end
+
+  test "from an order: the row takes the entered quantity and price, and the total is the price times the quantity" do
+    order = order_for_test
+    row = register_for(order, num: "4", newprice: "1000", munit: "2", weightkg: "3", itemno: "7").orderpart
+    assert_equal [ 4, 1000, 4000, "7", "2", 0.85 ], [ row.qty, row.unitpd, row.totala, row.itemno, row.cordno, row.irate ]
+    # 1個あたりの重量は、重量を計測単位で割る（Ａ部品・Ｂ部品の明細と同じ）
+    assert_equal [ 1.5, 6.0 ], [ row.unitweight, row.totalweight ]
+  end
+
+  test "from an order: an empty quantity is 1, an empty price is 0 and an empty weight is nothing" do
+    order = order_for_test
+    result = register_for(order)
+    row = result.orderpart
+    assert_equal [ 1, 0, 0 ], [ row.qty, row.unitpd, row.totala ]
+    assert_nil result.kepart.weightkg
+    assert_equal "1", row.itemno
+  end
+
+  test "from an order: the row continues the order of the rows of the order" do
+    order = order_for_test
+    Orderpart.create!(mno: order.mno, sno: 10, partno: "X")
+    NOrderpart.create!(mno: order.mno, sno: 20)
+    assert_equal 30, register_for(order).orderpart.sno
+  end
+
+  test "from an order: a wrong value is refused and nothing is made" do
+    order = order_for_test
+    assert_no_difference [ -> { Kepart.count }, -> { Orderpart.count } ] do
+      assert_match(/数量は 0 から 999999 の整数/, register_for(order, num: "-1").error)
+      assert_match(/単価は/, register_for(order, newprice: "abc").error)
+      assert_equal "部品コードを入力してください。", register_for(order, pcode: " ").error
+    end
+  end
+
+  test "from an order: a part code that is already a B part is refused and no row is added" do
+    order = order_for_test
+    Kepart.create!(pcode: "ORD1")
+    assert_no_difference -> { Orderpart.count } do
+      assert_equal "部品コード「ORD1」は、すでにＢ部品台帳にあります。", register_for(order).error
+    end
+  end
+
+  test "from an order without a management number nothing is made" do
+    order = Order.create!(mno: nil)
+    assert_no_difference [ -> { Kepart.count }, -> { Orderpart.count } ] do
+      assert_equal "管理番号がない注文には部品を追加できません。", register_for(order).error
+    end
+  end
+
+  test "from an order: if the row cannot be made the part is not made either" do
+    order = order_for_test
+    Orderpart.define_singleton_method(:create!) { |*| raise ActiveRecord::RecordInvalid }
+    begin
+      assert_raises(ActiveRecord::RecordInvalid) { register_for(order, pcode: "ROLL2") }
+    ensure
+      Orderpart.singleton_class.send(:remove_method, :create!)
+    end
+    assert_not Kepart.exists?(pcode: "ROLL2")
+  end
 end
