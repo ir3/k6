@@ -210,4 +210,37 @@ class StockOutControllerTest < ActionDispatch::IntegrationTest
       get stock_out_url(partno: "A001", mno: "202611001", num: "4")
     end
   end
+  # 「戻る」は、開いたときの直前のページ（飛び元）に戻る
+  def back_href
+    css_select("a").find { |link| link.text.strip == "戻る" }["href"]
+  end
+
+  test "the back button goes to the page the stock out screen was opened from" do
+    origin = edit_orderpart_url(Orderpart.create!(mno: @order.mno, sno: 10, partno: "A001", qty: 2, unitpd: 1, irate: 1.0))
+    get stock_out_url(partno: "A001"), headers: { "HTTP_REFERER" => origin }
+    assert_equal URI.parse(origin).request_uri, back_href
+  end
+
+  test "the back button keeps going to the first page after a wrong entry shows the stock out screen again" do
+    origin = edit_orderpart_url(Orderpart.create!(mno: @order.mno, sno: 10, partno: "A001", qty: 2, unitpd: 1, irate: 1.0))
+    get stock_out_url(partno: "A001"), headers: { "HTTP_REFERER" => origin }
+    post stock_out_url, params: { partno: "A001", num: "abc", price: "2500", okubun: "2" }, headers: { "HTTP_REFERER" => stock_out_url(partno: "A001") }
+    assert_response :unprocessable_entity
+    assert_equal URI.parse(origin).request_uri, back_href
+  end
+
+  test "the back button of the stock out screen goes to the stock maintenance without a previous page" do
+    get stock_out_url(partno: "A001")
+    assert_equal stock_maintenance_path(partno: "A001"), back_href
+  end
+
+  test "the back button of the stock out screen opened from the stock maintenance goes back to it" do
+    get stock_out_url(partno: "A001"), headers: { "HTTP_REFERER" => stock_maintenance_url(partno: "A001") }
+    assert_equal stock_maintenance_path(partno: "A001"), back_href
+  end
+
+  test "a page of another site is not used as the back button of the stock out screen" do
+    get stock_out_url(partno: "A001"), headers: { "HTTP_REFERER" => "https://evil.example.com/x" }
+    assert_equal stock_maintenance_path(partno: "A001"), back_href
+  end
 end

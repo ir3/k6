@@ -160,4 +160,37 @@ class StockInControllerTest < ActionDispatch::IntegrationTest
     assert_select "span.TB12", text: /入庫数を入力後/
     assert_select "th.TB12, th .TB12", false
   end
+  # 「戻る」は、開いたときの直前のページ（飛び元）に戻る
+  def back_href
+    css_select("a").find { |link| link.text.strip == "戻る" }["href"]
+  end
+
+  test "the back button goes to the page the stock in screen was opened from" do
+    origin = keparts_url
+    get stock_in_url(partno: "A001"), headers: { "HTTP_REFERER" => origin }
+    assert_equal URI.parse(origin).request_uri, back_href
+  end
+
+  test "the back button keeps going to the first page after a wrong entry shows the stock in screen again" do
+    origin = keparts_url
+    get stock_in_url(partno: "A001"), headers: { "HTTP_REFERER" => origin }
+    post stock_in_url, params: { partno: "A001", num: "abc", price: "2500", ikubun: "1" }, headers: { "HTTP_REFERER" => stock_in_url(partno: "A001") }
+    assert_response :unprocessable_entity
+    assert_equal URI.parse(origin).request_uri, back_href
+  end
+
+  test "the back button of the stock in screen goes to the stock maintenance without a previous page" do
+    get stock_in_url(partno: "A001")
+    assert_equal stock_maintenance_path(partno: "A001"), back_href
+  end
+
+  test "the back button of the stock in screen opened from the stock maintenance goes back to it" do
+    get stock_in_url(partno: "A001"), headers: { "HTTP_REFERER" => stock_maintenance_url(partno: "A001") }
+    assert_equal stock_maintenance_path(partno: "A001"), back_href
+  end
+
+  test "a page of another site is not used as the back button of the stock in screen" do
+    get stock_in_url(partno: "A001"), headers: { "HTTP_REFERER" => "https://evil.example.com/x" }
+    assert_equal stock_maintenance_path(partno: "A001"), back_href
+  end
 end

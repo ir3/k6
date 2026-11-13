@@ -5,6 +5,8 @@
 # 出庫数が渡されたとき(?num=)は、出庫数の初期値にする。
 # Ｂ部品は StockbOutController（旧 zaikoout2.asp / syukoEntry2.asp）が、行き先と台帳だけ入れ替えて使う。
 class StockOutController < ApplicationController
+  include RemembersReturnPath
+
   before_action :set_maintainer
   before_action :require_known_part, only: :create
   helper_method :entry_path, :maintenance_path_for, :entry_title
@@ -66,6 +68,9 @@ class StockOutController < ApplicationController
   def load_screen
     @part = @maintainer.part
     @on_hand = @maintainer.on_hand
+    # 「戻る」の戻り先。開いたときの直前のページ（注文部品詳細編集・在庫メンテナンスなど）。
+    # 入力エラーで画面に戻ってきても、最初に開いたときのページに戻れるようにする。分からないときは、在庫メンテナンス
+    @return_path = return_path_for("#{controller_name}_#{@maintainer.partno}")
   end
 
   # 入力欄の値（入力し直せるように、エラーのときは画面に戻す）
