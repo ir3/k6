@@ -981,4 +981,9 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     colors = row.css("td").map { |td| td["style"].to_s[/background-color:\s*(#\h+)/i, 1] }
     assert_equal [ "#e2efbd" ], colors.uniq
   end
+  test "the order detail has the button to the sorted view without the temporary mark" do
+    get order_url(@order)
+    assert_select "a[href=?]", sorted_order_path(@order), text: "並び替え後表示"
+    assert_select "a", text: /並び替え後表示.*仮/, count: 0
+  end
 end
