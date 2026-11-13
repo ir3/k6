@@ -64,6 +64,16 @@
       %br
       日時
     %td.datej.updated-at-col{width: "72px", style: "font-size: 9px;"}= @order.updated_at.strftime("%Y/%m/%d %H:%M")
+-# 注釈の入力枠と更新ボタン（旧 partsin.asp の「注釈」の行。旧 updcom.asp）。内容は、ここでは表示だけ（上の表）。内容の更新は、取引台帳修正（旧 orderup.asp）で行う
+- note_input_cls = "input input-bordered input-sm border-2 border-neutral bg-base-100"
+- note_btn_cls = "btn btn-sm wtext btn-info"
+%table.center-table.radius-table.row-compact{width: "99%", align:"center"}
+  %tr
+    %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 注釈
+    %td{style: "text-align:left;"}
+      = form_with url: annotation_order_path(@order), method: :patch, class: "flex items-center gap-2" do
+        = text_field_tag :comment, @annotation, id: "order_annotation", maxlength: OrderAnnotationEditor::MAX_LENGTH, autocomplete: "off", class: "#{note_input_cls} flex-1"
+        = submit_tag "更新", name: nil, class: note_btn_cls
 -# 各種出力日（旧 partsin.asp の請求管理）。帳票出力履歴の日付を、8項目の表にまとめる。
 -# 未出力は「未」、手で入れた日付は青字で出す。
 -# 日付を手で入れる欄（旧 torihikikanri.asp）: チェックボックスと日付と「日付更新」は、表の中のセルに散らばるので、

@@ -48,6 +48,28 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.edit-table tr:first-child td", text: @order.updated_at.strftime("%Y/%m/%d %H:%M")
   end
 
+  # 内容の更新は、注文部品詳細ではなく、取引台帳修正（旧 orderup.asp）で行う
+  test "the content is changed on the order edit screen and the line breaks are kept" do
+    @order.update!(memo: "元の内容")
+    get edit_order_url(@order)
+    assert_select "textarea[name='order[memo]']", text: /元の内容/
+    patch order_url(@order), params: { order: { memo: "新しい内容\r\n2行目\r\n3行目" } }
+    assert_redirected_to order_url(@order)
+    assert_equal "新しい内容\r\n2行目\r\n3行目", @order.reload.memo
+    follow_redirect!
+    assert_select "td", text: /新しい内容\s*2行目\s*3行目/
+  end
+
+  test "the order detail shows the content but has no way to change it" do
+    @order.update!(memo: "表示だけの内容")
+    get order_url(@order)
+    assert_select "td", text: "表示だけの内容"
+    assert_select "textarea[name=memo]", count: 0
+    patch "/orders/#{@order.id}/memo", params: { memo: "x" }
+    assert_response :not_found
+    assert_equal "表示だけの内容", @order.reload.memo
+  end
+
   test "edit uses 6 rows for the memo and 2 rows for the delivery comment" do
     get edit_order_url(@order)
     assert_select "textarea[name='order[memo]'][rows='6']"
@@ -985,5 +1007,66 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     get order_url(@order)
     assert_select "a[href=?]", sorted_order_path(@order), text: "並び替え後表示"
     assert_select "a", text: /並び替え後表示.*仮/, count: 0
+  end
+  # 注釈の入力枠と更新ボタン（旧 partsin.asp の「注釈」の行・旧 updcom.asp）。内容は、注文部品詳細では表示だけ
+  test "show has the annotation form with its update button, and the content is only shown" do
+    @order.update!(memo: "1行目\n2行目")
+    OrderAnnotation.create!(tvalid: 1, mno: @order.mno, comment: "清水仕様")
+    get order_url(@order)
+    assert_response :success
+    assert_select "form[action=?][method=post]", annotation_order_path(@order) do
+      assert_select "input[name=_method][value=patch]"
+      assert_select "input#order_annotation[name=comment][value=?]", "清水仕様"
+      assert_select "input[type=submit][value=?]", "更新"
+    end
+    # 内容は、表に表示するだけ（入力枠も、内容の更新ボタンも無い。更新は、取引台帳修正で行う）
+    assert_select "textarea#order_memo", count: 0
+    assert_select "form[action$=?]", "/memo", count: 0
+    labels = css_select("th").map { |th| th.text.strip }
+    assert_includes labels, "内容"
+    assert_includes labels, "注釈"
+    assert_select "td", text: /1行目\s*2行目/
+  end
+
+  test "show has an empty annotation field for an order that has no annotation" do
+    get order_url(@order)
+    assert_select "input#order_annotation[name=comment]:not([value])"
+  end
+
+  test "the annotation form adds the annotation and comes back to the order with a message" do
+    assert_difference -> { OrderAnnotation.where(mno: @order.mno).count }, 1 do
+      patch annotation_order_url(@order), params: { comment: "E40611100にて出荷" }
+    end
+    assert_response :see_other
+    assert_redirected_to order_url(@order)
+    assert_equal "注釈を更新しました。", flash[:notice]
+    follow_redirect!
+    assert_select "input#order_annotation[value=?]", "E40611100にて出荷"
+  end
+
+  test "the annotation form updates the existing annotation and clears it with an empty value" do
+    OrderAnnotation.create!(tvalid: 1, mno: @order.mno, comment: "元の注釈")
+    assert_no_difference -> { OrderAnnotation.count } do
+      patch annotation_order_url(@order), params: { comment: "新しい注釈" }
+    end
+    assert_equal [ "新しい注釈" ], OrderAnnotation.where(mno: @order.mno).pluck(:comment)
+    patch annotation_order_url(@order), params: { comment: "" }
+    assert_equal [ "" ], OrderAnnotation.where(mno: @order.mno).pluck(:comment)
+  end
+
+  test "a too long annotation shows the message on the order and changes nothing" do
+    patch annotation_order_url(@order), params: { comment: "あ" * 256 }
+    assert_redirected_to order_url(@order)
+    assert_equal "注釈は 255 文字以内で入力してください。", flash[:alert]
+    assert_equal 0, OrderAnnotation.where(mno: @order.mno).count
+  end
+
+  test "the annotation update needs a signed in user and an existing order" do
+    patch annotation_order_url(id: 0), params: { comment: "x" }
+    assert_response :not_found
+    delete session_url
+    patch annotation_order_url(@order), params: { comment: "x" }
+    assert_redirected_to new_session_url(format: :html)
+    assert_equal 0, OrderAnnotation.where(mno: @order.mno).count
   end
 end

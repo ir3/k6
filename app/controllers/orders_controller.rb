@@ -280,6 +280,8 @@ class OrdersController < ApplicationController
     session[:mno] = @order.mno
     # 各種出力日（旧 partsin.asp の請求管理）。帳票出力履歴から求める
     @output_dates = OrderOutputDates.new(@order.mno).call
+    # 注釈（旧 partsin.asp の「注釈」）。注文ごとに1件。複数あれば、最後のもの
+    @annotation = OrderAnnotation.where(mno: @order.mno).order(:id).last&.comment
     # @orderparts = Orderpart.find_by_sql("SELECT * FROM orderparts WHERE (deleted_at IS NULL) AND mno=#{@order.mno}")
     # 各グループの中を「順(SNo)」順(同じ順は作成順＝古いものが上)で表示する。順が空の行は 0 として扱う
     # （並び替え後表示 OrderSortedItems と同じ）。Orderpartのdefault_scopeはid DESC(新しいものが上)なのでreorderで上書きする。
@@ -312,6 +314,13 @@ class OrdersController < ApplicationController
       flash[:alert] = result.error
     end
     redirect_to @order
+  end
+
+  # PATCH /orders/1/annotation
+  # 注文部品詳細の「注釈」の更新（旧 partsin.asp → updcom.asp「注釈登録」）。更新したあと、注文部品詳細へ戻る。
+  def update_annotation
+    @order = Order.find(params[:id])
+    notes_result(OrderAnnotationEditor.new(@order, params[:comment]).call)
   end
 
   # POST /orders/1/output_dates
@@ -574,6 +583,16 @@ class OrdersController < ApplicationController
     message = "取引台帳を登録しました。管理番号 #{@order.mno}"
     message += "（機番 #{@order.engno.to_s.strip} の直近の取引 #{@source_order.mno} の情報で空欄を補いました）" if @source_order
     message
+  end
+
+  # 注釈の更新の結果を出して、注文部品詳細へ戻る（更新のあとのリダイレクトは 303）
+  def notes_result(result)
+    if result.success?
+      flash[:notice] = "#{result.label}を更新しました。"
+    else
+      flash[:alert] = result.error
+    end
+    redirect_to order_path(@order), status: :see_other
   end
 
   def added_part_message(result)

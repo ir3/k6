@@ -37,6 +37,8 @@ Rails.application.routes.draw do
       post :add_part
       post :add_part_name
       post :output_dates
+      # 注文部品詳細の「注釈」の更新（旧 updcom.asp）。内容の更新は、取引台帳修正（orders#update）
+      patch :annotation, action: :update_annotation
       get "report/:kind", to: "orders#report", as: :report
     end
   end
