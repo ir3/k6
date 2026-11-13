@@ -115,7 +115,7 @@ class OrdersController < ApplicationController
     end
 
     mno_order = resolve_mno_order
-    keykind_labels = { "etype" => "形式検索", "engno" => "機番検索", "shipname" => "船名検索", "company" => "会社名検索", "memo" => "メモ検索" }
+    keykind_labels = { "etype" => "形式検索", "engno" => "機番検索", "shipname" => "船名検索", "company" => "会社名検索", "memo" => "内容検索" }
     if keykind && !keykind.empty?
       if keykind == "company"
         adlist_id = Adlist.find_by_sql("SELECT * FROM adlists WHERE (deleted_at IS NULL) AND #{keykind} like '%#{keyword}%'").first

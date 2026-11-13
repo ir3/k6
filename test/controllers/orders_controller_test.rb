@@ -1069,4 +1069,26 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_url(format: :html)
     assert_equal 0, OrderAnnotation.where(mno: @order.mno).count
   end
+  # 取引台帳の一覧の項目名は、注文部品詳細と同じ「内容」（以前は、全件一覧と検索結果が「Memo」だった）
+  test "the order lists call the memo column 内容, like the order detail" do
+    { "取引台帳" => orders_url, "検索結果" => orders_search_url(keyword: "202610"), "全件一覧" => orders_alllist_url }.each do |name, url|
+      get url
+      assert_response :success, name
+      headings = css_select("th").map { |th| th.text.strip }
+      assert_includes headings, "内容", name
+      assert_not_includes headings, "Memo", name
+    end
+    get order_url(@order)
+    assert_includes css_select("th").map { |th| th.text.strip }, "内容"
+  end
+  test "the content search shows 内容検索 as the search condition, and finds the orders by their content" do
+    @order.update!(memo: "清水仕様のノート")
+    Order.create!(mno: 202610099, memo: "別の内容")
+    post orders_search_url, params: { keyword: "清水仕様", keykind: "memo" }
+    follow_redirect! while response.redirect?
+    assert_response :success
+    assert_select "span", text: /内容検索: 清水仕様/
+    assert_select "span", text: /メモ検索/, count: 0
+    assert_equal [ @order.mno.to_s ], css_select("tbody tr").flat_map { |tr| tr.css("td a").map { |a| a.text.strip } }.select { |t| t.match?(/\A\d{9}\z/) }.uniq
+  end
 end

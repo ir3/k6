@@ -35,4 +35,14 @@ class MenusControllerTest < ActionDispatch::IntegrationTest
     get menu_url
     assert_response :success
   end
+  test "メニューの内容の検索ボタンは「内容検索」" do
+    sign_in_as users(:one)
+    get menu_url
+    assert_response :success
+    assert_select "form[action=?]", orders_search_path do
+      assert_select "input[name=keykind][value=memo]"
+      assert_select "input[type=submit][value=?]", "内容検索"
+    end
+    assert_select "input[type=submit][value=?]", "メモ検索", count: 0
+  end
 end
