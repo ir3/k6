@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class KepartsController < ApplicationController
+  include RemembersReturnPath
+
   before_action :set_kepart, only: %i[show edit update update_field destroy]
 
   # GET /keparts
@@ -30,6 +32,8 @@ class KepartsController < ApplicationController
   # Ｂ部品在庫メンテナンスの「部品定義参照」、KE部品の一覧、注文部品の部品コードから開く。
   def show
     @stockb_rows = Stockb.where(partno: @kepart.pcode).count
+    # 「戻る」の戻り先。登録のあと、同じ画面に戻ってきても、最初に開いたときの直前のページに戻れるようにする
+    @return_path = return_path_for("kepart_#{@kepart.id}")
   end
 
   # PATCH /keparts/1/field（1回に1項目。旧 kepartsedits / kepartseditt / kepricereg / hnpartsb 相当）

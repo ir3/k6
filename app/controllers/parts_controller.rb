@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PartsController < ApplicationController
+  include RemembersReturnPath
+
   before_action :require_authentication
   before_action :set_part, only: %i[show update_field duplicate destroy]
 
@@ -32,6 +34,8 @@ class PartsController < ApplicationController
   def show
     @stock_rows = Stock.where("UPPER(partno) = ?", @part.pcode.to_s.upcase).count
     @old_part_number = StockSetting.find_by(partno: @part.pcode.to_s.strip.upcase)&.opartno
+    # 「戻る」の戻り先。登録のあと、同じ画面に戻ってきても、最初に開いたときの直前のページに戻れるようにする
+    @return_path = return_path_for("part_#{@part.id}")
 
     respond_to do |format|
       format.html

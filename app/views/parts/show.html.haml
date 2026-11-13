@@ -21,7 +21,7 @@
 ] |
 
 .mb-3.flex.items-center.gap-3
-  = link_to "戻る", :back, class: "btn btn-sm btn-info"
+  = link_to "戻る", (@return_path || "javascript:history.back()"), class: "btn btn-sm btn-info"
   %span 部品コード #{@part.pcode}
 
 %table.center-table.radius-table.row-compact{width: "99%", align: "center"}

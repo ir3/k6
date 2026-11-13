@@ -361,4 +361,66 @@ class KepartsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=hidden][name=order_id][value=?]", order.id.to_s
     assert_select "a[href=?]", order_path(order), text: "戻る"
   end
+  # 「戻る」の戻り先（RemembersReturnPath）
+  def back_href
+    css_select("a").find { |link| link.text.strip == "戻る" }["href"]
+  end
+
+  def open_from(page_url, kepart = @kepart)
+    get kepart_url(kepart), headers: { "HTTP_REFERER" => page_url }
+  end
+
+  test "the back button goes to the page the screen was opened from" do
+    order = Order.create!(mno: 202611070)
+    open_from order_url(order)
+    assert_equal order_path(order), back_href
+  end
+
+  test "the back button keeps going to the first page after an item is registered (the screen comes back to itself)" do
+    order = Order.create!(mno: 202611071)
+    open_from order_url(order)
+    patch kepart_field_url(@kepart), params: { field: "comment", value: "登録した" }, headers: { "HTTP_REFERER" => kepart_url(@kepart) }
+    # 登録のあと、同じ画面に戻ってくる。そのときの直前のページは、この画面自身
+    get kepart_url(@kepart), headers: { "HTTP_REFERER" => kepart_url(@kepart) }
+    assert_equal order_path(order), back_href
+    get kepart_url(@kepart), headers: { "HTTP_REFERER" => kepart_url(@kepart) }
+    assert_equal order_path(order), back_href
+  end
+
+  test "the query of the previous page is kept" do
+    open_from stockb_maintenance_url(partno: "E001~")
+    assert_equal "/stockb_maintenance?partno=E001~", back_href
+  end
+
+  test "without a previous page the back button goes back in the browser" do
+    get kepart_url(@kepart)
+    assert_equal "javascript:history.back()", back_href
+  end
+
+  test "a page of another site, or a path that points to another site, is not remembered" do
+    open_from "https://evil.example.com/orders/1"
+    assert_equal "javascript:history.back()", back_href
+    open_from "http://www.example.com//evil.example.com/x"
+    assert_equal "javascript:history.back()", back_href
+    open_from "not a url at all"
+    assert_equal "javascript:history.back()", back_href
+  end
+
+  test "each B part remembers its own previous page" do
+    other = Kepart.create!(pcode: "E002~")
+    order = Order.create!(mno: 202611072)
+    open_from order_url(order)
+    open_from stockb_maintenance_url(partno: "E002~"), other
+    get kepart_url(@kepart), headers: { "HTTP_REFERER" => kepart_url(@kepart) }
+    assert_equal order_path(order), back_href
+    get kepart_url(other), headers: { "HTTP_REFERER" => kepart_url(other) }
+    assert_equal "/stockb_maintenance?partno=E002~", back_href
+  end
+
+  test "opening the screen again from another page replaces the remembered page" do
+    order = Order.create!(mno: 202611073)
+    open_from order_url(order)
+    open_from keparts_url
+    assert_equal keparts_path, back_href
+  end
 end

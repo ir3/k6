@@ -241,4 +241,33 @@ class PartsControllerTest < ActionDispatch::IntegrationTest
     get parts_url
     assert_select "a[href=?]", part_path(@part), text: "A0001"
   end
+  # 「戻る」の戻り先（RemembersReturnPath）
+  def back_href
+    css_select("a").find { |link| link.text.strip == "戻る" }["href"]
+  end
+
+  test "the back button goes to the page the screen was opened from and keeps it after an item is registered" do
+    order = Order.create!(mno: 202611080)
+    get part_url(@part), headers: { "HTTP_REFERER" => order_url(order) }
+    assert_equal order_path(order), back_href
+    patch part_field_url(@part), params: { field: "comment", value: "登録した" }, headers: { "HTTP_REFERER" => part_url(@part) }
+    get part_url(@part), headers: { "HTTP_REFERER" => part_url(@part) }
+    assert_equal order_path(order), back_href
+  end
+
+  test "the back button of the A part screen goes back in the browser without a previous page or with another site" do
+    get part_url(@part)
+    assert_equal "javascript:history.back()", back_href
+    get part_url(@part), headers: { "HTTP_REFERER" => "https://evil.example.com/orders/1" }
+    assert_equal "javascript:history.back()", back_href
+  end
+
+  test "the A part and the B part do not share the remembered page" do
+    kepart = Kepart.create!(pcode: "SHARE~")
+    order = Order.create!(mno: 202611081)
+    get part_url(@part), headers: { "HTTP_REFERER" => order_url(order) }
+    get kepart_url(kepart), headers: { "HTTP_REFERER" => keparts_url }
+    get part_url(@part), headers: { "HTTP_REFERER" => part_url(@part) }
+    assert_equal order_path(order), back_href
+  end
 end
