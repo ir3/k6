@@ -949,4 +949,36 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal edit_orderpart_path(b_row), links["SB001~"]
     assert_equal edit_orderpart_path(a_row), links["SA001"]
   end
+  # 小計の行の背景色（A部品小計・B部品小計は薄黄緑。そのほかは、これまでの青みがかった色）
+  def summary_row_background(label)
+    row = css_select("tr").find { |tr| tr.at_css("td")&.text&.strip == label }
+    assert row, "#{label} の行が無い"
+    row.at_css("td")["style"][/background-color:\s*(#\h+)/i, 1]&.downcase
+  end
+
+  test "the A part subtotal and the B part subtotal rows are pale yellow-green and the other rows keep their color" do
+    Part.create!(pcode: "SUB-A", jname: "Ａ", newprice: 100)
+    Kepart.create!(pcode: "SUB-B~", jname: "Ｂ", newprice: 200)
+    Orderpart.create!(mno: @order.mno, sno: 10, partno: "SUB-A", qty: 1, unitpd: 100, irate: 1.0)
+    Orderpart.create!(mno: @order.mno, sno: 20, partno: "SUB-B~", qty: 1, unitpd: 200, irate: 1.0)
+    NOrderpart.create!(mno: @order.mno, sno: 30, partsname: "その他の部品", qty: 1, unitpd: 300, tvalid: 1)
+    Orderpart.create!(mno: @order.mno, sno: 40, partno: "NO-MASTER", qty: 1, unitpd: 400, irate: 1.0)
+    get order_url(@order)
+    assert_response :success
+    assert_equal "#e2efbd", summary_row_background("A部品小計")
+    assert_equal "#e2efbd", summary_row_background("B部品小計")
+    # そのほかの小計・合計は、これまでの色
+    assert_equal "#c8dce8", summary_row_background("その他小計")
+    assert_equal "#c8dce8", summary_row_background("部品番号不明小計")
+    assert_equal "#c8dce8", summary_row_background("合計")
+  end
+
+  test "all the cells of the A part subtotal row have the same background" do
+    Part.create!(pcode: "SUB-A2", jname: "Ａ", newprice: 100)
+    Orderpart.create!(mno: @order.mno, sno: 10, partno: "SUB-A2", qty: 1, unitpd: 100, irate: 1.0)
+    get order_url(@order)
+    row = css_select("tr").find { |tr| tr.at_css("td")&.text&.strip == "A部品小計" }
+    colors = row.css("td").map { |td| td["style"].to_s[/background-color:\s*(#\h+)/i, 1] }
+    assert_equal [ "#e2efbd" ], colors.uniq
+  end
 end

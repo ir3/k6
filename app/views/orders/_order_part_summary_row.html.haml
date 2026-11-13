@@ -1,4 +1,6 @@
+-# 小計・合計の行。bg: で背景色を変えられる（A部品小計・B部品小計は薄黄緑。そのほかは、これまでの青みがかった色）
+- bg = local_assigns[:bg] || "#c8dce8"
 %tr
-  %td{colspan: 11, style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= label
-  %td{style: 'background-color:#c8dce8; color:#777; text-align:right; font-weight:bold;'}= value.round.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ',')
-  %td.updated-at-col{style: 'background-color:#c8dce8;'}
+  %td{colspan: 11, style: "background-color:#{bg}; color:#777; text-align:right; font-weight:bold;"}= label
+  %td{style: "background-color:#{bg}; color:#777; text-align:right; font-weight:bold;"}= value.round.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ",")
+  %td.updated-at-col{style: "background-color:#{bg};"}

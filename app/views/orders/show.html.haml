@@ -187,12 +187,14 @@
   %tbody
   - a_group.each do |e|
     = render "order_part_row", **e
+  -# A部品小計・B部品小計の行は、薄黄緑
+  - subtotal_bg = "#e2efbd"
   - if a_subtotal != 0
-    = render "order_part_summary_row", label: "A部品小計", value: a_subtotal
+    = render "order_part_summary_row", label: "A部品小計", value: a_subtotal, bg: subtotal_bg
   - b_group.each do |e|
     = render "order_part_row", **e
   - if b_subtotal != 0
-    = render "order_part_summary_row", label: "B部品小計", value: b_subtotal
+    = render "order_part_summary_row", label: "B部品小計", value: b_subtotal, bg: subtotal_bg
   - if n_group.any?
     - n_group.each do |n_orderpart|
       = render "n_orderpart_row", n_orderpart: n_orderpart, fallback_rate: @order.irate2
