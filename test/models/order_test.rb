@@ -78,4 +78,59 @@ class OrderTest < ActiveSupport::TestCase
       assert_equal 202_610_021, Order.next_mno
     end
   end
+  # 点数（旧 partsin.asp の Pnum）
+  def order_with_lines
+    order = Order.create!(mno: 202611100)
+    Part.create!(pcode: "PN-A1", newprice: 1)
+    Part.create!(pcode: "PN-A2", newprice: 1)
+    Kepart.create!(pcode: "PN-B1~", newprice: 1)
+    Orderpart.create!(mno: order.mno, sno: 10, partno: "PN-A1", qty: 1, unitpd: 1)
+    Orderpart.create!(mno: order.mno, sno: 20, partno: "PN-A1", kzaiko: "^", qty: 1, unitpd: 1)
+    Orderpart.create!(mno: order.mno, sno: 30, partno: "PN-A2", qty: 1, unitpd: 1)
+    Orderpart.create!(mno: order.mno, sno: 40, partno: "PN-B1~", qty: 1, unitpd: 1)
+    Orderpart.create!(mno: order.mno, sno: 50, partno: "NO-MASTER", qty: 1, unitpd: 1)
+    NOrderpart.create!(mno: order.mno, sno: 60, partsname: "部品番号なし", qty: 1, tvalid: 1)
+    NOrderpart.create!(mno: order.mno, sno: 70, partsname: "取り消した", qty: 1, tvalid: 0)
+    order
+  end
+
+  test "the number of items is the number of the rows of the order detail without the cancelled rows" do
+    order = order_with_lines
+    # A部品3（在庫「^」の行を含む）・B部品1・部品番号不明1・部品番号なしの有効な1。取り消した1行は数えない
+    assert_equal 6, order.parts_count
+  end
+
+  test "a deleted row is not counted and an order without rows is 0" do
+    order = order_with_lines
+    Orderpart.where(mno: order.mno, partno: "PN-A2").first.update!(deleted_at: Time.current)
+    assert_equal 5, order.parts_count
+    assert_equal 0, Order.create!(mno: 202611101).parts_count
+    assert_equal 0, Order.create!(mno: nil).parts_count
+  end
+
+  test "the rows of another order are not counted" do
+    order = order_with_lines
+    other = Order.create!(mno: 202611102)
+    Orderpart.create!(mno: other.mno, sno: 10, partno: "PN-A1", qty: 1, unitpd: 1)
+    assert_equal 6, order.parts_count
+    assert_equal 1, other.parts_count
+  end
+
+  test "refreshing writes the number of items and returns it, and keeps the updated time" do
+    order = order_with_lines
+    order.update_columns(pnum: nil, updated_at: Time.zone.local(2026, 1, 2, 3, 4, 5))
+    assert_equal 6, order.refresh_parts_count!
+    order.reload
+    assert_equal 6, order.pnum
+    assert_equal Time.zone.local(2026, 1, 2, 3, 4, 5), order.updated_at
+  end
+
+  test "refreshing does not write when the number is already right" do
+    order = order_with_lines
+    order.refresh_parts_count!
+    queries = []
+    callback = ->(*, payload) { queries << payload[:sql] if payload[:sql].match?(/\A\s*UPDATE/i) }
+    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { order.refresh_parts_count! }
+    assert_empty queries
+  end
 end

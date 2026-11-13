@@ -278,6 +278,8 @@ class OrdersController < ApplicationController
     @order = Order.find(params[:id])
     session[:order_id] = @order.id
     session[:mno] = @order.mno
+    # 点数（旧 partsin.asp の Pnum）。開くたびに、明細の行数を数え直して、注文台帳に書く
+    @order.refresh_parts_count!
     # 各種出力日（旧 partsin.asp の請求管理）。帳票出力履歴から求める
     @output_dates = OrderOutputDates.new(@order.mno).call
     # 注釈（旧 partsin.asp の「注釈」）。注文ごとに1件。複数あれば、最後のもの

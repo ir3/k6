@@ -87,6 +87,23 @@ class Order < ActiveRecord::Base
   # 部品明細の並び順(sno)の刻み
   PART_SNO_STEP = 10
 
+  # 点数（旧 partsin.asp の Pnum）: 注文部品詳細に出ている明細の行数。
+  # 部品番号あり（Ａ部品・Ｂ部品・部品番号不明。在庫台帳から出す「^」の行を含む）の行数 + 部品番号なしの有効な行（tvalid=1）の行数。
+  # 取り消し線で出ている無効な行（tvalid=0）は数えない。旧ASPの、実データの点数（2026年の注文 1,079 件のうち 1,039 件）と、この数え方が合う
+  def parts_count
+    return 0 if mno.blank?
+
+    Orderpart.where(mno: mno).reorder(nil).count + NOrderpart.where(mno: mno, tvalid: 1).count
+  end
+
+  # 点数を数え直して、注文台帳に書く（旧 partsin.asp は、注文部品詳細を開くたびに、点数を書き込んでいた）。
+  # 変わらなければ書かない。更新日時は変えない（明細の増減は、注文の内容の変更ではないため）
+  def refresh_parts_count!
+    count = parts_count
+    update_column(:pnum, count) unless pnum == count
+    count
+  end
+
   # 部品明細(部品番号あり: orderparts、部品番号なし: n_orderparts)に追加する行の並び順の番号。
   # 既存の最大値+10。旧ASPの「件数×10+10」は欠番や削除で重複したので使わない
   # （実データでは12%の注文でsnoが重複していた）。

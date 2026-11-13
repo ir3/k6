@@ -1091,4 +1091,58 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_select "span", text: /メモ検索/, count: 0
     assert_equal [ @order.mno.to_s ], css_select("tbody tr").flat_map { |tr| tr.css("td a").map { |a| a.text.strip } }.select { |t| t.match?(/\A\d{9}\z/) }.uniq
   end
+  # 点数（旧 partsin.asp の Pnum）。注文部品詳細を開くたびに、明細の行数を数え直して書く
+  def number_of_items_cell
+    th = css_select("th").find { |cell| cell.text.strip == "点数" }
+    assert th, "点数の見出しが無い"
+    th.parent.css("th").zip(th.parent.css("td")).find { |head, _| head == th }&.last&.text&.strip
+  end
+
+  test "the order detail fills in the number of items that was empty, counting every row of the screen" do
+    Part.create!(pcode: "PN-A1", newprice: 1)
+    Kepart.create!(pcode: "PN-B1~", newprice: 1)
+    Orderpart.create!(mno: @order.mno, sno: 10, partno: "PN-A1", qty: 1, unitpd: 1)
+    Orderpart.create!(mno: @order.mno, sno: 20, partno: "PN-B1~", qty: 1, unitpd: 1)
+    Orderpart.create!(mno: @order.mno, sno: 30, partno: "NO-MASTER", qty: 1, unitpd: 1)
+    NOrderpart.create!(mno: @order.mno, sno: 40, partsname: "部品番号なし", qty: 1, tvalid: 1)
+    NOrderpart.create!(mno: @order.mno, sno: 50, partsname: "取り消した", qty: 1, tvalid: 0)
+    @order.update_columns(pnum: nil)
+    get order_url(@order)
+    assert_response :success
+    assert_equal "4", number_of_items_cell
+    assert_equal 4, @order.reload.pnum
+  end
+
+  test "the order detail corrects a wrong number of items and does not change the updated time" do
+    Part.create!(pcode: "PN-A2", newprice: 1)
+    Orderpart.create!(mno: @order.mno, sno: 10, partno: "PN-A2", qty: 1, unitpd: 1)
+    @order.update_columns(pnum: 99, updated_at: Time.zone.local(2026, 1, 2, 3, 4, 5))
+    get order_url(@order)
+    assert_equal "1", number_of_items_cell
+    @order.reload
+    assert_equal 1, @order.pnum
+    assert_equal Time.zone.local(2026, 1, 2, 3, 4, 5), @order.updated_at
+  end
+
+  test "the number of items follows the rows that are added and deleted" do
+    Part.create!(pcode: "PN-A3", newprice: 100)
+    get order_url(@order)
+    assert_equal "0", number_of_items_cell
+    post add_part_order_url(@order), params: { partsno: "PN-A3" }
+    follow_redirect!
+    assert_equal "1", number_of_items_cell
+    post add_part_order_url(@order), params: { partsno: "PN-A3" }
+    follow_redirect!
+    assert_equal "2", number_of_items_cell
+    delete orderpart_url(Orderpart.where(mno: @order.mno).first)
+    follow_redirect!
+    assert_equal "1", number_of_items_cell
+    assert_equal 1, @order.reload.pnum
+  end
+
+  test "an order without any row shows 0 as the number of items" do
+    @order.update_columns(pnum: nil)
+    get order_url(@order)
+    assert_equal "0", number_of_items_cell
+  end
 end
