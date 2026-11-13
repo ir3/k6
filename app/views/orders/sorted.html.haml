@@ -48,7 +48,8 @@
     %tr{style: (item.kzaiko == "^" ? "background-color: #00ffff;" : nil)}
       %td{style:'text-align:right'}= item.sno
       - if item.part_source == :part
-        %td= (link_to item.code, parts_path+"/#{item.part.id}")+ item.kzaiko.to_s
+        -# Ａ部品の部品コードは、注文部品詳細と同じく、Ａ部品詳細編集（旧 partsin2.asp）へ
+        %td= (link_to item.code, edit_orderpart_path(item.record))+ item.kzaiko.to_s
       - elsif item.part_source == :kepart
         -# Ｂ部品の部品コードは、注文部品詳細と同じく、Ｂ部品詳細編集（旧 partsin22.asp）へ
         %td= (link_to item.code, edit_orderpart_path(item.record))+ item.kzaiko.to_s

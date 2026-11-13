@@ -1,5 +1,6 @@
--# 注文部品詳細編集（旧 partsin2.asp）。注文部品詳細の「順」から開く。Ｂ部品の明細は、Ｂ部品詳細編集（edit_b_part.html.haml）。
-- content_for :page_title, "注文部品詳細編集"
+-# Ａ部品詳細編集（旧 partsin2.asp。旧ASPの見出しは「注文部品詳細編集」）。注文部品詳細の、Ａ部品の部品コードと「順」から開く。
+-# Ｂ部品の明細は、Ｂ部品詳細編集（edit_b_part.html.haml）。どの台帳にも無い部品の明細は、これまでどおり「注文部品詳細編集」
+- content_for :page_title, (@part.is_a?(Part) ? "Ａ部品詳細編集" : "注文部品詳細編集")
 - input_cls = "input input-bordered input-sm border-2 border-neutral bg-base-100"
 - btn_cls = "btn btn-sm wtext btn-info"
 - number = ->(value) { value.to_i.to_s.gsub(/(?<=\d)(?=(?:\d{3})+(?!\d))/, ",") }

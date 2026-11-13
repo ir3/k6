@@ -1,8 +1,9 @@
 %tr{style: (orderpart.kzaiko == "^" ? "background-color: #00ffff;" : nil)}
-  -# 「順」を押すと注文部品詳細編集(旧 partsin2.asp)へ。順が空でも押せるように「-」を出す
+  -# 「順」を押すと、部品コードと同じ詳細編集（Ａ部品は旧 partsin2.asp、Ｂ部品は旧 partsin22.asp）へ。順が空でも押せるように「-」を出す
   %td{style:'text-align:right'}= link_to((orderpart.sno.nil? ? "-" : orderpart.sno), edit_orderpart_path(orderpart))
   - if part_source == :part
-    %td= (link_to orderpart.partno, parts_path+"/#{part.id}")+ orderpart.kzaiko
+    -# Ａ部品の部品コードは、Ａ部品詳細編集（旧 partsin2.asp）へ。Ａ部品台帳の定義（Ａ部品メンテナンス）は、その画面の部品コードから見る
+    %td= (link_to orderpart.partno, edit_orderpart_path(orderpart))+ orderpart.kzaiko
   - elsif part_source == :kepart
     -# Ｂ部品の部品コードは、Ｂ部品詳細編集（旧 partsin22.asp）へ。Ｂ部品台帳の定義は、その画面の部品コードから見る
     %td= (link_to orderpart.partno, edit_orderpart_path(orderpart))+ orderpart.kzaiko

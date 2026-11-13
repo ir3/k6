@@ -65,7 +65,7 @@ class OrderpartsController < ApplicationController
   end
 
   # GET /orderparts/1/edit
-  # 注文部品詳細編集（旧 partsin2.asp）。注文部品詳細の「順」から開く
+  # Ａ部品詳細編集（旧 partsin2.asp）。注文部品詳細の、Ａ部品の部品コードと「順」から開く（Ｂ部品の明細は、Ｂ部品詳細編集）
   def edit
     @orderpart = Orderpart.find(params[:id])
     prepare_edit_screen

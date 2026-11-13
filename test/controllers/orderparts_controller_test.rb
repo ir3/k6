@@ -30,7 +30,7 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
   test "edit shows the part, the quantity table and the price calculation" do
     get edit_orderpart_url(@orderpart)
     assert_response :success
-    assert_select "title", /注文部品詳細編集/
+    assert_select "title", /Ａ部品詳細編集/
     assert_select "a[href=?]", part_path(@part), text: "A001"
     assert_select "td", text: "和文の名称"
     assert_select "td", text: "元の備考"
@@ -72,6 +72,9 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     get edit_orderpart_url(row)
     assert_response :success
     assert_select "td", text: "NOMASTER"
+    # どの台帳にも無い部品の明細は、Ａ部品でもＢ部品でもないので、これまでどおりの名前
+    assert_select "title", /注文部品詳細編集/
+    assert_select "title", text: /Ａ部品詳細編集/, count: 0
   end
 
   test "edit has one form per item and a quantity grid from 0 to 99" do
@@ -142,7 +145,7 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     patch_field(sno: "abc")
     assert_response :unprocessable_entity
     assert_select ".alert-error, .alert-danger, .alert", /順は -99999 から 99999 の整数で入力してください。/
-    assert_select "title", /注文部品詳細編集/
+    assert_select "title", /Ａ部品詳細編集/
     assert_equal 10, @orderpart.reload.sno
   end
 
@@ -207,7 +210,8 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
   end
   # 注文部品詳細の一覧は、各グループの中を「順」順(同じ順は作成順)に並べる
   def listed_orderpart_ids
-    css_select("a").map { |a| a["href"].to_s[%r{\A/orderparts/(\d+)/edit\z}, 1]&.to_i }.compact
+    # 部品コードと「順」の2つのリンクが、同じ編集画面を指すので、重複を除く
+    css_select("a").map { |a| a["href"].to_s[%r{\A/orderparts/(\d+)/edit\z}, 1]&.to_i }.compact.uniq
   end
 
   def part_row(partno, sno)
@@ -295,13 +299,13 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     Orderpart.create!({ mno: @order.mno, sno: 30, partno: code, qty: 2, unitpd: 500, irate: 1.0, itemno: "7", info: "Ｂの備考" }.merge(attrs))
   end
 
-  test "a B part row opens the B part detail edit screen, an A part row the part edit screen" do
+  test "a B part row opens the B part detail edit screen, an A part row the A part detail edit screen" do
     row = b_row
     get edit_orderpart_url(row)
     assert_response :success
     assert_select "title", /Ｂ部品詳細編集/
     get edit_orderpart_url(@orderpart)
-    assert_select "title", /注文部品詳細編集/
+    assert_select "title", /Ａ部品詳細編集/
   end
 
   test "the B part detail edit screen shows the row like the old partsin22" do
@@ -383,12 +387,15 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     assert_select "title", /Ｂ部品詳細編集/
   end
 
-  test "the order detail links the part code of a B part to the B part detail edit screen and an A part to its maintenance" do
+  test "the order detail links the part codes of A parts and B parts to their detail edit screens" do
     row = b_row(code: "KE-B2~")
     get order_url(@order)
     link = css_select("td a").find { |a| a.text == "KE-B2~" }
     assert_equal edit_orderpart_path(row), link["href"]
     a_link = css_select("td a").find { |a| a.text == "A001" }
-    assert_equal part_path(@part), a_link["href"]
+    assert_equal edit_orderpart_path(@orderpart), a_link["href"]
+    # Ａ部品台帳の定義（Ａ部品メンテナンス）へは、Ａ部品詳細編集の部品コードから行く
+    get edit_orderpart_url(@orderpart)
+    assert_select "a[href=?]", part_path(@part), text: "A001"
   end
 end
