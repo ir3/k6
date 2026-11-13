@@ -1145,4 +1145,35 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     get order_url(@order)
     assert_equal "0", number_of_items_cell
   end
+  # 並び替え後表示の、帳票出力の注釈（旧 reorder.asp）。請求書A 以降に有効なので、請求書A の段の直下に出す
+  test "the sorted view puts the report buttons in two rows and the note right under the row that starts with the invoice A" do
+    get sorted_order_url(@order)
+    assert_response :success
+    column = css_select(".report-buttons").first
+    assert column, "帳票出力のボタンのまとまりが無い"
+    rows = column.children.select(&:element?)
+    # 1段目: 見積・受注メモ、2段目: 請求書A 以降、その下に注釈
+    first_row, invoice_row, note = rows
+    assert_equal %w[部品見積依頼出力 部品番号あり見積出力 部品番号なし見積出力 受注メモ出力], first_row.css("a").map { |a| a.text.strip }
+    assert_equal "請求書A", invoice_row.at_css("a").text.strip
+    assert_equal %w[請求書A 請求書A控 納品書A 請求書B 請求書B控 納品書B 出荷案内書 物品受領書], invoice_row.css("a").map { |a| a.text.strip }
+    assert_equal "p", note.name
+    assert_includes note["class"], "TB12"
+    assert_equal "印刷のプロパティ設定で出力用紙サイズをA4/B5選択可。A:値引き・消費税あり/B:値引き・消費税なし", note.text.strip
+    assert_equal 3, rows.size
+    # 注釈は、明細の表の前に出る
+    assert response.body.index("印刷のプロパティ設定") < response.body.index("<thead")
+  end
+
+  test "every report button is still there and each one opens its own report" do
+    get sorted_order_url(@order)
+    links = css_select(".report-buttons a")
+    assert_equal XlsxReports::Registry.size, links.size
+    XlsxReports::Registry.each do |kind, entry|
+      link = links.find { |a| a.text.strip == entry[:label] }
+      assert link, entry[:label]
+      assert_equal report_order_path(@order, kind: kind), link["href"]
+      assert_equal "false", link["data-turbo"]
+    end
+  end
 end

@@ -22,13 +22,24 @@
     %th.bg-primary.text-primary-content{width:"60px", style: 'font-size: 11px;'} 型式
     %td{style:'text-align:center;'}= @order.etype
 
-.flex.flex-wrap.items-center.gap-2{style: "margin: 16px 0 16px 30px;"}
-  %h4 帳票出力
-  - XlsxReports::Registry.each do |kind, entry|
-    -# Turbo経由だとファイル応答を取得したあとにもう一度リクエストされ、出力履歴が二重に記録されるため外す
-    = link_to entry[:label], report_order_path(@order, kind: kind),
-      data: { turbo: false },
-      class: "btn wtext #{entry[:klass] ? 'btn-info' : 'btn-outline'}"
+-# 帳票出力のボタンは、旧 reorder.asp と同じく、2段に分ける（見積・受注メモ／請求書A 以降）。
+-# 注釈（用紙サイズと、A・Bの違い）は請求書A 以降に有効なので、請求書A のボタンの直下に、請求書A の左端から出す
+- reports = XlsxReports::Registry.to_a
+- invoice_from = reports.index { |kind, _| kind == "seikyu_a" } || reports.size
+- report_rows = [ reports.first(invoice_from), reports.drop(invoice_from) ].reject(&:empty?)
+.flex.items-start.gap-3{style: "margin: 16px 0 16px 30px;"}
+  %h4{style: "padding-top: 0.5rem;"} 帳票出力
+  .report-buttons.flex.flex-col.gap-2
+    - report_rows.each do |row|
+      .flex.flex-wrap.items-center.gap-2
+        - row.each do |kind, entry|
+          -# Turbo経由だとファイル応答を取得したあとにもう一度リクエストされ、出力履歴が二重に記録されるため外す
+          = link_to entry[:label], report_order_path(@order, kind: kind),
+            data: { turbo: false },
+            class: "btn wtext #{entry[:klass] ? 'btn-info' : 'btn-outline'}"
+    -# 帳票出力の注釈（旧 reorder.asp）
+    %p.TB12
+      印刷のプロパティ設定で出力用紙サイズをA4/B5選択可。A:値引き・消費税あり/B:値引き・消費税なし
 
 %table.center-table.radius-table.row-compact.zebra-table.list-table{width: "99%", align:"center"}
   %thead.bg-primary.text-primary-content
