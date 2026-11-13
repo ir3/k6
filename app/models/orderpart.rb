@@ -17,6 +17,11 @@ class Orderpart < ActiveRecord::Base
     update!(qty: new_qty, totala: unitpd.to_i * new_qty, totalweight: (per_unit * new_qty).round(3))
   end
 
+  # 単価を変える（Ｂ部品単価変更。旧 partsedit22P.asp）。合計金額(totala)は 単価×数量 で取り直す
+  def change_unitpd!(new_price)
+    update!(unitpd: new_price, totala: new_price * qty.to_i)
+  end
+
   private
 
   # 明細に持っている1個あたりの重量。無ければ合計重量を今の数量で割る

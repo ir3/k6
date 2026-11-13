@@ -73,6 +73,13 @@
     %span 順入力
     = f.text_field :sno, value: @orderpart.sno, size: 8, maxlength: 6, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 6rem; text-align: right;"
     = f.submit "順変更", name: nil, class: btn_cls
+  -# Ｂ部品の時価は、取引ごとに入力する（旧 partsedit22P.asp「Ｂ部品単価変更」）。Ａ部品の単価は部品台帳から入るので、Ｂ部品の明細だけ
+  - if part_source == :kepart
+    = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
+      %span 単価入力
+      = f.text_field :unitpd, value: @orderpart.unitpd, size: 12, maxlength: 10, autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 8rem; text-align: right;"
+      = f.submit "単価変更", name: nil, class: btn_cls
+      %span.TB12 Ｂ部品の時価は、取引毎に入力します。
   = form_with model: @orderpart, url: update_path, method: :patch, scope: :orderpart, html: {class: form_cls} do |f|
     %span ItemNo
     = f.text_field :itemno, value: @orderpart.itemno, size: 30, maxlength: OrderpartEditor::TEXT_MAX_LENGTH[:itemno], autocomplete: "off", class: input_cls, style: "ime-mode:disabled; width: 14rem;"

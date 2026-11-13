@@ -5,7 +5,9 @@
 # 入力された部品番号で部品台帳(Part)を探し、見つかれば注文の部品明細(Orderpart)に1行追加する。
 # Ａ部品に無いときは、旧 partsreg3.asp が partsin3.asp（部品詳細入力3(Ｂ部品)）へ移ったのと同じく、
 # KE部品台帳(Kepart＝Ｂ部品)から同じ部品コードを探し、あればＢ部品として明細に1行追加する。
-# Ｂ部品は時価なので、旧 partsin3.asp と同じく、台帳の単価は持ってこない（単価0。明細で入力する）。
+# Ｂ部品は時価なので、明細の単価は、取引ごとに「単価変更」（旧 partsedit22P.asp）で入力する。
+# 追加したときの初めの単価は、Ｂ部品メンテナンスの参考単価（新単価）にする（旧 partsin3.asp は、台帳の単価を持ってこなかった=
+# 単価0だったが、参考単価を登録しても明細に出ないため、初めの値として使う）。参考単価が未設定なら、単価0で、注意を出す。
 # どちらにも無いときは、結果の not_found が true になる（画面は、Ｂ部品の登録へ進む）。
 # 在庫台帳(Stock)にも登録がある部品は、partsreg3.asp と同じく「^」付きの在庫行を先に1行追加し、
 # 続けて通常の行も1行追加する（合計2行）。実データでは同じ部品に両方ある注文は少ないが、
@@ -74,9 +76,10 @@ class OrderPartAdder
                         warnings: [], not_found: true)
     end
 
-    # 単価は持ってこない（Ｂ部品は時価。旧 partsin3.asp の price = 0）。在庫台帳の「^」の行も足さない
-    row = create_row(kepart, price: 0)
-    Result.new(rows: [ row ], partno: kepart.pcode, error: nil, warnings: [], source: :kepart)
+    # 単価は、Ｂ部品メンテナンスの参考単価から（時価なので、あとで、明細の「単価変更」で取引ごとに直す）。
+    # 在庫台帳の「^」の行は足さない
+    row = create_row(kepart, price: kepart.newprice.to_i)
+    Result.new(rows: [ row ], partno: kepart.pcode, error: nil, warnings: kepart_warnings(kepart), source: :kepart)
   end
 
   # 在庫台帳に登録がある部品か（在庫数は問わない。partsreg3.asp は部品番号で検索するだけ）
@@ -97,5 +100,9 @@ class OrderPartAdder
 
   def warnings_for(part)
     part.newprice.to_i.zero? ? [ "新販売単価が未設定のため、単価0で追加しました。" ] : []
+  end
+
+  def kepart_warnings(kepart)
+    kepart.newprice.to_i.zero? ? [ "参考単価が未設定のため、単価0で追加しました。明細の「単価変更」で入力してください。" ] : []
   end
 end

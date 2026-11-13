@@ -577,8 +577,11 @@ class OrdersController < ApplicationController
   end
 
   def added_part_message(result)
-    # Ｂ部品は時価なので、単価0で追加する（明細で単価を入力する）
-    return "Ｂ部品 #{result.partno} を追加しました。単価は、明細で入力してください（Ｂ部品は時価です）。" if result.source == :kepart
+    # Ｂ部品は時価。単価は、参考単価から入れるので、取引ごとに、明細の「単価変更」で直す
+    if result.source == :kepart
+      price = result.rows.first.unitpd.to_i
+      return "Ｂ部品 #{result.partno} を追加しました。" + (price.positive? ? "単価は参考単価の #{price} 円です（明細の「単価変更」で、取引ごとに直せます）。" : "")
+    end
 
     message = "部品 #{result.partno} を追加しました。"
     message += "（在庫台帳にあるため、在庫分と通常の#{result.rows.size}行）" if result.rows.size > 1

@@ -108,4 +108,58 @@ class OrderpartEditorTest < ActiveSupport::TestCase
     edit(qty: "5")
     assert_equal 0.0, @orderpart.reload.totalweight
   end
+  # Ｂ部品の単価変更（旧 partsedit22P.asp）
+  def b_part_row(qty: 3, unitpd: 0)
+    Kepart.create!(pcode: "B-PRICE~", newprice: 9999)
+    Orderpart.create!(mno: @orderpart.mno, sno: 90, partno: "B-PRICE~", qty: qty, unitpd: unitpd, irate: 1.0)
+  end
+
+  test "changes the unit price of a B part row and the total is the price times the quantity" do
+    row = b_part_row
+    result = OrderpartEditor.new(row, unitpd: "1500").call
+    assert result.success?
+    assert_equal "単価", result.label
+    row.reload
+    assert_equal [ 1500, 4500 ], [ row.unitpd, row.totala ]
+    # 参考単価（KE部品台帳）は変わらない
+    assert_equal 9999, Kepart.find_by!(pcode: "B-PRICE~").newprice
+  end
+
+  test "the unit price may be 0 and full-width digits are accepted" do
+    row = b_part_row(unitpd: 500)
+    assert OrderpartEditor.new(row, unitpd: "０").call.success?
+    assert_equal [ 0, 0 ], [ row.reload.unitpd, row.totala ]
+    assert OrderpartEditor.new(row, unitpd: "２０００").call.success?
+    assert_equal 2000, row.reload.unitpd
+  end
+
+  test "a wrong unit price is refused and nothing changes" do
+    row = b_part_row(unitpd: 700)
+    [ "abc", "1.5", "-1", "", "2000000001" ].each do |bad|
+      result = OrderpartEditor.new(row, unitpd: bad).call
+      assert_not result.success?, bad.inspect
+      assert_equal "単価は 0 から 2000000000 の整数で入力してください。", result.error
+    end
+    assert_equal 700, row.reload.unitpd
+  end
+
+  test "the unit price of an A part row cannot be changed from here" do
+    # @orderpart は、部品台帳（Ａ部品）にある部品の明細
+    before = @orderpart.unitpd
+    result = OrderpartEditor.new(@orderpart, unitpd: "1").call
+    assert_not result.success?
+    assert_equal "単価を変えられるのは、Ｂ部品の明細だけです。", result.error
+    assert_equal before, @orderpart.reload.unitpd
+  end
+
+  test "the unit price of a row whose part is in no master cannot be changed" do
+    row = Orderpart.create!(mno: @orderpart.mno, sno: 91, partno: "NO-MASTER", qty: 1, unitpd: 10, irate: 1.0)
+    assert_not OrderpartEditor.new(row, unitpd: "1").call.success?
+    assert_equal 10, row.reload.unitpd
+  end
+
+  test "a part that is both an A part and a B part is an A part, so its unit price cannot be changed" do
+    Kepart.create!(pcode: @orderpart.partno, newprice: 1)
+    assert_not OrderpartEditor.new(@orderpart, unitpd: "1").call.success?
+  end
 end

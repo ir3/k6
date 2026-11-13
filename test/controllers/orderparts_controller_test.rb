@@ -271,4 +271,42 @@ class OrderpartsControllerTest < ActionDispatch::IntegrationTest
     assert positions.all?, "部品名が表示されていない: #{positions.inspect}"
     assert_equal positions.sort, positions
   end
+  test "the edit screen has the unit price form only for a B part row" do
+    kepart = Kepart.create!(pcode: "KE-PRICE~", newprice: 100)
+    b_row = Orderpart.create!(mno: @order.mno, sno: 30, partno: "KE-PRICE~", qty: 2, unitpd: 0, irate: 1.0)
+    get edit_orderpart_url(b_row)
+    assert_select "input[name=?][value=?]", "orderpart[unitpd]", "0"
+    assert_select "input[type=submit][value=?]", "単価変更"
+    assert_select "span.TB12", text: /Ｂ部品の時価は、取引毎に入力します/
+    get edit_orderpart_url(@orderpart)
+    assert_select "input[name=?]", "orderpart[unitpd]", count: 0
+    assert_equal kepart, Kepart.find_by(pcode: "KE-PRICE~")
+  end
+
+  test "the unit price form changes the price of a B part row and comes back to the edit screen" do
+    Kepart.create!(pcode: "KE-PRICE2~", newprice: 100)
+    row = Orderpart.create!(mno: @order.mno, sno: 31, partno: "KE-PRICE2~", qty: 4, unitpd: 0, irate: 1.0)
+    patch orderpart_url(row), params: { orderpart: { unitpd: "2500" } }
+    assert_response :see_other
+    assert_redirected_to edit_orderpart_url(row)
+    assert_equal "単価を登録しました。", flash[:notice]
+    assert_equal [ 2500, 10_000 ], row.reload.then { |r| [ r.unitpd, r.totala ] }
+  end
+
+  test "the unit price form refuses the price of an A part row" do
+    patch orderpart_url(@orderpart), params: { orderpart: { unitpd: "1" } }
+    assert_response :unprocessable_entity
+    assert_equal 1228, @orderpart.reload.unitpd
+  end
+
+  test "the price that was changed shows in the order detail" do
+    Kepart.create!(pcode: "KE-PRICE3~", newprice: 100)
+    row = Orderpart.create!(mno: @order.mno, sno: 32, partno: "KE-PRICE3~", qty: 2, unitpd: 0, irate: 1.0)
+    patch orderpart_url(row), params: { orderpart: { unitpd: "3000" } }
+    get order_url(@order)
+    tr = css_select("tr").find { |t| t.css("td a").map(&:text).include?("KE-PRICE3~") }
+    cells = tr.css("td").map { |td| td.text.strip }
+    assert_includes cells, "3,000"
+    assert_includes cells, "6,000"
+  end
 end

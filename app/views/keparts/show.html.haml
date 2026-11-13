@@ -45,7 +45,7 @@
           = text_field_tag :value, @kepart[field], id: "kepart_#{field}", autocomplete: "off", class: input_cls, style: "max-width: #{width};#{' ime-mode:disabled;' if ascii}"
           = submit_tag button, name: nil, class: btn_cls
         - if field == :newprice
-          %span.TB12 Ｂ部品の時価は、取引毎に入力しますのでここでの入力は参考のみ。
+          %span.TB12 Ｂ部品の時価は、取引毎に入力しますのでここでの入力は参考のみ。（注文の明細に追加するときの、初めの単価になります）
         - if field == :weightkg
           %span.TB12 空欄にして登録すると、重量を消去します。
 

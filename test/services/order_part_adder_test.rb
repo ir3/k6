@@ -82,12 +82,19 @@ class OrderPartAdderTest < ActiveSupport::TestCase
     assert_nil row.kzaiko
   end
 
-  test "a B part is added at price 0 because the B part price is the market price, and with no warning" do
+  test "a B part is added at its reference price, which can be changed per trade afterwards" do
     Kepart.create!(pcode: "E002~", newprice: 5000, price: 4000)
     result = add("E002~")
     row = rows_of.sole
-    assert_equal [ 0, 0 ], [ row.unitpd, row.totala ]
+    assert_equal [ 5000, 5000 ], [ row.unitpd, row.totala ]
     assert_equal [], result.warnings
+  end
+
+  test "a B part without a reference price is added at price 0 with a warning that tells where to enter it" do
+    Kepart.create!(pcode: "E006~", newprice: nil)
+    result = add("E006~")
+    assert_equal [ 0, 0 ], [ rows_of.sole.unitpd, rows_of.sole.totala ]
+    assert_equal [ "参考単価が未設定のため、単価0で追加しました。明細の「単価変更」で入力してください。" ], result.warnings
   end
 
   test "a B part uses the same defaults as an A part for itemno, cordno and the rate" do
